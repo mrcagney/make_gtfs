@@ -1,0 +1,186 @@
+unit_id;unit_name;route_id;route_desc;weekday_peak_headway;weekday_offpeak_headway;weekday_night_headway;saturday_day_headway;saturday_night_headway;sunday_day_headway;sunday_night_headway
+1;City LINK;010;City Link, Wynyard Quarter to Karangahape Rd via Queen St;5;7.5;10;7.5;10;7.5;10
+2;Inner LINK;020;Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart;10;15;15;15;15;15;15
+3;Richmond Road;030;Grey Lynn to Auckland University via Richmond Rd and Grey Lynn;10;15;30;30;30;30;30
+3;Richmond Road;031;St Lukes to Auckland University via Richmond Rd and Grey Lynn;30;30;30;30;30;30;30
+3;Richmond Road;032;Westmere to Auckland University via Williamson Ave and Freemans Bay;15;30;30;30;30;30;30
+3;Richmond Road;033;Benson Rd to Karangahape Rd via Remuera, Hobson Bay, Eastern Parnell;30;60;60;60;60;60;60
+4;Great North Road;040;New Lynn to City via Great North Rd;6;10;15;15;15;15;15
+6;New North Road;060;Avondale Peninsula to Wynyard Quarter via Rosebank Rd, St Lukes and Auckalnd;5;12;15;15;15;15;15
+7;Sandringham Road;070;New Lynn to Wynyard Quarter via Sandringham Rd and Auckland University;10;15;15;15;15;15;30
+7;Sandringham Road;071;Avondale, New Windsor to Wynyard Quarter via St Lukes and Auckland University;15;;;;;;
+7;Sandringham Road;072;Avondale, New Windsor to St Lukes;30;30;60;30;30;30;30
+8;Dominion Road;080;New Lynn to Wynyard Quarter via White Swan Rd Dominion Rd and Auckland University;10;15;15;15;15;15;15
+8;Dominion Road;081;Lynfield to Wynyard Quarter via Dominion Rd Extension, Dominion Rd and Auckland University;10;15;15;15;15;15;15
+8;Dominion Road;082;Mt Roskill to Wynyard Quarter via Dominion Road;10;15;;;;;
+9;Mt Eden Road;090;Waikowhai via Hillsborough Rd to Britomart via Mt Eden Rd and Symonds St;5;15;15;15;15;15;15
+9;Mt Eden Road;091;Waikowhai via Melrose Rd to Britomart via Mt Eden Rd and Symonds St;5;15;15;15;15;15;15
+10;Manukau Road;100;Onehunga to Wynyard Quarter via Manukau Rd;5;10;15;15;15;15;15
+12;Remuera Road;120;Mt Albert to Glen Innes via Pt Chevalier, Herne Bay, Auckland University, Parnell and Remuera Rd;15;15;15;15;15;15;15
+12;Remuera Road;121;Pt. Chevalier Beach to City and Auckland University, via Jervois Road;15;;;;;;
+12;Remuera Road;122;Meadowbank to Ponsonby via City and Auckland University;15;;;;;;
+14;Mt Wellington;140;Otahuhu to Sylvia Park via Panama Rd;15;30;30;30;30;30;30
+14;Mt Wellington;141;Sylvia Park to Ellerslie;15;30;30;30;30;30;30
+14;Mt Wellington;142;Ellerslie to Glen Innes;15;30;30;30;30;30;30
+14;Mt Wellington;143;Sylvia Park to Glen Innes;15;30;30;30;30;30;30
+14;Mt Wellington;144;Panmure to Glen Innes to Meadowbank (St John’s circuit);15;30;30;30;30;30;30
+16;Tamaki;160;Glen Innes to City via St Heliers and Tamaki Drive;30;30;30;30;30;30;30 
+16;Tamaki;161;Riddell Rd to City via St Heliers and Tamaki Drive;30;30;30;30;30;30;30 
+16;Tamaki;162;Glen Innes to city via Wai-o-toki Bay and Kepa Rd;15;30;30;30;30;30;30
+16;Tamaki;163;Glen Innes to City via Long Drive;15;30;;;;;
+16;Tamaki;164;Glen Innes to Mission Bay via Long Drive;;30;30;30;30;30;30 
+16;Tamaki;165;Bastion Pt to Glen Innes via Mission Bay;20;30;60;30;60;30;60 
+17;Hospitals;170;Hospitals. Remuera to Britomart via Ascot, Greenlane and Auckland Hospitals;60;60;60;60;60;60;60
+18;Mt Eden Crosstown;180;Mt Eden Crosstown. Wynyard Quarter to Mission Bay via Kingsland, Mt Eden Village;15;20;30;30;30;30;30
+19;Balmoral Road Crosstown;190;Balmoral Road Crosstown Pt. Chevalier to Orakei;10;15;15;15;15;15;30
+20;Mt Albert Crosstown;200;Mt Albert Rd Crosstown. Mt Albert to Pakuranga via Onehunga;10;15;15;15;15;15;30
+21;Stoddard Rd Crosstown;210;Stoddard Rd Crosstown. Triangle Rd to Onehunga via Rosebank Rd and Avondale;15;30;30;30;60;30;60
+21;Stoddard Rd Crosstown;211;Avondale to New Lynn via Avondale Peninsula;30;30;60;60;60;60;60
+22;Hillsborough Rd Crosstown;220;Hillsborough Rd Crosstown. New Lynn to Onehunga and Sylvia Park;15;30;30;30;60;30;60
+22;Hillsborough Rd Crosstown;221;Hillsborough Rd Crosstown. New Lynn to Onehunga and Otahuhu;15;30;60;60;60;60;60
+24;Waiheke;240;O'Brien Rd. Omiha Bay to Matiatia Ferry Terminal;30;60;60;60;60;60;60
+24;Waiheke;241;Donald Bruce Rd. Kennedy Point to Matiatia Ferry Terminal;30;60;60;60;60;60;60
+24;Waiheke;242;Seaview Rd. Onetangi to Matiatia Ferry Terminal;30;60;60;60;60;60;60
+25;Titirangi;250;New Lynn to Avondale via Green Bay and Blockhouse Bay;15;30;60;30;60;30;60
+25;Titirangi;251;Golf Road to New Lynn;30;60;60;60;120;60;120
+25;Titirangi;252;French Bay to New Lynn via Golf Rd;30;60;60;120;120;120;120
+25;Titirangi;253;South Titirangi Rd to New Lynn via Titirangi Rd;60;60;60;60;60;60;60
+25;Titirangi;254;Glen Eden Station to New Lynn via Titirangi Village and Titirangi Rd;60;60;60;60;60;60;60
+25;Titirangi;255;Woodlands Park Rd to New Lynn via Titirangi Village and Titirangi Road;60;60;60;60;60;60;60
+25;Titirangi;256;Brains Park to New Lynn via Nikau St;30;30;60;30;60;30;60
+25;Titirangi;257;Titirangi Shops to City via Green Bay and Blockhouse Bay Rd;20;;;;;;
+26;Waikumete;260;New Lynn to Triangle Rd via Great North, Henderson and Lincoln Rd;10;12;15;15;15;15;30
+26;Waikumete;261;New Lynn to Westgate via Great North Rd, Henderson, Lincoln Rd, Triangle Rd;15;30;60;30;60;30;60
+26;Waikumete;262;Henderson to New Lynn via Glengarry Rd and Glen Eden;30;60;60;60;60;60;60
+26;Waikumete;263;Henderson to New Lynn via Rosier Rd and Glen Eden;30;60;60;60;60;60;60
+26;Waikumete;264;Henderson to New Lynn via Glendene;15;30;60;30;60;30;60
+26;Waikumete;265;Henderson circuit via Sunnyvale and McLaren Park;60;60;;60;60;60;60
+27;Te Atatu;270;Te Atatu Peninsula to Henderson via Te Atatu Rd;15;15;15;15;15;15;60
+27;Te Atatu;271;Te Atatu Peninsula to Henderson via Edmonton Rd;30;60;60;60;60;60;60
+27;Te Atatu;272;Te Atatu Peninsula to City via Northwestern Motorway;10;;;;;;
+27;Te Atatu;273;Glendene roundabout to City via Te Atatu Rd and Northwestern Motorway;15;;;;;;
+27;Te Atatu;274;Henderson to City via Edmonton Road and Northwestern Motorway;15;;;;;;
+28;Ranui;280;Henderson West Circuit. Via Henderson Valley Rd, Summerland Dr, Simpson Rd and Sturges Rd;20;30;60;30;60;30;60
+28;Ranui;281;Ranui to Henderson via Birdwood Rd loop, Universal Drive and Triangle Rd Interchange;20;30;60;30;60;30;60
+28;Ranui;282;Waitakere to Henderson via Swanson Station and Rathgar Rd;30;60;60;60;60;60;60
+28;Ranui;283;Ranui to City via Universal Drive and Northwestern Motorway;15;;;;;;
+29;Hobsonville;290;Westgate to Hobsonville Ferry Terminal via West Harbour and Hobsonville;15;30;60;30;60;30;60
+29;Hobsonville;291;Westgate to Hobsonville Ferry Terminal via Whenuapai and Herald Island;30;60;60;60;60;60;60
+29;Hobsonville;292;Royal Heights loop. Royal Heights to Westgate;30;60;60;60;60;60;60
+29;Hobsonville;293;Westgate to Triangle Rd via Don Buck Dr and Universal Dr;10;;;;;;
+30;Hobsonville;300;Northwestern Motorway. Westgate to Britomart via Triangle Rd interchange, Te Atatu motorway interchange and Great North Rd;7.5;15;15;15;15;15;15
+30;Hobsonville;301;Huapai to Westgate;30;60;60;60;60;60;60
+30;Hobsonville;302;Helensville to Westgate;30;60;60;60;60;60;60
+33;Upper Harbour Crosstown;330;Henderson to Constellation Station via Don Buck Rd, Hobsonville Rd and Greenhithe;20;30;60;30;60;30;60
+33;Upper Harbour Crosstown;331;Greenhithe to Constellation and City;20;;;;;;
+34;North Harbour;340;Birkenhead Wharf to Albany via Highbury, Glenfield, Constellation and Massey University;30;30;30;30;30;30;30
+34;North Harbour;341;Constellation Station to Albany via Massey University;15;;;;;;
+34;North Harbour;342;Constellation Station to Takapuna via Unsworth;30;30;30;30;30;30;30
+34;North Harbour;343;Constellation Station to Albany via Snapper Rock and Albany Highway;15;30;30;30;60;30;60
+34;North Harbour;344;Constellation Station to Albany via Rosedale Road;15;30;60;60;60;60;60
+34;North Harbour;345;Constellation Station to City (continuation of full buses from Snapper Rock or Rosedale);15;;;;;;
+35;Bayview;350;Bayview to City via Highbury;15;30;30;30;60;30;60
+35;Bayview;351;Windy Ridge to City via Highbury;15;;;;;;
+36;Bayview;360;Beach Haven to Takapuna via Windy Ridge and Glenfield;30;30;60;30;60;30;60
+37;Akoranga West;370;Smales Farm, Glenfield, Coronation, Sunnybrae, Akoranga, Takapuna;30;30;60;30;60;30;60
+37;Akoranga West;371;Akoranga to Constellation via Northcote, Hillcrest, Link Drive;30;30;60;30;60;30;60
+37;Akoranga West;372;Hillcrest to circuit to city;30;30;60;30;60;30;60
+37;Akoranga West;373;Sylvan Avenue to city;15;;;;;;
+37;Akoranga West;374;Beach Haven to Takapuna via Highbury, Northcote and Akoranga;30;30;60;30;60;30;60
+38;Birkenhead to Takapuna;380;Highbury to North Shore Hospital via Northcote and Smales Station;30;60;60;60;60;60;60
+39;Birkenhead to City;390;Birkdale Rd to the City;15;30;60;30;60;30;60
+39;Birkenhead to City;391;Rangatira Rd to the City;15;30;60;30;60;30;60
+39;Birkenhead to City;392;Chatswood to Highbury;30;60;60;;;;
+39;Birkenhead to City;393;Verbena Road to Highbury;30;60;60;;;;
+39;Birkenhead to City;394;Highbury to City (full bus from either Chatswood or Vebena Road);15;;;;;;
+39;Birkenhead to City;395;Highbury to Newmarket via Ponsonby Rd;15;;;;;;
+40;Northern Express 1;400;Northern Express 1. Albany Station to Britomart via Busway and Fanshawe St;5;10;15;10;15;15;30
+40;Northern Express 1;401;Northern Express 1. Silverdale Station to Britomart via Busway and Fanshawe St;10;30;30;30;30;30;30
+41;Northern Express 2;410;Northern Express 2. Albany Station to Universities via Wellesley St;7.5;15;30;15;15;15;15
+42;Albany to Newmarket via Ponsonby;420;Albany Station to Newmarket via Ponsonby Rd and Auckland City Hospital;10;30;;;;;
+43;Devonport;430;Devonport Ferry Terminal to Constellation Station via Takapuna and Smales Farm Station;10;15;30;15;30;15;30
+43;Devonport;431;Bayswater Ferry Terminal to Milford via Hauraki, Takapuna, Smales Farm Station and Nile Rd;30;30;60;30;30;30;30
+43;Devonport;432;Stanley Point to Devonport Ferry Terminal and Vauxhall;30;60;60;60;60;60;60
+43;Devonport;433;Belmont to City;30;;;;;;
+44;Lower East Coast Bays;440;Mairangi Bay to Auckland University via Beach Rd, Milford, Takapuna and Akoranga Station;30;30;30;30;30;30;30
+44;Lower East Coast Bays;441;Constellation Station to Auckland University via East Coast Rd, Milford, Takapuna and Akoranga Station;30;30;30;30;30;30;30
+44;Lower East Coast Bays;442;Mairangi Bay to Britomart via Beach Rd, Milford and Smales Farm Station;20;;;;;;
+44;Lower East Coast Bays;443;East Coast Rd to Britomart via Forrest Hill and Smales Farm Station;20;;;;;;
+44;Lower East Coast Bays;444;Albany to Takapuna via East Coast Rd, Forrest Hill and Smales Farm Station;30;30;30;30;60;30;60
+45;Upper East Coast Bays;450;Albany to Constellation Station via Browns Bay and Mairangi Bay;10;15;15;15;30;15;30
+45;Upper East Coast Bays;451;Albany Station to Constellation Station via Long Bay, Browns Bay and Rosedale Rd;15;30;60;30;60;30;60
+45;Upper East Coast Bays;452;Constellation Station to City;15;;;;;;
+45;Upper East Coast Bays;453;Long Bay to Albany via Glenvar;15;;;;;;
+45;Upper East Coast Bays;454;Oaktree Ave. Long Bay to Albany Station via Beach Rd and Browns Bay;30;60;60;60;60;60;60
+45;Upper East Coast Bays;455;Fairview Loop circuit. Lonely Track Rd loop;30;60;60;60;60;60;60
+46;Hibiscus Coast;460;Whangaparaoa Rd. Gulf Harbour to Orewa via Silverdale;30;60;60;60;60;60;60
+46;Hibiscus Coast;461;Hibiscus Coast Highway. Manly to Waiwera via Silverdale;30;60;60;60;60;60;60
+46;Hibiscus Coast;462;Dairy Flat Highway. Silverdale to Albany Station;30;60;60;60;60;60;60
+46;Hibiscus Coast;463;Whangaparaoa circuit. Polkinghornes Bay to Silverdale via Vipond Rd and Red Beach;30;60;60;60;60;60;60
+46;Hibiscus Coast;464;Millwater circuit. Orewa to Silverdale via Millwater;30;60;60;60;60;60;60
+48;Warkworth;480;Warkworth to Silverdale Park and Ride Station;60;120;120;120;120;120;120
+50;Ti Rakau Drive;500;Britomart to Howick via Ti Rakau Drive, Botany Town Centre and Whitford Road;15;30;30;30;30;30;30
+50;Ti Rakau Drive;501;Britomart to Ormiston Town Centre via Ti Rakau Drive, Botany Town Centre, Kilkenny;15;30;30;30;30;30;30
+52;Howick to Panmure;520;Panmure to Howick Beach via Half Moon Bay Ferry Terminal;15;30;60;30;60;30;60
+52;Howick to Panmure;521;Howick to Sylvia Park via Wellington St, Cascade Drive and Reeves Rd;30;60;60;60;60;60;60
+52;Howick to Panmure;522;Bucklands Beach to Panmure;30;;;;;;
+53;Botany Crosstown;530;Manukau to Howick via Botany Town Centre and Meadowland Drive;15;30;60;30;60;30;60
+53;Botany Crosstown;531;Manukau to Bucklands Beach via Botany Town Centre and Highland Park;15;30;60;30;60;30;60
+53;Botany Crosstown;532;Botany Town Centre to Manukau via Ormiston Town Centre;15;30;60;30;60;30;60
+54;East Tamaki Crosstown;540;Botany Town Centre to Middlemore Hospital via Highbrook and Otara;15;30;60;30;60;30;60
+54;East Tamaki Crosstown;541;Botany Town Centre to Manukau via Preston Rd;30;30;30;30;60;30;60
+54;East Tamaki Crosstown;542;Panmure to Manukau via Highbrook;15;30;;;;;
+55;Pakuranga Rd;550;Britomart to Howick via Pakuranga Rd;5;15;15;15;15;15;30
+60;Airport;600;Airport Link. Onehunga to Manukau via Mangere Town Centre, Airport and Papatoetoe;15;15;15;15;30;15;30
+61;Mangere Bridge;610;Onehunga to Ellerslie Station via Tawa Rd;15;30;60;30;60;30;60
+61;Mangere Bridge;611;Onehunga to Ellerslie Station via Queenstown Rd, Royal Oak and Oranga Rd;15;30;60;30;60;30;60
+61;Mangere Bridge;612;Mangere Town Centre to Onehunga via Favona and Mangere Bridge;15;30;60;30;60;30;60
+61;Mangere Bridge;613;Onehunga to City via Queenstown Rd, The Drive, Gillies Ave;15;30;30;30;60;30;60
+61;Mangere Bridge;614;Mangere Town Centre to City via Queenstown and Pah Rd;15;;;;;;
+62;Otahuhu;620;Mangere Town Centre to Ihumatao;15;60;;;;;
+62;Otahuhu;621;Mangere Town Centre to Sylvia Park via Massey Rd, Otahuhu Station and Otahuhu –half;15;15;15;15;15;15;30
+62;Otahuhu;622;Mangere Town Centre to Seaside Park via Favona and Otahuhu train station;30;60;60;60;60;60;60
+62;Otahuhu;623;Mangere Town Centre to Middlemore Hospital (west) via Tidal Road;30;60;60;60;60;60;60
+62;Otahuhu;624;Otahuhu Station to Ellerslie Station via Otahuhu and Penrose;20;30;60;60;60;60;60
+62;Otahuhu;625;Mangere Town Centre to Manukau City Centre via Mangere East, Otahuhu Station;15;30;60;30;60;30;60
+63;Papatoetoe / Otara;630;Mangere Town Centre to Botany Town Centre via Papatoetoe, Otara, Springs Rd;20;30;60;30;60;30;60
+63;Papatoetoe / Otara;631;Mangere Town Centre to Flat Bush via Papatoetoe, Otara, and Ormiston Rd;20;30;60;30;60;30;60
+63;Papatoetoe / Otara;632;Mangere Town Centre to Manukau via western Papatoetoe;15;30;60;30;60;30;60
+63;Papatoetoe / Otara;633;Flat Bush Town Centre to Beachlands via Whitford;60;60;60;60;60;60;60
+63;Papatoetoe / Otara;634;Pine Harbour Ferry Feeder. Maraetai to Pine Harbour Ferry Terminal;30;60;60;60;60;60;60
+63;Papatoetoe / Otara;635;Manukau to Botany Town Centre via Preston Rd;30;60;60;60;60;60;60
+64;Manurewa;640;Otahuhu Station to Weymouth via Great South Rd, Manukau and Manurewa;15;30;60;30;30;30;60
+64;Manurewa;641;Otahuhu Station to Papakura via Great South Rd, Manukau and Manurewa;15;30;60;30;60;30;60
+64;Manurewa;642;Manurewa to Otara MIT via Clendon and Manukau;15;30;60;30;60;30;60
+64;Manurewa;643;Wattle Downs to Manurewa;15;30;60;30;60;30;60
+64;Manurewa;644;Manurewa to Manukau via Tahned GTahred Genarsd ceirncsu citi rcuit;15;30;60;30;60;30;60
+64;Manurewa;645;Manukau to Papakura via Manurewa, Takanini Station and Porchester Rd;15;30;60;30;60;30;60
+64;Manurewa;646;Wiri Industrial. Homai Station to Manukau Station via Plunket Ave;15;;;;;;
+65;Papakura;650;Papakura to Takanini Station via Cosgrove;30;30;60;60;60;60;60
+65;Papakura;651;Papakura to Papakura via Sheehan Avenue;15;30;30;30;60;30;60
+65;Papakura;652;Papakura to Red Hills;30;30;60;30;60;30;60
+65;Papakura;653;Papakura Station to Drury;30;30;60;30;60;30;60
+65;Papakura;654;Papakura to Pahurehure;15;30;30;30;60;30;60
+65;Papakura;655;Papakura to Karaka Harbourside;30;30;60;30;60;30;60
+67;Pukekohe;670;Pukekohe Northeast loop;30;60;60;60;60;60;60
+67;Pukekohe;671;Pukekohe Northwest loop;30;60;60;60;60;60;60
+67;Pukekohe;672;Pukekohe South loop;30;60;60;60;60;60;60
+67;Pukekohe;673;Waiuku to Papakura or Pukekohe (allocation may change to Unit 65 post local;60;60;120;120;120;120;120
+67;Pukekohe;674;Tuakau to Wesley College (subject to funding arrangements);30;60;120;120;120;120;120
+F;Ferry;F0;Pine Harbour Ferry. Pine Harbour Ferry Terminal to Downtown Ferry Terminal;30;60;60;60;60;60;60
+F;Ferry;F1;Bayswater Ferry. Bayswater Ferry Terminal to Downtown Ferry Terminal;30;60;60;60;60;60;60
+F;Ferry;F2;Birkenhead Ferry. Birkenhead Ferry Terminal to Downtown Ferry Terminal via Northcote;30;60;60;60;60;60;60
+F;Ferry;F3;Gulf Harbour Ferry. Gulf Harbour Ferry Terminal to Downtown Ferry Terminal;30;;;;;;
+F;Ferry;F4;West Harbour Ferry. West Harbour Ferry Terminal to Downtown Ferry Terminal;20;60;;;;;
+F;Ferry;F5;Rakino Ferry. Rakino Ferry Terminal to Downtown Ferry Terminal;;;;;;;
+F;Ferry;F6;Half Moon Bay Ferry. Half Moon Bay Ferry Terminal to Downtown Ferry Terminal;30;60;60;60;60;60;60
+F;Ferry;F7;Hobsonville / Beach Haven Ferry. Hobsonville Point and Beach Haven Wharf to Downtown;30;60;60;60;60;60;60
+R;Rail;R0;Southern Rail Line. Papakura and Manukau to Britomart via Newmarket Station;10;10;15;10;15;15;30
+R;Rail;R1;Eastern Rail Line. Papakura and Manukau to Britomart via Glen Innes;10;10;15;10;15;15;30
+R;Rail;R2;Western Rail Line. Swanson to Britomart via Newmarket;10;10;15;15;15;15;30
+R;Rail;R3;Onehunga Rail Line. Onehunga Station to Britomart via Penrose Station;30;30;60;20;60;20;60
+R;Rail;R4;Pukekohe Rail Line. Pukekohe Station to Papakura Station;15;30;60;30;60;30;60
+X;PTOM Exempt;X0;AIRBUS EXPRESS. Airport to Ferry Terminal Downtown via Mt Eden or Dominion Rd;10;10;20;15;20;15;20
+X;PTOM Exempt;X1;Devonport Ferry. Devonport Ferry Terminal to Downtown Ferry Terminal;15;30;30;30;30;30;30 
+X;PTOM Exempt;X2;Stanley Bay Ferry. Stanley Bay Ferry Terminal to Downtown Ferry Terminal;30;;;;;;
+X;PTOM Exempt;X3;Waiheke Ferry. Matiatia Ferry Terminal to Downtown Ferry Terminal;30;60;90;60;60;60;60 
