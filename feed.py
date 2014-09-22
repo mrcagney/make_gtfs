@@ -94,10 +94,10 @@ class Feed(object):
         f['num_trips'] = 0
         for name, duration in duration_by_name.items():
             # Get num vehicles for service window
-            n = (duration*60/f[name + '_headway']).fillna(0)
+            n = 2*(duration*60/f[name + '_headway']).fillna(0)
             f['num_trips'] += n
         # Double the number to account for vehicles in both directions
-        self.raw_routes = 2*f 
+        self.raw_routes = f 
 
     def create_trips(self):
         """
@@ -108,8 +108,9 @@ class Feed(object):
 
         sw_by_name = cofig['service_window_by_name']
         
-        # Get number of trips for each route
+        # Get number of trips on each route
         self.add_num_trips()
+
         for index, row in self.routes.iterrows():
             route = row['route_id']
             # Get number of trips for each route
