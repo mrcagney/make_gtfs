@@ -49,15 +49,36 @@ class Feed(object):
 
     def create_agency(self):
         """
+        Create a Pandas data frame representing ``agency.txt``.
         """
         self.agency = pd.DataFrame({
-          'agency_name': [self.config['agency_name']],
-          'agency_url': [self.config['agency_url']],
-          'agency_timezone': [self.config['agency_timezone']],
-        })
+          'agency_name': self.config['agency_name'], 
+          'agency_url': self.config['agency_url'],
+          'agency_timezone': self.config['agency_timezone']
+          }, index=[0])
+
+    def create_calendar(self):
+        """
+        Create a Pandas data frame representing ``calendar.txt``.
+        It is a dumb calendar with one service that operates
+        on every day of the week.
+        """
+        self.calendar = pd.DataFrame({
+          'service_id': 's0', 
+          'monday': 1,
+          'tuesday': 1, 
+          'wednesday': 1,
+          'thursday': 1, 
+          'friday': 1, 
+          'saturday': 1, 
+          'sunday': 1, 
+          'start_date': self.config['start_date'], 
+          'end_date': self.config['end_date'],
+          }, index=[0])
 
     def create_routes(self):
         """
+        Create a Pandas data frame representing ``routes.txt``.
         """
         f = self.raw_routes[['route_short_name', 'route_desc', 
           'route_type']].copy()
@@ -78,11 +99,12 @@ class Feed(object):
         return {name: sum(w[1] - w[0] for w in window)
           for name, window in sw_by_name.items()}
 
-    def add_num_trips(self):
+    def add_num_trips_per_direction(self):
         """
-        Add the column 'num_trips' to ``self.raw_routes``.
+        Add the column 'num_trips_per_direction' to ``self.raw_routes``.
         This column is the sum of the number of vehicles
-        over all service windows for a given route.
+        traveling in one direction on a given route
+        over all service windows.
         
         Note that headway and frequency are unidirectional
         (measured in one direction only).
@@ -91,32 +113,39 @@ class Feed(object):
         """
         f = self.raw_routes.copy()
         duration_by_name = self.get_service_window_duration_by_name()
-        f['num_trips'] = 0
+        f['num_trips_per_direction'] = 0
         for name, duration in duration_by_name.items():
             # Get num vehicles for service window
-            n = 2*(duration*60/f[name + '_headway']).fillna(0)
-            f['num_trips'] += n
+            n = (duration*60/f[name + '_headway']).fillna(0)
+            f['num_trips_per_direction'] += n
         # Double the number to account for vehicles in both directions
         self.raw_routes = f 
 
     def create_trips(self):
         """
+        Create a Pandas data frame representing ``trips.txt``.
         Assume ``self.routes`` has been created.
         """
         assert hasattr(self, 'routes'),\
           "You must first create self.routes"
 
-        sw_by_name = cofig['service_window_by_name']
-        
-        # Get number of trips on each route
-        self.add_num_trips()
-
-        for index, row in self.routes.iterrows():
+        # Create trip IDs and directions
+        self.add_num_trips_per_direction()
+        F = []
+        for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
-            # Get number of trips for each route
+            ntpd = row['num_trips_per_direction']
+            for i in range(int(ntpd)):
+                F.append([route, 0])
+                F.append([route, 1])
+        f = pd.DataFrame(F, columns=['route_id', 'direction_id'])
+        f['trip_id'] = ['t' + str(i) for i in range(f.shape[0])]
+        
+        # Create service IDs
+        f['service_id'] = self.calendar['service_id'].iat[0]
 
-            # Create trips for each service window
-
+        # Save
+        self.trips = f
 
     def get_linestring_by_route(self, use_utm=True):
         """
@@ -127,7 +156,12 @@ class Feed(object):
         in UTM coordinates.
         Otherwise, return each linestring in WGS84 longitude-latitude
         coordinates.
+
+        Assume ``self.routes`` has been created.
         """
+        assert hasattr(self, 'routes'),\
+          "You must first create self.routes"
+
         # Note the output for conversion to UTM with the utm package:
         # >>> u = utm.from_latlon(47.9941214, 7.8509671)
         # >>> print u
