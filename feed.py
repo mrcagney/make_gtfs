@@ -64,7 +64,7 @@ class Feed(object):
         on every day of the week.
         """
         self.calendar = pd.DataFrame({
-          'service_id': 's0', 
+          'service_id': 'c0', 
           'monday': 1,
           'tuesday': 1, 
           'wednesday': 1,
@@ -89,6 +89,74 @@ class Feed(object):
         f['route_id'] = ['r' + str(i) for i in range(f.shape[0])]
         # Save
         self.routes = f 
+
+    def get_linestring_by_route(self, use_utm=False):
+        """
+        Given a GeoJSON feature collection of linestrings tagged with 
+        route short names, return a dictionary with structure
+        route ID -> Shapely linestring of shape.
+        If ``use_utm == True``, then return each linestring in
+        in UTM coordinates.
+        Otherwise, return each linestring in WGS84 longitude-latitude
+        coordinates.
+
+        Assume ``self.routes`` has been created.
+        """
+        assert hasattr(self, 'routes'),\
+          "You must first create self.routes"
+
+        # Note the output for conversion to UTM with the utm package:
+        # >>> u = utm.from_latlon(47.9941214, 7.8509671)
+        # >>> print u
+        # (414278, 5316285, 32, 'T')
+        d = {}
+        if use_utm:
+            def proj(lon, lat):
+                return utm.from_latlon(lat, lon)[:2] 
+        else:
+            def proj(lon, lat):
+                return lon, lat
+            
+        rid_by_rsn = dict(self.routes[['route_short_name', 'route_id']].values)
+        return {rid_by_rsn[f['properties']['route_short_name']]: 
+          transform(proj, shape(f['geometry'])) 
+          for f in self.raw_shapes['features']}
+
+    def get_shape_by_route(self):
+        """
+        Return a dictionary of the form route ID -> shape ID.
+
+        Assume ``self.routes`` has been created.
+        """
+        assert hasattr(self, 'routes'),\
+          "You must first create self.routes"
+
+        return {route: 's-{!s}'.format(route) 
+          for route in self.routes['route_id'].values}
+
+    def create_shapes(self):
+        """
+        Create a Pandas data frame representing ``shapes.txt`` and save it 
+        to ``self.shapes``.
+        Each route has one shape that is used for both directions of travel. 
+        
+        Assume ``self.routes`` has been created.
+        """
+        assert hasattr(self, 'routes'),\
+          "You must first create self.routes"
+
+        F = []
+        shape_by_route = self.get_shape_by_route()
+        linestring_by_route = self.get_linestring_by_route(use_utm=False)
+        for index, row in self.routes.iterrows():
+            route = row['route_id']
+            linestring = linestring_by_route[route]
+            shape = shape_by_route[route]
+            rows = [[shape, i, lon, lat] 
+              for i, (lon, lat) in enumerate(linestring.coords)]
+            F.extend(rows)
+        self.shapes = pd.DataFrame(F, columns=['shape_id', 'shape_pt_sequence',
+          'shape_pt_lon', 'shape_pt_lat'])
 
     def get_service_window_duration_by_name(self):
         """
@@ -123,57 +191,29 @@ class Feed(object):
 
     def create_trips(self):
         """
-        Create a Pandas data frame representing ``trips.txt``.
-        Assume ``self.routes`` has been created.
+        Create a Pandas data frame representing ``trips.txt`` and save it to
+        ``self.trips``.
+        Assume ``self.routes`` and ``self.shapes`` have been created.
         """
-        assert hasattr(self, 'routes'),\
-          "You must first create self.routes"
+        assert hasattr(self, 'routes') and hasattr(self, 'shapes'),\
+          "You must first create self.routes and self.shapes"
 
         # Create trip IDs and directions
         self.add_num_trips_per_direction()
         F = []
+        shape_by_route = self.get_shape_by_route()
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
+            shape = shape_by_route[route]
             ntpd = row['num_trips_per_direction']
             for i in range(int(ntpd)):
-                F.append([route, 0])
-                F.append([route, 1])
-        f = pd.DataFrame(F, columns=['route_id', 'direction_id'])
-        f['trip_id'] = ['t' + str(i) for i in range(f.shape[0])]
-        
+                F.append([route, 't-{!s}-{!s}-0'.format(route, i), 0, shape])
+                F.append([route, 't-{!s}-{!s}-1'.format(route, i), 1, shape])
+        f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
+          'shape_id'])
+
         # Create service IDs
         f['service_id'] = self.calendar['service_id'].iat[0]
 
         # Save
         self.trips = f
-
-    def get_linestring_by_route(self, use_utm=True):
-        """
-        Given a GeoJSON feature collection of linestrings tagged with 
-        route short names, return a dictionary with structure
-        route ID -> Shapely linestring of shape.
-        If ``use_utm == True``, then return each linestring in
-        in UTM coordinates.
-        Otherwise, return each linestring in WGS84 longitude-latitude
-        coordinates.
-
-        Assume ``self.routes`` has been created.
-        """
-        assert hasattr(self, 'routes'),\
-          "You must first create self.routes"
-
-        # Note the output for conversion to UTM with the utm package:
-        # >>> u = utm.from_latlon(47.9941214, 7.8509671)
-        # >>> print u
-        # (414278, 5316285, 32, 'T')
-        d = {}
-        if use_utm:
-            def proj(lon, lat):
-                return utm.from_latlon(lat, lon)[:2] 
-        else:
-            def proj(lon, lat):
-                return lon, lat
-            
-        return {f['properties']['route_short_name']: 
-          transform(proj, shape(f['geometry'])) 
-          for f in collection['features']}
