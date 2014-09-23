@@ -3,13 +3,13 @@
   "agency_url":"https://at.govt.nz/",
   "agency_timezone":"Pacific/Auckland",
   "service_window_by_name":{
-    "weekday_peak": [[7, 9]],
-    "weekday_offpeak": [[5, 7], [9, 19]],
-    "weekday_night": [[0, 5], [19, 24]],
-    "saturday_day": [[5, 19]],
-    "saturday_night": [[0, 5], [19, 24]],
-    "sunday_day": [[5, 19]],
-    "sunday_night": [[0, 5], [19, 24]]
+    "weekday_peak": [["07:00:00", "09:00:00"]],
+    "weekday_offpeak": [["05:00:00", "07:00:00"], ["09:00:00", "19:00:00"]],
+    "weekday_night": [["00:00:00", "05:00:00"], ["19:00:00", "24:00:00"]],
+    "saturday_day": [["05:00:00", "19:00:00"]],
+    "saturday_night": [["00:00:00", "05:00:00"], ["19:00:00", "24:00:00"]],
+    "sunday_day": [["05:00:00", "19:00:00"]],
+    "sunday_night": [["00:00:00", "05:00:00"], ["19:00:00", "24:00:00"]]
   },
   "default_route_type":3,
   "default_speed":20,

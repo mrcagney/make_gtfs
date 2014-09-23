@@ -1,3 +1,8 @@
+"""
+Todo
+-----
+- Handle case of more than endpoint stops?
+"""
 import datetime as dt
 import dateutil.relativedelta as rd
 import zipfile
@@ -9,6 +14,50 @@ import numpy as np
 from shapely.ops import transform
 from shapely.geometry import shape, mapping
 import utm
+
+def seconds_to_timestr(seconds, inverse=False):
+    """
+    Return the given number of integer seconds as the time string '%H:%M:%S'.
+    If ``inverse == True``, then do the inverse operation.
+    In keeping with GTFS standards, the hours entry may be greater than 23.
+    """
+    if not inverse:
+        try:
+            seconds = int(seconds)
+            hours, remainder = divmod(seconds, 3600)
+            mins, secs = divmod(remainder, 60)
+            result = '{:02d}:{:02d}:{:02d}'.format(hours, mins, secs)
+        except:
+            result = None
+    else:
+        try:
+            hours, mins, seconds = seconds.split(':')
+            result = int(hours)*3600 + int(mins)*60 + int(seconds)
+        except:
+            result = None
+    return result
+
+def timestr_mod_24(timestr):
+    """
+    Given a GTFS time string in the format %H:%M:%S, return a timestring
+    in the same format but with the hours taken modulo 24.
+    """
+    try:
+        hours, mins, seconds = [int(x) for x in timestr.split(':')]
+        hours %= 24
+        result = '{:02d}:{:02d}:{:02d}'.format(hours, mins, seconds)
+    except:
+        result = None
+    return result
+
+def get_duration(timestr_a, timestr_b):
+    """
+    Return the number of minutes in the time interval 
+    [``timestr_a``, ``timestr_b``].
+    """
+    a = seconds_to_timestr(timestr_a, inverse=True)
+    b = seconds_to_timestr(timestr_b, inverse=True)
+    return (b - a)/60
 
 def get_shape_id(route_id):
     return 's-{!s}'.format(route_id)
@@ -90,6 +139,7 @@ class Feed(object):
         Create a Pandas data frame representing ``routes.txt``.
         """
         f = self.raw_routes[['route_short_name', 'route_desc']].copy()
+        cols = self.raw_routes.columns
 
         # Create route type and fill in missing values with default
         # types from config
@@ -172,10 +222,11 @@ class Feed(object):
     def get_service_window_duration_by_name(self):
         """
         Return a dictionary of the form
-        service window name -> service window duration (hours).
+        service window name -> service window duration (minutes).
         """
         sw_by_name = self.config['service_window_by_name']
-        return {name: sum(w[1] - w[0] for w in window)
+        return {name: sum(seconds_to_timestr(w[1], inverse=True) -\
+          seconds_to_timestr(w[0], inverse=True) for w in window)/60
           for name, window in sw_by_name.items()}
 
     def add_num_trips_per_direction(self):
@@ -204,21 +255,35 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``trips.txt`` and save it to
         ``self.trips``.
+        Trip IDs encode direction, service window, and trip number within that
+        direction and service window to make it easy to compute stop times.
+
         Assume ``self.routes`` and ``self.shapes`` have been created.
         """
         assert hasattr(self, 'routes') and hasattr(self, 'shapes'),\
           "You must first create self.routes and self.shapes"
 
         # Create trip IDs and directions
-        self.add_num_trips_per_direction()
+        #self.add_num_trips_per_direction()
         F = []
+        sw_by_name = self.config['service_window_by_name']
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
             shape = get_shape_id(route)
-            ntpd = row['num_trips_per_direction']
-            for i in range(int(ntpd)):
-                F.append([route, 't-{!s}-{!s}-0'.format(route, i), 0, shape])
-                F.append([route, 't-{!s}-{!s}-1'.format(route, i), 1, shape])
+            for name, sw in sw_by_name.items():
+                headway = row[name + '_headway']
+                for i, interval in enumerate(sw):
+                    duration = get_duration(*interval)
+                    num_trips_per_direction = int(duration/headway)
+                    for direction in range(2):
+                        for j in range(num_trips_per_direction):
+                            F.append([
+                              route, 
+                              't-{!s}-{!s}-{!s}-{!s}-{!s}'.format(route, 
+                               direction, name, i, j), 
+                              direction,
+                              shape,
+                              ])
         f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
           'shape_id'])
 
@@ -255,3 +320,33 @@ class Feed(object):
                 F.append([stop_id, stop_name, stop_lon, stop_lat])
         self.stops = pd.DataFrame(F, columns=['stop_id', 'stop_name', 
           'stop_lon', 'stop_lat'])
+
+    def create_stop_times(self):
+        """
+        Create a Pandas data frame representing ``stop_times.txt`` and save it
+        to ``self.stop_times``.
+
+        Assume ``self.stops`` and ``self.trips`` has been created.
+        """
+        assert hasattr(self, 'stops') and hasattr(self, 'trips'),\
+          "You must first create self.stops and self.trips"
+        F = []
+        sw_by_name = self.config['service_window_by_name']
+        for route, group in pd.merge(self.routes, self.trips).groupby(
+          'route_id'):
+            sids = get_stop_ids(route)
+            sids_by_direction = {0: sids, 1: sids[::-1]}
+            speed = group['speed']
+            for index, row in group.iterrows():
+                junk, route, direction, swname, i, j =\
+                  row['trip_id'].split('-')
+                sids_tmp = sids_by_direction[direction]
+                base_time = seconds_to_timestr(sw_by_name[swname][i],
+                  inverse=True)
+                headway = group[swname + '_headway']
+                start_time = base_time + headway*60*j
+                # Get end time from route length
+                entry = []
+                if direction == 0:
+                    stop_times = []
+        self.stop_times = None
