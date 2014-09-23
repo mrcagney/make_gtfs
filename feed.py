@@ -10,6 +10,15 @@ from shapely.ops import transform
 from shapely.geometry import shape, mapping
 import utm
 
+def get_shape_id(route_id):
+    return 's-{!s}'.format(route_id)
+
+def get_stop_ids(route_id):
+    return ['st-{!s}-{!s}'.format(route_id, i) for i in range(2)]
+
+def get_stop_names(route_short_name):
+    return ['First stop on route {!s}'.format(route_short_name),
+      'Last stop on route {!s}'.format(route_short_name)]
 
 class Feed(object):
     """
@@ -80,11 +89,26 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``routes.txt``.
         """
-        f = self.raw_routes[['route_short_name', 'route_desc', 
-          'route_type']].copy()
-        # Fill in missing route types with default route type from config
+        f = self.raw_routes[['route_short_name', 'route_desc']].copy()
+
+        # Create route type and fill in missing values with default
+        # types from config
+        if 'route_type' in self.raw_routes.columns:
+            f['route_type'] = self.raw_routes['route_type'].copy()
+        else:
+            f['route_type'] = np.nan
         f['route_type'].fillna(
           int(self.config['default_route_type']), inplace=True)
+
+        # Create route speeds and fill in missing values with default speeds
+        # from config
+        if 'speed' in self.raw_routes.columns:
+            f['speed'] = self.raw_routes['speed'].copy()
+        else:
+            f['speed'] = np.nan
+        f['speed'].fillna(
+          int(self.config['default_speed']), inplace=True)
+
         # Create route IDs
         f['route_id'] = ['r' + str(i) for i in range(f.shape[0])]
         # Save
@@ -122,18 +146,6 @@ class Feed(object):
           transform(proj, shape(f['geometry'])) 
           for f in self.raw_shapes['features']}
 
-    def get_shape_by_route(self):
-        """
-        Return a dictionary of the form route ID -> shape ID.
-
-        Assume ``self.routes`` has been created.
-        """
-        assert hasattr(self, 'routes'),\
-          "You must first create self.routes"
-
-        return {route: 's-{!s}'.format(route) 
-          for route in self.routes['route_id'].values}
-
     def create_shapes(self):
         """
         Create a Pandas data frame representing ``shapes.txt`` and save it 
@@ -146,12 +158,11 @@ class Feed(object):
           "You must first create self.routes"
 
         F = []
-        shape_by_route = self.get_shape_by_route()
         linestring_by_route = self.get_linestring_by_route(use_utm=False)
         for index, row in self.routes.iterrows():
             route = row['route_id']
             linestring = linestring_by_route[route]
-            shape = shape_by_route[route]
+            shape = get_shape_id(route)
             rows = [[shape, i, lon, lat] 
               for i, (lon, lat) in enumerate(linestring.coords)]
             F.extend(rows)
@@ -201,10 +212,9 @@ class Feed(object):
         # Create trip IDs and directions
         self.add_num_trips_per_direction()
         F = []
-        shape_by_route = self.get_shape_by_route()
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
-            shape = shape_by_route[route]
+            shape = get_shape_id(route)
             ntpd = row['num_trips_per_direction']
             for i in range(int(ntpd)):
                 F.append([route, 't-{!s}-{!s}-0'.format(route, i), 0, shape])
@@ -217,3 +227,31 @@ class Feed(object):
 
         # Save
         self.trips = f
+
+    def create_stops(self):
+        """
+        Create a Pandas data frame representing ``stops.txt`` and save it to
+        ``self.stops``.
+        Create one stop at the beginning (the first point) of each shape 
+        and one at the end (the last point) of each shape.
+
+        Assume ``self.routes`` has been created.
+        """
+        assert hasattr(self, 'routes'),\
+          "You must first create self.routes"
+
+        linestring_by_route = self.get_linestring_by_route(use_utm=False)
+        rsn_by_rid = dict(self.routes[['route_id', 'route_short_name']].values)
+        F = []
+        for rid, linestring in linestring_by_route.items():
+            rsn = rsn_by_rid[rid] 
+            stop_ids = get_stop_ids(rid)
+            stop_names = get_stop_names(rsn)
+            for i in range(2):
+                stop_id = stop_ids[i]
+                stop_name = stop_names[i]
+                stop_lon, stop_lat = linestring.interpolate(i, 
+                  normalized=True).coords[0]
+                F.append([stop_id, stop_name, stop_lon, stop_lat])
+        self.stops = pd.DataFrame(F, columns=['stop_id', 'stop_name', 
+          'stop_lon', 'stop_lat'])
