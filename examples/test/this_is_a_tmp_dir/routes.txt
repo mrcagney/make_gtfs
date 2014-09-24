@@ -1,7 +1,0 @@
-route_short_name,route_desc,route_type,route_id
-010,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,r0
-020,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",3,r1
-030,Grey Lynn to Auckland University via Richmond Rd and Grey Lynn,3,r2
-031,St Lukes to Auckland University via Richmond Rd and Grey Lynn,3,r3
-032,Westmere to Auckland University via Williamson Ave and Freemans Bay,3,r4
-033,"Benson Rd to Karangahape Rd via Remuera, Hobson Bay, Eastern Parnell",3,r5

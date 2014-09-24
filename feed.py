@@ -2,7 +2,6 @@
 """
 import json
 import os
-import zipfile
 import shutil
 
 import pandas as pd
@@ -64,6 +63,7 @@ def get_stop_ids(route_id):
 def get_stop_names(route_short_name):
     return ['Route {!s} stop {!s}'.format(route_short_name, i)
       for i in range(2)]
+
 
 class Feed(object):
     """
@@ -357,20 +357,19 @@ class Feed(object):
         for name in names:
             assert hasattr(self, name),\
               "You must create {!s}".format(name)
-
-        # Initialize zip archive
-        if zip_path is None:
-            zip_path = os.path.join(self.home_path, 'gtfs.zip')
-            zf = zipfile.ZipFile(zip_path, mode='w')
         
-        # Write files to a temp directory and then to zip archive
-        tmp_dir = os.path.join(self.home_path, 'this_is_a_tmp_dir')
-        os.mkdir(tmp_dir)
+        # Write files to a temporary directory 
+        tmp_dir = os.path.join(self.home_path, 'hello-tmp-dir')
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
         for name in names:
             path = os.path.join(tmp_dir, name + '.txt')
             getattr(self, name).to_csv(path, index=False)
-            zf.write(path)
-        zf.close()
 
-        # Delete temp directory
-        #shutil.rmtree(tmp_dir)
+        # Zip files 
+        if zip_path is None:
+            zip_path = os.path.join(self.home_path, 'gtfs')
+        shutil.make_archive(zip_path, format="zip", root_dir=tmp_dir)    
+
+        # Delete temporary directory
+        shutil.rmtree(tmp_dir)
