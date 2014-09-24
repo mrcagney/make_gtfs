@@ -1,13 +1,9 @@
 """
-Todo
------
-- Handle case of more than endpoint stops?
 """
-import datetime as dt
-import dateutil.relativedelta as rd
+import json
+import os
 import zipfile
 import shutil
-import json
 
 import pandas as pd
 import numpy as np
@@ -66,8 +62,8 @@ def get_stop_ids(route_id):
     return ['st-{!s}-{!s}'.format(route_id, i) for i in range(2)]
 
 def get_stop_names(route_short_name):
-    return ['First stop on route {!s}'.format(route_short_name),
-      'Last stop on route {!s}'.format(route_short_name)]
+    return ['Route {!s} stop {!s}'.format(route_short_name, i)
+      for i in range(2)]
 
 class Feed(object):
     """
@@ -76,34 +72,38 @@ class Feed(object):
     Make sure you have enough memory!  
     The stop times object can be big.
     """
-    def __init__(self, path):
+    def __init__(self, home_path):
         """
-        Read in all the relevant GTFS text files within the directory or 
-        ZIP file given by ``path`` and assign them to instance attributes.
-        Assume the zip file unzips as a collection of GTFS text files
-        rather than as a directory of GTFS text files.
-        Set the native distance units of this feed to the given distance
-        units.
-        Valid options are listed in ``VALID_DISTANCE_UNITS``.
-        All distance units will then be converted to kilometers.
+        Import the data files located in the directory at the given path,
+        and assign them to attributes of a new Feed object.
         """
-        zipped = False
-        if zipfile.is_zipfile(path):
-            # Extract to temporary location
-            zipped = True
-            archive = zipfile.ZipFile(path)
-            path = path.rstrip('.zip') + '/'
-            archive.extractall(path)
+        self.home_path = home_path
 
         # Import files
-        self.config = json.load(open(path + 'config.json', 'r'))
-        self.raw_routes = pd.read_csv(path + 'routes.csv', 
-          dtype={'route_short_name': str}, sep=';')
-        self.raw_shapes = json.load(open(path + 'shapes.geojson', 'r'))        
+        self.config = json.load(open(
+          os.path.join(home_path, 'config.json'), 'r'))
+        self.raw_shapes = json.load(open(
+          os.path.join(home_path,'shapes.geojson'), 'r'))        
 
-        if zipped:
-            # Remove extracted directory
-            shutil.rmtree(path)
+        raw_routes = pd.read_csv(
+          os.path.join(home_path, 'routes.csv'), 
+          dtype={'route_short_name': str})
+        cols = raw_routes.columns
+        # Create route type and fill in missing values with default
+        # types from config
+        if 'route_type' not in cols:
+            raw_routes['route_type'] = np.nan
+        raw_routes['route_type'].fillna(
+          int(self.config['default_route_type']), inplace=True)
+        raw_routes['route_type'] = raw_routes['route_type'].astype(int)
+        # Create route speeds and fill in missing values with default speeds
+        # from config
+        if 'speed' not in cols:
+            raw_routes['speed'] = np.nan
+        raw_routes['speed'].fillna(
+          int(self.config['default_speed']), inplace=True)
+        # Save
+        self.raw_routes = raw_routes
 
     def create_agency(self):
         """
@@ -138,29 +138,12 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``routes.txt``.
         """
-        f = self.raw_routes[['route_short_name', 'route_desc']].copy()
-        cols = self.raw_routes.columns
-
-        # Create route type and fill in missing values with default
-        # types from config
-        if 'route_type' in self.raw_routes.columns:
-            f['route_type'] = self.raw_routes['route_type'].copy()
-        else:
-            f['route_type'] = np.nan
-        f['route_type'].fillna(
-          int(self.config['default_route_type']), inplace=True)
-
-        # Create route speeds and fill in missing values with default speeds
-        # from config
-        if 'speed' in self.raw_routes.columns:
-            f['speed'] = self.raw_routes['speed'].copy()
-        else:
-            f['speed'] = np.nan
-        f['speed'].fillna(
-          int(self.config['default_speed']), inplace=True)
+        f = self.raw_routes[['route_short_name', 'route_desc', 
+          'route_type']].copy()
 
         # Create route IDs
         f['route_id'] = ['r' + str(i) for i in range(f.shape[0])]
+        
         # Save
         self.routes = f 
 
@@ -219,86 +202,13 @@ class Feed(object):
         self.shapes = pd.DataFrame(F, columns=['shape_id', 'shape_pt_sequence',
           'shape_pt_lon', 'shape_pt_lat'])
 
-    def get_service_window_duration_by_name(self):
-        """
-        Return a dictionary of the form
-        service window name -> service window duration (minutes).
-        """
-        sw_by_name = self.config['service_window_by_name']
-        return {name: sum(seconds_to_timestr(w[1], inverse=True) -\
-          seconds_to_timestr(w[0], inverse=True) for w in window)/60
-          for name, window in sw_by_name.items()}
-
-    def add_num_trips_per_direction(self):
-        """
-        Add the column 'num_trips_per_direction' to ``self.raw_routes``.
-        This column is the sum of the number of vehicles
-        traveling in one direction on a given route
-        over all service windows.
-        
-        Note that headway and frequency are unidirectional
-        (measured in one direction only).
-        So the total number of vehicles per hour on a route is
-        *double* its frequency.
-        """
-        f = self.raw_routes.copy()
-        duration_by_name = self.get_service_window_duration_by_name()
-        f['num_trips_per_direction'] = 0
-        for name, duration in duration_by_name.items():
-            # Get num vehicles for service window
-            n = (duration*60/f[name + '_headway']).fillna(0)
-            f['num_trips_per_direction'] += n
-        # Double the number to account for vehicles in both directions
-        self.raw_routes = f 
-
-    def create_trips(self):
-        """
-        Create a Pandas data frame representing ``trips.txt`` and save it to
-        ``self.trips``.
-        Trip IDs encode direction, service window, and trip number within that
-        direction and service window to make it easy to compute stop times.
-
-        Assume ``self.routes`` and ``self.shapes`` have been created.
-        """
-        assert hasattr(self, 'routes') and hasattr(self, 'shapes'),\
-          "You must first create self.routes and self.shapes"
-
-        # Create trip IDs and directions
-        #self.add_num_trips_per_direction()
-        F = []
-        sw_by_name = self.config['service_window_by_name']
-        for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
-            route = row['route_id']
-            shape = get_shape_id(route)
-            for name, sw in sw_by_name.items():
-                headway = row[name + '_headway']
-                for i, interval in enumerate(sw):
-                    duration = get_duration(*interval)
-                    num_trips_per_direction = int(duration/headway)
-                    for direction in range(2):
-                        for j in range(num_trips_per_direction):
-                            F.append([
-                              route, 
-                              't-{!s}-{!s}-{!s}-{!s}-{!s}'.format(route, 
-                               direction, name, i, j), 
-                              direction,
-                              shape,
-                              ])
-        f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
-          'shape_id'])
-
-        # Create service IDs
-        f['service_id'] = self.calendar['service_id'].iat[0]
-
-        # Save
-        self.trips = f
-
     def create_stops(self):
         """
         Create a Pandas data frame representing ``stops.txt`` and save it to
         ``self.stops``.
         Create one stop at the beginning (the first point) of each shape 
         and one at the end (the last point) of each shape.
+        This will create duplicate stops in case shapes share endpoints.
 
         Assume ``self.routes`` has been created.
         """
@@ -321,6 +231,64 @@ class Feed(object):
         self.stops = pd.DataFrame(F, columns=['stop_id', 'stop_name', 
           'stop_lon', 'stop_lat'])
 
+    def get_service_windows(self):
+        """
+        Return a list of tuples of the form 
+        (service window name string, 
+         service window start time string, service window duration in minutes)
+        Service window names can be repeated in case the service is not a 
+        contiguous block of time, e.g. "offpeak" from 06:00:00 to 08:00:00 and
+        from 09:00:00 to 19:00:00.
+        """
+        sw_by_name = self.config['service_window_by_name']
+        result = []
+        for name, window in sw_by_name.items():
+            for interval in window:
+                duration = (seconds_to_timestr(interval[1], inverse=True) -\
+                  seconds_to_timestr(interval[0], inverse=True))/60
+                result.append((name, interval[0], duration))
+        return result
+
+    def create_trips(self):
+        """
+        Create a Pandas data frame representing ``trips.txt`` and save it to
+        ``self.trips``.
+        Trip IDs encode direction, service window, and trip number within that
+        direction and service window to make it easy to compute stop times.
+
+        Assume ``self.routes`` and ``self.shapes`` have been created.
+        """
+        assert hasattr(self, 'routes') and hasattr(self, 'shapes'),\
+          "You must first create self.routes and self.shapes"
+
+        # Create trip IDs and directions
+        #self.add_num_trips_per_direction()
+        F = []
+        windows = self.get_service_windows()
+        for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
+            route = row['route_id']
+            shape = get_shape_id(route)
+            for name, start, duration in windows:
+                headway = row[name + '_headway']
+                num_trips_per_direction = int(duration/headway)
+                for direction in range(2):
+                    for i in range(num_trips_per_direction):
+                        F.append([
+                          route, 
+                          't-{!s}-{!s}-{!s}-{!s}-{!s}'.format(
+                          route, name, start, direction, i), 
+                          direction,
+                          shape,
+                          ])
+        f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
+          'shape_id'])
+
+        # Create service IDs
+        f['service_id'] = self.calendar['service_id'].iat[0]
+
+        # Save
+        self.trips = f
+
     def create_stop_times(self):
         """
         Create a Pandas data frame representing ``stop_times.txt`` and save it
@@ -330,23 +298,79 @@ class Feed(object):
         """
         assert hasattr(self, 'stops') and hasattr(self, 'trips'),\
           "You must first create self.stops and self.trips"
+
         F = []
-        sw_by_name = self.config['service_window_by_name']
-        for route, group in pd.merge(self.routes, self.trips).groupby(
+        windows = self.get_service_windows()
+        linestring_by_route = self.get_linestring_by_route(use_utm=True)
+        # Store arrival and departure times as seconds past midnight and
+        # convert to strings at the end
+        f = pd.merge(self.raw_routes, 
+          self.routes[['route_id', 'route_short_name']])
+        for route, group in pd.merge(f, self.trips).groupby(
           'route_id'):
+            length = linestring_by_route[route].length/1000  # kilometers
+            speed = group['speed'].iat[0]  # kph
+            duration = int((length/speed)*3600)  # seconds
             sids = get_stop_ids(route)
             sids_by_direction = {0: sids, 1: sids[::-1]}
-            speed = group['speed']
             for index, row in group.iterrows():
-                junk, route, direction, swname, i, j =\
-                  row['trip_id'].split('-')
+                trip = row['trip_id']
+                junk, route, swname, base_timestr, direction, i =\
+                  trip.split('-')
+                direction = int(direction)
+                i = int(i)
                 sids_tmp = sids_by_direction[direction]
-                base_time = seconds_to_timestr(sw_by_name[swname][i],
+                base_time = seconds_to_timestr(base_timestr,
                   inverse=True)
-                headway = group[swname + '_headway']
-                start_time = base_time + headway*60*j
+                headway = row[swname + '_headway']
+                start_time = base_time + headway*60*i
+                end_time = start_time + duration
                 # Get end time from route length
-                entry = []
-                if direction == 0:
-                    stop_times = []
-        self.stop_times = None
+                entry0 = [trip, sids_tmp[0], 0, start_time, start_time]
+                entry1 = [trip, sids_tmp[1], 1, end_time, end_time]
+                F.extend([entry0, entry1])
+        g = pd.DataFrame(F, columns=['trip_id', 'stop_id', 'stop_sequence',
+          'arrival_time', 'departure_time'])
+        g[['arrival_time', 'departure_time']] =\
+          g[['arrival_time', 'departure_time']].applymap(
+          lambda x: seconds_to_timestr(x))
+        self.stop_times = g
+
+    def create_all(self):
+        self.create_agency()
+        self.create_calendar()
+        self.create_routes()
+        self.create_shapes()
+        self.create_stops()
+        self.create_trips()
+        self.create_stop_times()
+
+    def export(self, zip_path=None):
+        """
+        Assuming all the necessary data frames have been created
+        (as in create_all()), export them to CSV files and zip to the given
+        path.
+        If ``zip_path is None``, then write to ``self.home_path + 'gtfs.zip'``.
+        """
+        names = ['agency', 'calendar', 'routes', 'stops', 'trips',
+          'stop_times']
+        for name in names:
+            assert hasattr(self, name),\
+              "You must create {!s}".format(name)
+
+        # Initialize zip archive
+        if zip_path is None:
+            zip_path = os.path.join(self.home_path, 'gtfs.zip')
+            zf = zipfile.ZipFile(zip_path, mode='w')
+        
+        # Write files to a temp directory and then to zip archive
+        tmp_dir = os.path.join(self.home_path, 'this_is_a_tmp_dir')
+        os.mkdir(tmp_dir)
+        for name in names:
+            path = os.path.join(tmp_dir, name + '.txt')
+            getattr(self, name).to_csv(path, index=False)
+            zf.write(path)
+        zf.close()
+
+        # Delete temp directory
+        #shutil.rmtree(tmp_dir)
