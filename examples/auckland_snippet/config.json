@@ -1,0 +1,18 @@
+{
+  "agency_name":"Auckland Transport",
+  "agency_url":"https://at.govt.nz/",
+  "agency_timezone":"Pacific/Auckland",
+  "start_date":"20140101",
+  "end_date":"20150101",
+  "service_windows":{
+    "weekday_peak": [["07:00:00", "09:00:00"], ["16:00:00", "18:00:00"]],
+    "weekday_offpeak": [["09:00:00", "16:00:00"], ["18:00:00", "19:00:00"]],
+    "weekday_eve": [["06:00:00", "07:00:00"], ["19:00:00", "24:00:00"]],
+    "saturday_day": [["07:00:00", "19:00:00"]],
+    "saturday_eve": [["19:00:00", "24:00:00"]],
+    "sunday_day": [["07:00:00", "19:00:00"]],
+    "sunday_eve": [["19:00:00", "24:00:00"]]
+  },
+  "default_route_type":3,
+  "default_speed":20
+}

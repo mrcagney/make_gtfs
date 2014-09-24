@@ -57,17 +57,19 @@ def timestr_mod_24(timestr):
         result = None
     return result
 
-def get_duration(window, units='s'):
+def get_duration(timestr1, timestr2, units='s'):
     """
-    Return the duration of the given service window in the given units.
-    Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).
+    Return the duration of the time period between the first and second 
+    time string in the given units.
+    Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).    
+    Assume ``timestr1 < timestr2``.
     """
     valid_units = ['s', 'min', 'h']
     assert units in valid_units,\
       "Units must be one of {!s}".format(valid_units)
 
-    duration = seconds_to_timestr(window[2], inverse=True) -\
-      seconds_to_timestr(window[1], inverse=True)
+    duration = seconds_to_timestr(timestr2, inverse=True) -\
+      seconds_to_timestr(timestr1, inverse=True)
 
     if units == 's':
         return duration
@@ -75,6 +77,13 @@ def get_duration(window, units='s'):
         return duration/60
     else:
         return duration/3600
+
+def get_window_duration(window, units='s'):
+    """
+    Return the duration of the given service window in the given units.
+    Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).
+    """
+    return sum(get_duration(*w, units=units) for w in window)
 
 def get_shape_id(route_id):
     return SEP.join(['s', route_id])
@@ -310,19 +319,21 @@ class Feed(object):
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
             shape = get_shape_id(route)
-            for name, start, end in windows:
-                headway = row[name + '_headway']
-                duration = get_duration([name, start, end])
-                num_trips_per_direction = int(duration/(headway*60))
-                for direction in range(2):
-                    for i in range(num_trips_per_direction):
-                        F.append([
-                          route, 
-                          SEP.join(['t', route, name, start, str(direction),
-                          str(i)]), 
-                          direction,
-                          shape,
-                          ])
+            for wname, window in windows.items():
+                headway = row[wname + '_headway']
+                for subwindow in window:
+                    start = subwindow[0]
+                    duration = get_duration(*subwindow, units='s') 
+                    num_trips_per_direction = int(duration/(headway*60))
+                    for direction in range(2):
+                        for i in range(num_trips_per_direction):
+                            F.append([
+                              route, 
+                              SEP.join(['t', route, wname, start, 
+                              str(direction), str(i)]), 
+                              direction,
+                              shape,
+                              ])
         f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
           'shape_id'])
 
@@ -357,14 +368,14 @@ class Feed(object):
             sids_by_direction = {0: sids_tmp, 1: sids_tmp[::-1]}
             for index, row in group.iterrows():
                 trip = row['trip_id']
-                junk, route, swname, base_timestr, direction, i =\
+                junk, route, wname, base_timestr, direction, i =\
                   trip.split(SEP)
                 direction = int(direction)
                 i = int(i)
                 sids = sids_by_direction[direction]
                 base_time = seconds_to_timestr(base_timestr,
                   inverse=True)
-                headway = row[swname + '_headway']
+                headway = row[wname + '_headway']
                 start_time = base_time + headway*60*i
                 end_time = start_time + duration
                 # Get end time from route length
