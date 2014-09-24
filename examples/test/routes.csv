@@ -1,4 +1,4 @@
-unit_id,unit_name,route_short_name,route_desc,weekday_peak_headway,weekday_offpeak_headway,weekday_night_headway,saturday_day_headway,saturday_night_headway,sunday_day_headway,sunday_night_headway
+unit_id,unit_name,route_short_name,route_desc,weekday_peak_headway,weekday_offpeak_headway,weekday_eve_headway,saturday_day_headway,saturday_eve_headway,sunday_day_headway,sunday_eve_headway
 1,City LINK,010,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",5,7.5,10,7.5,10,7.5,10
 2,Inner LINK,020,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",10,15,15,15,15,15,15
 3,Richmond Road,030,Grey Lynn to Auckland University via Richmond Rd and Grey Lynn,10,15,30,30,30,30,30
