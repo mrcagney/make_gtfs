@@ -1,4 +1,5 @@
 """
+See DESC below for a description.
 """
 import json
 import os
@@ -9,6 +10,17 @@ import numpy as np
 from shapely.ops import transform
 from shapely.geometry import shape, mapping
 import utm
+
+# Program description
+DESC = """
+  This is a Python 3.4 command line program that makes a GTFS Feed
+  from a GeoJSON file of route shapes (named 'shapes.geojson') and 
+  a CSV file of route names and headways (named 'routes.csv'). 
+  A configuration file (named 'config.json') is also required.        
+  """
+
+# Character to separate different chunks within an ID
+SEP = '#'
 
 def seconds_to_timestr(seconds, inverse=False):
     """
@@ -45,24 +57,65 @@ def timestr_mod_24(timestr):
         result = None
     return result
 
-def get_duration(timestr_a, timestr_b):
+def get_duration(window, units='s'):
     """
-    Return the number of minutes in the time interval 
-    [``timestr_a``, ``timestr_b``].
+    Return the duration of the given service window in the given units.
+    Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).
     """
-    a = seconds_to_timestr(timestr_a, inverse=True)
-    b = seconds_to_timestr(timestr_b, inverse=True)
-    return (b - a)/60
+    valid_units = ['s', 'min', 'h']
+    assert units in valid_units,\
+      "Units must be one of {!s}".format(valid_units)
+
+    duration = seconds_to_timestr(window[2], inverse=True) -\
+      seconds_to_timestr(window[1], inverse=True)
+
+    if units == 's':
+        return duration
+    elif units == 'min':
+        return duration/60
+    else:
+        return duration/3600
 
 def get_shape_id(route_id):
-    return 's-{!s}'.format(route_id)
+    return SEP.join(['s', route_id])
 
 def get_stop_ids(route_id):
-    return ['st-{!s}-{!s}'.format(route_id, i) for i in range(2)]
+    return [SEP.join(['st', route_id, str(i)]) for i in range(2)]
 
 def get_stop_names(route_short_name):
     return ['Route {!s} stop {!s}'.format(route_short_name, i)
       for i in range(2)]
+
+def parse_args():
+    """
+    Parse command line options and return an object with two attributes:
+    `input_dir`, a list of one input directory path, and `output_file`, 
+    a list of one output file path.
+    """
+    import argparse
+    import textwrap
+
+    parser = argparse.ArgumentParser(
+      formatter_class=argparse.RawDescriptionHelpFormatter, 
+      description=textwrap.dedent(DESC))
+    parser.add_argument('input_dir', nargs='?', type=str, default='.',
+      help='path to a directory containing the input files '\
+      '(default: current directory)')
+    parser.add_argument('-o', dest='output_file',
+      help="path to the GTFS output file (default: 'gtfs.zip')")
+    return parser.parse_args()
+
+def main():
+    """
+    Get command line arguments, create feed, and export feed.
+    """
+    # Read command line arguments
+    args = parse_args()
+
+    # Create and export feed
+    feed = Feed(args.input_dir)
+    feed.create_all()
+    feed.export(args.output_file)
 
 
 class Feed(object):
@@ -84,10 +137,11 @@ class Feed(object):
           os.path.join(home_path, 'config.json'), 'r'))
         self.raw_shapes = json.load(open(
           os.path.join(home_path,'shapes.geojson'), 'r'))        
-
         raw_routes = pd.read_csv(
           os.path.join(home_path, 'routes.csv'), 
           dtype={'route_short_name': str})
+
+        # Clean up raw routes
         cols = raw_routes.columns
         # Create route type and fill in missing values with default
         # types from config
@@ -105,9 +159,13 @@ class Feed(object):
         # Save
         self.raw_routes = raw_routes
 
+    def get_service_windows(self):
+        return self.config['service_windows']
+
     def create_agency(self):
         """
-        Create a Pandas data frame representing ``agency.txt``.
+        Create a Pandas data frame representing ``agency.txt`` and save it to
+        ``self.agency``.
         """
         self.agency = pd.DataFrame({
           'agency_name': self.config['agency_name'], 
@@ -117,7 +175,8 @@ class Feed(object):
 
     def create_calendar(self):
         """
-        Create a Pandas data frame representing ``calendar.txt``.
+        Create a Pandas data frame representing ``calendar.txt`` and save it to
+        ``self.calendar``.
         It is a dumb calendar with one service that operates
         on every day of the week.
         """
@@ -136,7 +195,8 @@ class Feed(object):
 
     def create_routes(self):
         """
-        Create a Pandas data frame representing ``routes.txt``.
+        Create a Pandas data frame representing ``routes.txt`` and save it
+        to ``self.routes``.
         """
         f = self.raw_routes[['route_short_name', 'route_desc', 
           'route_type']].copy()
@@ -231,24 +291,6 @@ class Feed(object):
         self.stops = pd.DataFrame(F, columns=['stop_id', 'stop_name', 
           'stop_lon', 'stop_lat'])
 
-    def get_service_windows(self):
-        """
-        Return a list of tuples of the form 
-        (service window name string, 
-         service window start time string, service window duration in minutes)
-        Service window names can be repeated in case the service is not a 
-        contiguous block of time, e.g. "offpeak" from 06:00:00 to 08:00:00 and
-        from 09:00:00 to 19:00:00.
-        """
-        sw_by_name = self.config['service_window_by_name']
-        result = []
-        for name, window in sw_by_name.items():
-            for interval in window:
-                duration = (seconds_to_timestr(interval[1], inverse=True) -\
-                  seconds_to_timestr(interval[0], inverse=True))/60
-                result.append((name, interval[0], duration))
-        return result
-
     def create_trips(self):
         """
         Create a Pandas data frame representing ``trips.txt`` and save it to
@@ -268,15 +310,16 @@ class Feed(object):
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
             shape = get_shape_id(route)
-            for name, start, duration in windows:
+            for name, start, end in windows:
                 headway = row[name + '_headway']
-                num_trips_per_direction = int(duration/headway)
+                duration = get_duration([name, start, end])
+                num_trips_per_direction = int(duration/(headway*60))
                 for direction in range(2):
                     for i in range(num_trips_per_direction):
                         F.append([
                           route, 
-                          't-{!s}-{!s}-{!s}-{!s}-{!s}'.format(
-                          route, name, start, direction, i), 
+                          SEP.join(['t', route, name, start, str(direction),
+                          str(i)]), 
                           direction,
                           shape,
                           ])
@@ -300,7 +343,6 @@ class Feed(object):
           "You must first create self.stops and self.trips"
 
         F = []
-        windows = self.get_service_windows()
         linestring_by_route = self.get_linestring_by_route(use_utm=True)
         # Store arrival and departure times as seconds past midnight and
         # convert to strings at the end
@@ -311,23 +353,23 @@ class Feed(object):
             length = linestring_by_route[route].length/1000  # kilometers
             speed = group['speed'].iat[0]  # kph
             duration = int((length/speed)*3600)  # seconds
-            sids = get_stop_ids(route)
-            sids_by_direction = {0: sids, 1: sids[::-1]}
+            sids_tmp = get_stop_ids(route)
+            sids_by_direction = {0: sids_tmp, 1: sids_tmp[::-1]}
             for index, row in group.iterrows():
                 trip = row['trip_id']
                 junk, route, swname, base_timestr, direction, i =\
-                  trip.split('-')
+                  trip.split(SEP)
                 direction = int(direction)
                 i = int(i)
-                sids_tmp = sids_by_direction[direction]
+                sids = sids_by_direction[direction]
                 base_time = seconds_to_timestr(base_timestr,
                   inverse=True)
                 headway = row[swname + '_headway']
                 start_time = base_time + headway*60*i
                 end_time = start_time + duration
                 # Get end time from route length
-                entry0 = [trip, sids_tmp[0], 0, start_time, start_time]
-                entry1 = [trip, sids_tmp[1], 1, end_time, end_time]
+                entry0 = [trip, sids[0], 0, start_time, start_time]
+                entry1 = [trip, sids[1], 1, end_time, end_time]
                 F.extend([entry0, entry1])
         g = pd.DataFrame(F, columns=['trip_id', 'stop_id', 'stop_sequence',
           'arrival_time', 'departure_time'])
@@ -337,6 +379,9 @@ class Feed(object):
         self.stop_times = g
 
     def create_all(self):
+        """
+        Create all Pandas data frames necessary for a GTFS feed.
+        """
         self.create_agency()
         self.create_calendar()
         self.create_routes()
@@ -348,8 +393,8 @@ class Feed(object):
     def export(self, zip_path=None):
         """
         Assuming all the necessary data frames have been created
-        (as in create_all()), export them to CSV files and zip to the given
-        path.
+        (as in create_all()), export them to CSV files and zip them into 
+        the given path.
         If ``zip_path is None``, then write to ``self.home_path + 'gtfs.zip'``.
         """
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
@@ -373,3 +418,6 @@ class Feed(object):
 
         # Delete temporary directory
         shutil.rmtree(tmp_dir)
+
+if __name__ == '__main__':
+    main()
