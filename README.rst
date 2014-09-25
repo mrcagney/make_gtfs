@@ -29,7 +29,8 @@ routes.csv
 This is a CSV file of route names and headways.
 It must contain a header row with at least the columns ``route_short_name``
 and one column of the form ``<service window name>_headway`` for every service window. 
-Headways are specified in minutes.
+Route short names must be unique and headways are specified in minutes.
+
 A *service window* is a (not necessarily contiguous) time period of the week during which a route headways are constant, e.g. Saturday 6:00 to 7:00 and 9:00 to 15:00.
 
 Here's an example ``routes.csv`` file::
