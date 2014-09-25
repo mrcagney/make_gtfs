@@ -1,7 +1,7 @@
 Make GTFS
 ***********
 This is a Python 3.4 command line program that makes a GTFS feed
-from a GeoJSON file of route shapes, a CSV file of route headways, and a configuration file.
+from a CSV file of route headways, a GeoJSON file of route shapes, and a configuration file of metadata.
 It's inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
 
 Experimental. 
@@ -29,6 +29,7 @@ routes.csv
 This is a CSV file of route names and headways.
 It must contain a header row with at least the columns ``route_short_name``
 and one column of the form ``<service window name>_headway`` for every service window. 
+Headways are specified in minutes.
 A *service window* is a (not necessarily contiguous) time period of the week during which a route headways are constant, e.g. Saturday 6:00 to 7:00 and 9:00 to 15:00.
 
 Here's an example ``routes.csv`` file::
@@ -37,14 +38,14 @@ Here's an example ``routes.csv`` file::
     010,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",5,7.5,10,7.5,10,7.5,10
     020,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",10,15,15,15,15,15,15
 
-Optionally, you can also specify a ``speed`` column with float values in kilometers per hour and a ``route_type`` column with integer values that indicate `route types according to GTFS <https://developers.google.com/transit/gtfs/reference#routes_fields>`_.
+Optionally, you can also specify a ``speed`` column with float values in kilometers per hour and a ``route_type`` column with integer values that indicate `GTFS route type <https://developers.google.com/transit/gtfs/reference#routes_fields>`_.
 If these columns don't exist, then they will be created with uniform default values specified in ``config.json``.
 
 
 shapes.geojson
 ---------------
 This is a GeoJSON file containing route shapes.
-The file consists of one feature collection of LineString features, where each feature property contains at least the attribut ``route_short_name``, which links the route's shape to its headway information in ``routes.csv``.
+The file consists of one feature collection of LineString features, where each feature's properties contains at least the attribute ``route_short_name``, which links the route's shape to its headway information in ``routes.csv``.
 
 Here's an example of ``shapes.geojson``::
 
@@ -83,8 +84,8 @@ Basically,
 - ``routes.txt`` is created from ``routes.csv``
 - ``shapes.txt`` is created from ``shapes.geojson``
 - ``agency.txt`` is created from ``config.json``
-- ``calendar.txt`` is created in a dumb way with exactly one service that applies to all trips
-- ``stops.txt`` is created by taking each shape and adding one stop for each of its two endpoints.  This will lead to duplicate stops in case shapes share endpoints.
+- ``calendar.txt`` is created in a dumb way with exactly one all-week service that applies to all trips
+- ``stops.txt`` is created by making a pair of stops for each shape which lie on the shape's endpoints.  This will lead to duplicate stops in case shapes share endpoints.
 - ``trips.txt`` and ``stop_times.txt`` are created by taking each route, each service window, each service subwindow, and each direction (0 and 1), and running a set of trips starting on the hour and operating at the route's speed and headway specified for that service subwindow.  In particular, there is always an even number (possibly zero) of trips running on a route at any given time, half going of in one direction and half going in the opposite direction.
 
 Documentation
