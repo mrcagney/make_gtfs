@@ -39,8 +39,11 @@ Here's an example ``routes.csv`` file::
     010,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",5,7.5,10,7.5,10,7.5,10
     020,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",10,15,15,15,15,15,15
 
-Optionally, you can also specify a ``speed`` column with float values in kilometers per hour and a ``route_type`` column with integer values that indicate `GTFS route type <https://developers.google.com/transit/gtfs/reference#routes_fields>`_.
-If these columns don't exist, then they will be created with uniform default values specified in ``config.json``.
+You can also specify the columns
+
+- ``route_desc``: (optional; default='') `GTFS route description <https://developers.google.com/transit/gtfs/reference#routes_fields>`_
+- ``speed``: (optional; default specified in ``config.json``) speed measured in kilometers per hour 
+- ``route_type``: (optional; default specified in ``config.json``) `GTFS route type <https://developers.google.com/transit/gtfs/reference#routes_fields>`_
 
 
 shapes.geojson

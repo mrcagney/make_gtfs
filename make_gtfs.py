@@ -78,13 +78,6 @@ def get_duration(timestr1, timestr2, units='s'):
     else:
         return duration/3600
 
-def get_window_duration(window, units='s'):
-    """
-    Return the duration of the given service window in the given units.
-    Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).
-    """
-    return sum(get_duration(*w, units=units) for w in window)
-
 def get_shape_id(route_id):
     return SEP.join(['s', route_id])
 
@@ -152,6 +145,8 @@ class Feed(object):
 
         # Clean up raw routes
         cols = raw_routes.columns
+        if 'route_desc' not in cols:
+            raw_routes['route_desc'] = np.nan
         # Create route type and fill in missing values with default
         # types from config
         if 'route_type' not in cols:
@@ -170,6 +165,14 @@ class Feed(object):
 
     def get_service_windows(self):
         return self.config['service_windows']
+
+    def get_window_duration(self, window_name, units='s'):
+        """
+        Return the duration of the given service window in the given units.
+        Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).
+        """
+        window = self.get_service_windows()[window_name]
+        return sum(get_duration(*w, units=units) for w in window)
 
     def create_agency(self):
         """
@@ -226,10 +229,10 @@ class Feed(object):
         Otherwise, return each linestring in WGS84 longitude-latitude
         coordinates.
 
-        Assume ``self.routes`` has been created.
+        Will create ``self.routes`` if it does not already exist.
         """
-        assert hasattr(self, 'routes'),\
-          "You must first create self.routes"
+        if not hasattr(self, 'routes'):
+            self.create_routes()
 
         # Note the output for conversion to UTM with the utm package:
         # >>> u = utm.from_latlon(47.9941214, 7.8509671)
@@ -254,10 +257,10 @@ class Feed(object):
         to ``self.shapes``.
         Each route has one shape that is used for both directions of travel. 
         
-        Assume ``self.routes`` has been created.
+        Will create ``self.routes`` if it does not already exist.
         """
-        assert hasattr(self, 'routes'),\
-          "You must first create self.routes"
+        if not hasattr(self, 'routes'):
+            self.create_routes()
 
         F = []
         linestring_by_route = self.get_linestring_by_route(use_utm=False)
@@ -279,10 +282,10 @@ class Feed(object):
         and one at the end (the last point) of each shape.
         This will create duplicate stops in case shapes share endpoints.
 
-        Assume ``self.routes`` has been created.
+        Will create ``self.routes`` if it does not already exist.
         """
-        assert hasattr(self, 'routes'),\
-          "You must first create self.routes"
+        if not hasattr(self, 'routes'):
+            self.create_routes()
 
         linestring_by_route = self.get_linestring_by_route(use_utm=False)
         rsn_by_rid = dict(self.routes[['route_id', 'route_short_name']].values)
@@ -307,10 +310,15 @@ class Feed(object):
         Trip IDs encode direction, service window, and trip number within that
         direction and service window to make it easy to compute stop times.
 
-        Assume ``self.routes`` and ``self.shapes`` have been created.
+        Will create ``self.calendar``, ``self.routes``, and ``self.shapes`` 
+        if they don't already exist.
         """
-        assert hasattr(self, 'routes') and hasattr(self, 'shapes'),\
-          "You must first create self.routes and self.shapes"
+        if not hasattr(self, 'calendar'):
+            self.create_calendar()
+        if not hasattr(self, 'routes'):
+            self.create_routes()
+        if not hasattr(self, 'shapes'):
+            self.create_shapes()
 
         # Create trip IDs and directions
         #self.add_num_trips_per_direction()
@@ -348,10 +356,13 @@ class Feed(object):
         Create a Pandas data frame representing ``stop_times.txt`` and save it
         to ``self.stop_times``.
 
-        Assume ``self.stops`` and ``self.trips`` has been created.
+        Will create ``self.stops`` and ``self.trips`` if they don't already 
+        exist.
         """
-        assert hasattr(self, 'stops') and hasattr(self, 'trips'),\
-          "You must first create self.stops and self.trips"
+        if not hasattr(self, 'stops'):
+            self.create_stops()
+        if not hasattr(self, 'trips'):
+            self.create_trips()
 
         F = []
         linestring_by_route = self.get_linestring_by_route(use_utm=True)

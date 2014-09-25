@@ -30,8 +30,8 @@ class TestFeed(unittest.TestCase):
         ts1 = '01:01:01'
         ts2 = '01:05:01'
         get = get_duration(ts1, ts2, units='min')
-        self.assertEqual(get, 4)
-
+        expect = 4
+        self.assertEqual(get, expect)
 
     def test_init(self):
         feed = akl
@@ -39,38 +39,76 @@ class TestFeed(unittest.TestCase):
         self.assertIsInstance(feed.config, dict)
         self.assertIsInstance(feed.raw_shapes, dict)
 
+    def test_get_window_duration(self):
+        feed = akl
+        get = feed.get_window_duration('weekday_peak', units='h')
+        expect = 4
+        self.assertEqual(get, expect)
 
-    # def test_get_trips_stats(self):
-    #     feed = cairns
-    #     trips_stats = feed.get_trips_stats()
-    #     # Should be a data frame with the correct number of rows
-    #     self.assertIsInstance(trips_stats, pd.core.frame.DataFrame)
-    #     self.assertEqual(trips_stats.shape[0], feed.trips.shape[0])
-    #     # Shapeless feeds should have null entries for distance column
-    #     feed2 = cairns_shapeless
-    #     trips_stats = feed2.get_trips_stats()
-    #     self.assertEqual(len(trips_stats['distance'].unique()), 1)
-    #     self.assertTrue(np.isnan(trips_stats['distance'].unique()[0]))   
-    #     # Should contain the correct trips
-    #     get_trips = set(trips_stats['trip_id'].values)
-    #     expect_trips = set(feed.trips['trip_id'].values)
-    #     self.assertEqual(get_trips, expect_trips)
+    def test_create_routes(self):
+        feed = akl
+        feed.create_routes()      
+        routes = feed.routes 
+        # Should be a data frame
+        self.assertIsInstance(routes, pd.core.frame.DataFrame)
+        # Should have correct shape
+        expect_nrows = feed.raw_routes.shape[0]
+        expect_ncols = 4
+        self.assertEqual(routes.shape, (expect_nrows, expect_ncols))
 
-    # def test_get_linestring_by_shape(self):
-    #     feed = cairns
-    #     linestring_by_shape = feed.get_linestring_by_shape()
-    #     # Should be a dictionary
-    #     self.assertIsInstance(linestring_by_shape, dict)
-    #     # The first element should be a Shapely linestring
-    #     self.assertIsInstance(list(linestring_by_shape.values())[0], 
-    #       LineString)
-    #     # Should contain all shapes
-    #     self.assertEqual(len(linestring_by_shape), 
-    #       feed.shapes.groupby('shape_id').first().shape[0])
-    #     # Should be None if feed.shapes is None
-    #     feed2 = cairns_shapeless
-    #     self.assertIsNone(feed2.get_linestring_by_shape())
+    def test_create_linestring_by_route(self):
+        feed = akl
+        linestring_by_route = feed.get_linestring_by_route(use_utm=False)
+        # Should be a dictionary
+        self.assertIsInstance(linestring_by_route, dict)
+        # The first element should be a Shapely linestring
+        self.assertIsInstance(list(linestring_by_route.values())[0], 
+          LineString)
+        # Should contain one shape for each route
+        self.assertEqual(len(linestring_by_route), feed.raw_routes.shape[0])
 
+    def test_create_shapes(self):
+        feed = akl
+        feed.create_shapes()
+        shapes = feed.shapes
+        # Should be a data frame
+        self.assertIsInstance(shapes, pd.core.frame.DataFrame)
+        # Should have correct shape
+        expect_nshapes = feed.raw_routes.shape[0]
+        expect_ncols = 4
+        self.assertEqual(shapes.groupby('shape_id').ngroups, expect_nshapes)
+        self.assertEqual(shapes.shape[1], expect_ncols)
+
+    def test_create_stops(self):
+        feed = akl
+        feed.create_stops()
+        stops = feed.stops
+        # Should be a data frame
+        self.assertIsInstance(stops, pd.core.frame.DataFrame)
+        # Should have correct shape
+        expect_nrows = 2*feed.raw_routes.shape[0]
+        expect_ncols = 4
+        self.assertEqual(stops.shape, (expect_nrows, expect_ncols))
+
+    def test_create_trips(self):
+        feed = akl
+        feed.create_trips()
+        trips = feed.trips
+        # Should be a data frame
+        self.assertIsInstance(trips, pd.core.frame.DataFrame)
+        # Should have correct shape
+        windows = feed.get_service_windows()
+        expect_nrows = 0
+        for index, row in feed.raw_routes.iterrows():
+            # Number of trips for this route is the sum over each service
+            # window of twice the window duration divided by the headway. 
+            # Twice because have a trip running in both directions 
+            # simulateously
+            expect_nrows += 2*sum(
+              feed.get_window_duration(wname, units='min')//\
+              row[wname + '_headway'] for wname in windows)
+        expect_ncols = 5
+        self.assertEqual(trips.shape, (expect_nrows, expect_ncols))
 
 if __name__ == '__main__':
     unittest.main()
