@@ -1,7 +1,7 @@
 import unittest
+import zipfile
 
 import pandas as pd 
-import numpy as np
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 from shapely.geometry import Point, LineString, mapping
 
@@ -109,6 +109,66 @@ class TestFeed(unittest.TestCase):
               row[wname + '_headway'] for wname in windows)
         expect_ncols = 5
         self.assertEqual(trips.shape, (expect_nrows, expect_ncols))
+
+    def test_create_stop_times(self):
+        feed = akl
+        feed.create_stop_times()
+        stop_times = feed.stop_times
+        # Should be a data frame
+        self.assertIsInstance(stop_times, pd.core.frame.DataFrame)
+        # Should have correct shape
+        windows = feed.get_service_windows()
+        expect_nrows = 0
+        for index, row in feed.raw_routes.iterrows():
+            # Number of trips for this route is the sum over each service
+            # window of twice the window duration divided by the headway. 
+            # Twice because have a trip running in both directions 
+            # simulateously.
+            # Number of stop times is twice the number of trips,
+            # because each trip has two stops.
+            expect_nrows += 4*sum(
+              feed.get_window_duration(wname, units='min')//\
+              row[wname + '_headway'] for wname in windows)
+        expect_ncols = 5
+        self.assertEqual(stop_times.shape, (expect_nrows, expect_ncols))
+
+    def test_create_all(self):
+        feed = akl
+        feed.create_all()
+        names = ['agency', 'calendar', 'routes', 'stops', 'trips',
+          'stop_times']
+        for name in names:
+            self.assertTrue(hasattr(feed, name))
+
+    def test_export(self):
+        feed = akl
+        
+        # Should raise an error if try to export before create files
+        self.assertRaises(AssertionError, feed.export())
+        
+        # Should create the necessary files. 
+        # Already know they're CSV because rely on Pandas for CSV export.
+        feed.create_all()
+        odir = 'tests/'
+        feed.export(odir)
+        names = ['agency', 'calendar', 'routes', 'stops', 'trips',
+          'stop_times']
+        for name in names:
+            path = os.path.join(odir, name + '.txt')
+            self.assertTrue(os.path.exists(path))
+            os.remove(path) # Clean up
+
+        # Should create a zip archive this time
+        feed.export(odir, as_zip=True)
+        zip_path = os.path.join(odir, 'gtfs.zip')
+        self.assertTrue(zipfile.is_zipfile(zip_path))
+    
+        # Zip archive should contain all the necessary files
+        expect_nameset = set(name + '.txt' for name in names)
+        get_nameset = set(zipfile.ZipFile(zip_path, 'r').namelist())
+        self.assertEqual(get_nameset, expect_nameset)
+
+        os.remove(zip_path) # Remove zip file
 
 
 if __name__ == '__main__':

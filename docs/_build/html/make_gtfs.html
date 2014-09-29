@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The make_gtfs Module &mdash; make_gtfs 0.2 documentation</title>
+    <title>The make_gtfs Module &mdash; make_gtfs 0.3 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2',
+        VERSION:     '0.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="make_gtfs 0.2 documentation" href="index.html" />
+    <link rel="top" title="make_gtfs 0.3 documentation" href="index.html" />
     <link rel="prev" title="Welcome to make_gtfs’s documentation!" href="index.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to make_gtfs’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">make_gtfs 0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">make_gtfs 0.3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,7 +52,7 @@
 <span id="the-make-gtfs-module"></span><h1>The make_gtfs Module<a class="headerlink" href="#module-make_gtfs.make_gtfs" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="make_gtfs.make_gtfs.Feed">
-<em class="property">class </em><tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">Feed</tt><big>(</big><em>home_path</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">Feed</tt><big>(</big><em>input_dir</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <p>A class to gather all the GTFS files for a feed and store them in memory 
 as Pandas data frames.  
@@ -129,11 +129,13 @@ if they don&#8217;t already exist.</p>
 
 <dl class="method">
 <dt id="make_gtfs.make_gtfs.Feed.export">
-<tt class="descname">export</tt><big>(</big><em>zip_path=None</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.export" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">export</tt><big>(</big><em>output_dir=None</em>, <em>as_zip=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.export" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assuming all the necessary data frames have been created
-(as in create_all()), export them to CSV files and zip them into 
-the given path.
-If <tt class="docutils literal"><span class="pre">zip_path</span> <span class="pre">is</span> <span class="pre">None</span></tt>, then write to <tt class="docutils literal"><span class="pre">self.home_path</span> <span class="pre">+</span> <span class="pre">'gtfs.zip'</span></tt>.</p>
+(as in create_all()), export them to CSV files in the given output
+directory.
+If <tt class="docutils literal"><span class="pre">as_zip</span></tt> is True, then instead write the files to a 
+zip archive called <tt class="docutils literal"><span class="pre">gtfs.zip</span></tt> in the given output directory.
+If <tt class="docutils literal"><span class="pre">output_dir</span> <span class="pre">is</span> <span class="pre">None</span></tt>, then write to <tt class="docutils literal"><span class="pre">self.input_dir</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -262,7 +264,7 @@ in the same format but with the hours taken modulo 24.</p>
         <li class="right" >
           <a href="index.html" title="Welcome to make_gtfs’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">make_gtfs 0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">make_gtfs 0.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

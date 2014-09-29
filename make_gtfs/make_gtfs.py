@@ -124,20 +124,20 @@ class Feed(object):
     Make sure you have enough memory!  
     The stop times object can be big.
     """
-    def __init__(self, home_path):
+    def __init__(self, input_dir):
         """
-        Import the data files located in the directory at the given path,
+        Import the data files located in the given directory path,
         and assign them to attributes of a new Feed object.
         """
-        self.home_path = home_path
+        self.input_dir = input_dir
 
         # Import files
         self.config = json.load(open(
-          os.path.join(home_path, 'config.json'), 'r'))
+          os.path.join(input_dir, 'config.json'), 'r'))
         self.raw_shapes = json.load(open(
-          os.path.join(home_path,'shapes.geojson'), 'r'))        
+          os.path.join(input_dir,'shapes.geojson'), 'r'))        
         raw_routes = pd.read_csv(
-          os.path.join(home_path, 'routes.csv'), 
+          os.path.join(input_dir, 'routes.csv'), 
           dtype={'route_short_name': str})
 
         # Clean up raw routes
@@ -412,12 +412,14 @@ class Feed(object):
         self.create_trips()
         self.create_stop_times()
 
-    def export(self, zip_path=None):
+    def export(self, output_dir=None, as_zip=False):
         """
         Assuming all the necessary data frames have been created
-        (as in create_all()), export them to CSV files and zip them into 
-        the given path.
-        If ``zip_path is None``, then write to ``self.home_path + 'gtfs.zip'``.
+        (as in create_all()), export them to CSV files in the given output
+        directory.
+        If ``as_zip`` is True, then instead write the files to a 
+        zip archive called ``gtfs.zip`` in the given output directory.
+        If ``output_dir is None``, then write to ``self.input_dir``.
         """
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
           'stop_times']
@@ -426,22 +428,31 @@ class Feed(object):
               "You must create {!s}".format(name)
         
         # Write files to a temporary directory 
-        tmp_dir = os.path.join(self.home_path, 'hello-tmp-dir')
-        if not os.path.exists(tmp_dir):
-            os.mkdir(tmp_dir)
+        if output_dir is None:
+            output_dir = self.input_dir
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
         for name in names:
-            path = os.path.join(tmp_dir, name + '.txt')
+            path = os.path.join(output_dir, name + '.txt')
             getattr(self, name).to_csv(path, index=False)
 
-        # Zip files 
-        if zip_path is None:
-            zip_path = os.path.join(self.home_path, 'gtfs')
-        else:
-            zip_path = zip_path.strip('.zip')
-        shutil.make_archive(zip_path, format="zip", root_dir=tmp_dir)    
+        # If requested, zip and delete files 
+        if as_zip:
+            # Create a temporary directory and move CSV files there
+            tmp_dir = os.path.join(output_dir, 'hello-tmp-dir')
+            if not os.path.exists(tmp_dir):
+                os.mkdir(tmp_dir)
+            for name in names:
+                old_path = os.path.join(output_dir, name + '.txt')
+                new_path = os.path.join(tmp_dir, name + '.txt')
+                shutil.move(old_path, new_path)
+            
+            # Create zip archive
+            zip_path = os.path.join(output_dir, 'gtfs')
+            shutil.make_archive(zip_path, format="zip", root_dir=tmp_dir)    
 
-        # Delete temporary directory
-        shutil.rmtree(tmp_dir)
+            # Delete temporary directory
+            shutil.rmtree(tmp_dir)
 
 
 if __name__ == '__main__':

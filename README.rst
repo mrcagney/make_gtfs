@@ -94,12 +94,12 @@ Basically,
 
 Examples
 =========
-Play with ``examples/examples.ipynb`` in an iPython notebook or view the notebook as HTML via RawGit `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.html>`_.
+Play with ``examples/examples.ipynb`` in an iPython notebook or view the notebook as HTML `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.html>`_.
 
 
 Documentation
 ===============
-Under ``docs/`` and also online via RawGit `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/html/index.html>`_.
+Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/html/index.html>`_.
 
 Todo
 =====
