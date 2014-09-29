@@ -94,7 +94,7 @@ Basically,
 
 Examples
 =========
-Play with ``examples/examples.ipynb`` in an iPython notebook or view it as a PDF `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.pdf>`_.
+Play with ``examples/examples.ipynb`` in an iPython notebook or view the notebook as HTML via RawGit `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.html>`_.
 
 
 Documentation
