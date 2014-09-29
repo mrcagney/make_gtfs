@@ -103,4 +103,5 @@ Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/
 
 Todo
 =====
-Allow for route shape variations by using MultiLineString features instead of LineStrings.
+- Allow for route shape variations by using MultiLineString features instead of LineStrings
+- Possibly morph package into json2gtfs, once the `TransitJSON spec <https://github.com/codeforamerica/transitjson>`_ has been finalized
