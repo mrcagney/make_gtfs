@@ -10,7 +10,7 @@ Use at your own risk.
 
 Installation
 =============
-``pip install git+https://github.com/araichev/make_gtfs.git``
+``pip install make_gtfs``
 
 Usage
 =====
@@ -92,9 +92,14 @@ Basically,
 - ``stops.txt`` is created by making a pair of stops for each shape which lie on the shape's endpoints.  This will lead to duplicate stops in case shapes share endpoints.
 - ``trips.txt`` and ``stop_times.txt`` are created by taking each route, each service window, each service subwindow, and each direction (0 and 1), and running a set of trips starting on the hour and operating at the route's speed and headway specified for that service subwindow.  In particular, there is always an even number (possibly zero) of trips running on a route at any given time, half going of in one direction and half going in the opposite direction.
 
+Examples
+=========
+Play with ``examples/examples.ipynb`` in an iPython notebook or view it as a PDF `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.pdf>`_.
+
+
 Documentation
-==============
-Only docstrings in the code at this point.
+===============
+Under ``docs/`` and also online via RawGit `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/html/index.html>`_.
 
 Todo
 =====

@@ -1,6 +1,3 @@
-"""
-See DESC below for a description.
-"""
 import json
 import os
 import shutil
@@ -164,6 +161,9 @@ class Feed(object):
         self.raw_routes = raw_routes
 
     def get_service_windows(self):
+        """
+        Return ``self.config['service_windows']``.
+        """
         return self.config['service_windows']
 
     def get_window_duration(self, window_name, units='s'):
@@ -436,10 +436,13 @@ class Feed(object):
         # Zip files 
         if zip_path is None:
             zip_path = os.path.join(self.home_path, 'gtfs')
+        else:
+            zip_path = zip_path.strip('.zip')
         shutil.make_archive(zip_path, format="zip", root_dir=tmp_dir)    
 
         # Delete temporary directory
         shutil.rmtree(tmp_dir)
+
 
 if __name__ == '__main__':
     main()

@@ -5,10 +5,10 @@ import numpy as np
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 from shapely.geometry import Point, LineString, mapping
 
-from make_gtfs import *
+from make_gtfs.make_gtfs import *
 
 # Load test feeds
-akl = Feed('tests/auckland_snippet/')
+akl = Feed('data/auckland_snippet/')
 
 class TestFeed(unittest.TestCase):
     def test_seconds_to_timestr(self):
@@ -109,6 +109,7 @@ class TestFeed(unittest.TestCase):
               row[wname + '_headway'] for wname in windows)
         expect_ncols = 5
         self.assertEqual(trips.shape, (expect_nrows, expect_ncols))
+
 
 if __name__ == '__main__':
     unittest.main()
