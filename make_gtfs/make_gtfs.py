@@ -100,8 +100,11 @@ def parse_args():
     parser.add_argument('input_dir', nargs='?', type=str, default='.',
       help='path to a directory containing the input files '\
       '(default: current directory)')
-    parser.add_argument('-o', dest='output_file',
-      help="path to the GTFS output file (default: 'gtfs.zip')")
+    parser.add_argument('-o', dest='output_dir', 
+      help="path to the output directory (default: input_dir)")
+    parser.add_argument('-z', dest='as_zip', action='store_true', 
+      default=False,
+      help='Write the output as a zip file instead of a collection of text files (default: False')
     return parser.parse_args()
 
 def main():
@@ -114,7 +117,7 @@ def main():
     # Create and export feed
     feed = Feed(args.input_dir)
     feed.create_all()
-    feed.export(args.output_file)
+    feed.export(args.output_dir, as_zip=args.as_zip)
 
 
 class Feed(object):
@@ -189,21 +192,19 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``calendar.txt`` and save it to
         ``self.calendar``.
-        It is a dumb calendar with one service that operates
-        on every day of the week.
+        It is a basic calendar with one service that operates during the work
+        week, one that operates on Saturdays, and one that operates on Sundays.
         """
-        self.calendar = pd.DataFrame({
-          'service_id': 'c0', 
-          'monday': 1,
-          'tuesday': 1, 
-          'wednesday': 1,
-          'thursday': 1, 
-          'friday': 1, 
-          'saturday': 1, 
-          'sunday': 1, 
-          'start_date': self.config['start_date'], 
-          'end_date': self.config['end_date'],
-          }, index=[0])
+        start_date =  self.config['start_date']
+        end_date = self.config['end_date']
+        F = [
+          ['c_weekday', 1, 1, 1, 1, 1, 0, 0, start_date, end_date],
+          ['c_saturday', 0, 0, 0, 0, 0, 1, 0, start_date, end_date],
+          ['c_sunday', 0, 0, 0, 0, 0, 0, 1, start_date, end_date],
+          ]
+        self.calendar = pd.DataFrame(F, columns=[
+          'service_id', 'monday', 'tuesday', 'wednesday', 'thursday','friday',
+          'saturday', 'sunday', 'start_date', 'end_date'])
 
     def create_routes(self):
         """
@@ -230,6 +231,9 @@ class Feed(object):
         coordinates.
 
         Will create ``self.routes`` if it does not already exist.
+
+        The route IDs of routes without shapes (routes in ``routes.csv`` but 
+        not in ``shapes.geojson``) will not appear in the resulting dictionary.
         """
         if not hasattr(self, 'routes'):
             self.create_routes()
@@ -266,6 +270,8 @@ class Feed(object):
         linestring_by_route = self.get_linestring_by_route(use_utm=False)
         for index, row in self.routes.iterrows():
             route = row['route_id']
+            if route not in linestring_by_route:
+                continue
             linestring = linestring_by_route[route]
             shape = get_shape_id(route)
             rows = [[shape, i, lon, lat] 
@@ -321,7 +327,6 @@ class Feed(object):
             self.create_shapes()
 
         # Create trip IDs and directions
-        #self.add_num_trips_per_direction()
         F = []
         windows = self.get_service_windows()
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
@@ -329,10 +334,19 @@ class Feed(object):
             shape = get_shape_id(route)
             for wname, window in windows.items():
                 headway = row[wname + '_headway']
+                if 'saturday' in wname:
+                    service = 'c_saturday'
+                elif 'sunday' in wname:
+                    service = 'c_sunday'
+                else:
+                    service = 'c_weekday'
                 for subwindow in window:
                     start = subwindow[0]
                     duration = get_duration(*subwindow, units='s') 
-                    num_trips_per_direction = int(duration/(headway*60))
+                    try:
+                        num_trips_per_direction = int(duration/(headway*60))
+                    except ValueError:
+                        num_trips_per_direction = 0
                     for direction in range(2):
                         for i in range(num_trips_per_direction):
                             F.append([
@@ -341,12 +355,10 @@ class Feed(object):
                               str(direction), str(i)]), 
                               direction,
                               shape,
+                              service,
                               ])
         f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
-          'shape_id'])
-
-        # Create service IDs
-        f['service_id'] = self.calendar['service_id'].iat[0]
+          'shape_id', 'service_id'])
 
         # Save
         self.trips = f
@@ -372,6 +384,8 @@ class Feed(object):
           self.routes[['route_id', 'route_short_name']])
         for route, group in pd.merge(f, self.trips).groupby(
           'route_id'):
+            if route not in linestring_by_route:
+                continue
             length = linestring_by_route[route].length/1000  # kilometers
             speed = group['speed'].iat[0]  # kph
             duration = int((length/speed)*3600)  # seconds
@@ -421,7 +435,7 @@ class Feed(object):
         zip archive called ``gtfs.zip`` in the given output directory.
         If ``output_dir is None``, then write to ``self.input_dir``.
         """
-        names = ['agency', 'calendar', 'routes', 'stops', 'trips',
+        names = ['agency', 'calendar', 'routes', 'stops', 'shapes', 'trips',
           'stop_times']
         for name in names:
             assert hasattr(self, name),\

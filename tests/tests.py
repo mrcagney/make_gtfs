@@ -136,7 +136,7 @@ class TestFeed(unittest.TestCase):
         feed = akl
         feed.create_all()
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
-          'stop_times']
+          'stop_times', 'shapes']
         for name in names:
             self.assertTrue(hasattr(feed, name))
 
@@ -152,7 +152,7 @@ class TestFeed(unittest.TestCase):
         odir = 'tests/'
         feed.export(odir)
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
-          'stop_times']
+          'stop_times', 'shapes']
         for name in names:
             path = os.path.join(odir, name + '.txt')
             self.assertTrue(os.path.exists(path))
