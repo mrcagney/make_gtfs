@@ -16,43 +16,61 @@ DESC = """
   A configuration file (named 'config.json') is also required.        
   """
 
+# Weekday name to integer correspondence from GTFS
+INT_BY_WEEKDAY = {
+    'monday': 0,
+    'tuesday': 1,
+    'wednesday': 2,
+    'thursday': 3,
+    'friday': 4,
+    'saturday': 5,
+    'sunday': 6,
+}
+
 # Character to separate different chunks within an ID
 SEP = '#'
 
-def seconds_to_timestr(seconds, inverse=False):
+def timestr_to_seconds(x, inverse=False, mod24=False):
     """
-    Return the given number of integer seconds as the time string '%H:%M:%S'.
-    If ``inverse == True``, then do the inverse operation.
+    Given a time string of the form '%H:%M:%S', return the number of seconds
+    past midnight that it represents.
     In keeping with GTFS standards, the hours entry may be greater than 23.
+    If ``mod24 == True``, then return the number of seconds modulo ``24*3600``.
+    If ``inverse == True``, then do the inverse operation.
+    In this case, if ``mod24 == True`` also, then first take the number of 
+    seconds modulo ``24*3600``.
     """
     if not inverse:
         try:
-            seconds = int(seconds)
+            hours, mins, seconds = x.split(':')
+            result = int(hours)*3600 + int(mins)*60 + int(seconds)
+            if mod24:
+                result %= 24*3600
+        except:
+            result = None
+    else:
+        try:
+            seconds = int(x)
+            if mod24:
+                seconds %= 24*3600
             hours, remainder = divmod(seconds, 3600)
             mins, secs = divmod(remainder, 60)
             result = '{:02d}:{:02d}:{:02d}'.format(hours, mins, secs)
         except:
             result = None
-    else:
-        try:
-            hours, mins, seconds = seconds.split(':')
-            result = int(hours)*3600 + int(mins)*60 + int(seconds)
-        except:
-            result = None
     return result
 
-def timestr_mod_24(timestr):
+def get_bitlist(days_active):
     """
-    Given a GTFS time string in the format %H:%M:%S, return a timestring
-    in the same format but with the hours taken modulo 24.
+    Given a list of weekday names (e.g. ['sunday', 'tuesday']),
+    convert the weekday names to their corresponding integers 
+    ('monday'=0, 'tuesday'=1, ..., 'sunday'=6) to form a second list
+    ``s``, and return a list of seven bits, where a 1 in position ``i``
+    indicates that ``i`` lies in ``s`` and a 0 indicates otherwise.
+    Used to help create the GTFS file ``calendar.txt``.
     """
-    try:
-        hours, mins, seconds = [int(x) for x in timestr.split(':')]
-        hours %= 24
-        result = '{:02d}:{:02d}:{:02d}'.format(hours, mins, seconds)
-    except:
-        result = None
-    return result
+    days_active = {INT_BY_WEEKDAY[d] for d in days_active}
+    return [int(j in days_active) for j in range(7)]
 
 def get_duration(timestr1, timestr2, units='s'):
     """
@@ -65,8 +83,7 @@ def get_duration(timestr1, timestr2, units='s'):
     assert units in valid_units,\
       "Units must be one of {!s}".format(valid_units)
 
-    duration = seconds_to_timestr(timestr2, inverse=True) -\
-      seconds_to_timestr(timestr1, inverse=True)
+    duration = timestr_to_seconds(timestr2) - timestr_to_seconds(timestr1)
 
     if units == 's':
         return duration
@@ -76,10 +93,10 @@ def get_duration(timestr1, timestr2, units='s'):
         return duration/3600
 
 def get_shape_id(route_id):
-    return SEP.join(['s', route_id])
+    return SEP.join(['shp', route_id])
 
 def get_stop_ids(route_id):
-    return [SEP.join(['st', route_id, str(i)]) for i in range(2)]
+    return [SEP.join(['stp', route_id, str(i)]) for i in range(2)]
 
 def get_stop_names(route_short_name):
     return ['Route {!s} stop {!s}'.format(route_short_name, i)
@@ -137,6 +154,7 @@ class Feed(object):
         # Import files
         self.config = json.load(open(
           os.path.join(input_dir, 'config.json'), 'r'))
+        self.service_windows = self.config['service_windows']
         self.raw_shapes = json.load(open(
           os.path.join(input_dir,'shapes.geojson'), 'r'))        
         raw_routes = pd.read_csv(
@@ -163,20 +181,6 @@ class Feed(object):
         # Save
         self.raw_routes = raw_routes
 
-    def get_service_windows(self):
-        """
-        Return ``self.config['service_windows']``.
-        """
-        return self.config['service_windows']
-
-    def get_window_duration(self, window_name, units='s'):
-        """
-        Return the duration of the given service window in the given units.
-        Allowable units are 's' (seconds), 'min' (minutes), 'h' (hours).
-        """
-        window = self.get_service_windows()[window_name]
-        return sum(get_duration(*w, units=units) for w in window)
-
     def create_agency(self):
         """
         Create a Pandas data frame representing ``agency.txt`` and save it to
@@ -192,16 +196,33 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``calendar.txt`` and save it to
         ``self.calendar``.
-        It is a basic calendar with one service that operates during the work
-        week, one that operates on Saturdays, and one that operates on Sundays.
+        Create the services from the distinct ``days_active`` fields of 
+        ``self.service_windows``.
+        Also create a dictionary ``self.service_by_swname`` with the structure
+        service window name -> service ID.
         """
+        # Create a service ID for each distinct days_active field and map the
+        # service windows to those service IDs
+        def get_sid(bitlist):
+            return 'srv' + ''.join([str(b) for b in bitlist])
+
+        bitlists = set()
+        d = dict()
+        for sw in self.service_windows:
+            bitlist = get_bitlist(sw['days_active'])
+            bitlists.add(tuple(bitlist))
+            d[sw['name']] = get_sid(bitlist)
+
+        # Save d
+        self.service_by_swname = d
+
+        # Create calendar
         start_date =  self.config['start_date']
         end_date = self.config['end_date']
-        F = [
-          ['c_weekday', 1, 1, 1, 1, 1, 0, 0, start_date, end_date],
-          ['c_saturday', 0, 0, 0, 0, 0, 1, 0, start_date, end_date],
-          ['c_sunday', 0, 0, 0, 0, 0, 0, 1, start_date, end_date],
-          ]
+        F = []
+        for bitlist in bitlists: 
+            F.append([get_sid(bitlist)] + list(bitlist) +\
+              [start_date, end_date])
         self.calendar = pd.DataFrame(F, columns=[
           'service_id', 'monday', 'tuesday', 'wednesday', 'thursday','friday',
           'saturday', 'sunday', 'start_date', 'end_date'])
@@ -328,19 +349,14 @@ class Feed(object):
 
         # Create trip IDs and directions
         F = []
-        windows = self.get_service_windows()
         for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
             route = row['route_id']
             shape = get_shape_id(route)
-            for wname, window in windows.items():
-                headway = row[wname + '_headway']
-                if 'saturday' in wname:
-                    service = 'c_saturday'
-                elif 'sunday' in wname:
-                    service = 'c_sunday'
-                else:
-                    service = 'c_weekday'
-                for subwindow in window:
+            for sw in self.service_windows:
+                swname = sw['name']
+                headway = row[swname + '_headway']
+                service = self.service_by_swname[swname]
+                for subwindow in sw['subwindows']:
                     start = subwindow[0]
                     duration = get_duration(*subwindow, units='s') 
                     try:
@@ -351,7 +367,7 @@ class Feed(object):
                         for i in range(num_trips_per_direction):
                             F.append([
                               route, 
-                              SEP.join(['t', route, wname, start, 
+                              SEP.join(['t', route, swname, start, 
                               str(direction), str(i)]), 
                               direction,
                               shape,
@@ -393,14 +409,13 @@ class Feed(object):
             sids_by_direction = {0: sids_tmp, 1: sids_tmp[::-1]}
             for index, row in group.iterrows():
                 trip = row['trip_id']
-                junk, route, wname, base_timestr, direction, i =\
+                junk, route, swname, base_timestr, direction, i =\
                   trip.split(SEP)
                 direction = int(direction)
                 i = int(i)
                 sids = sids_by_direction[direction]
-                base_time = seconds_to_timestr(base_timestr,
-                  inverse=True)
-                headway = row[wname + '_headway']
+                base_time = timestr_to_seconds(base_timestr)
+                headway = row[swname + '_headway']
                 start_time = base_time + headway*60*i
                 end_time = start_time + duration
                 # Get end time from route length
@@ -411,7 +426,7 @@ class Feed(object):
           'arrival_time', 'departure_time'])
         g[['arrival_time', 'departure_time']] =\
           g[['arrival_time', 'departure_time']].applymap(
-          lambda x: seconds_to_timestr(x))
+          lambda x: timestr_to_seconds(x, inverse=True))
         self.stop_times = g
 
     def create_all(self):
@@ -429,7 +444,7 @@ class Feed(object):
     def export(self, output_dir=None, as_zip=False):
         """
         Assuming all the necessary data frames have been created
-        (as in create_all()), export them to CSV files in the given output
+        (as in create_all()), export them to CSV files to the given output
         directory.
         If ``as_zip`` is True, then instead write the files to a 
         zip archive called ``gtfs.zip`` in the given output directory.
@@ -441,7 +456,7 @@ class Feed(object):
             assert hasattr(self, name),\
               "You must create {!s}".format(name)
         
-        # Write files to a temporary directory 
+        # Write files 
         if output_dir is None:
             output_dir = self.input_dir
         if not os.path.exists(output_dir):
@@ -450,7 +465,7 @@ class Feed(object):
             path = os.path.join(output_dir, name + '.txt')
             getattr(self, name).to_csv(path, index=False)
 
-        # If requested, zip and delete files 
+        # If requested, zip files and then delete files 
         if as_zip:
             # Create a temporary directory and move CSV files there
             tmp_dir = os.path.join(output_dir, 'hello-tmp-dir')
