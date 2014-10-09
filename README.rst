@@ -5,7 +5,6 @@ from a CSV file of route headways, a GeoJSON file of route shapes, and a configu
 It's inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
 
 Experimental. 
-Needs more testing.
 Use at your own risk.
 
 Installation
@@ -62,22 +61,50 @@ It contains network metadata.
 The required fields and format are most easily illustrated by example::
 
     {
-      "agency_name":"Auckland Transport",
-      "agency_url":"https://at.govt.nz/",
-      "agency_timezone":"Pacific/Auckland",
-      "start_date":"20140101",
-      "end_date":"20150101",
-      "service_windows":{
-        "weekday_peak": [["07:00:00", "09:00:00"], ["16:00:00", "18:00:00"]],
-        "weekday_offpeak": [["09:00:00", "16:00:00"], ["18:00:00", "19:00:00"]],
-        "weekday_eve": [["06:00:00", "07:00:00"], ["19:00:00", "24:00:00"]],
-        "saturday_day": [["07:00:00", "19:00:00"]],
-        "saturday_eve": [["19:00:00", "24:00:00"]],
-        "sunday_day": [["07:00:00", "19:00:00"]],
-        "sunday_eve": [["19:00:00", "24:00:00"]]
-      },
-      "default_route_type":3,
-      "default_speed":20
+      "agency_name": "Auckland Transport",
+      "agency_url": "https://at.govt.nz/",
+      "agency_timezone": "Pacific/Auckland",
+      "start_date": "20160101",
+      "end_date": "20170101",
+      "service_windows": [
+        {
+          "name": "weekday_peak",
+          "subwindows": [["07:00:00", "09:00:00"], ["16:00:00", "18:00:00"]],
+          "days_active": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+        },
+        {
+          "name": "weekday_offpeak",
+          "subwindows": [["09:00:00", "16:00:00"], ["18:00:00", "19:00:00"]],
+          "days_active": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+        },
+        {
+          "name": "weekday_eve",
+          "subwindows": [["06:00:00", "07:00:00"], ["19:00:00", "24:00:00"]],
+          "days_active": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+        },
+        {
+          "name": "saturday_day",
+          "subwindows": [["07:00:00", "19:00:00"]],
+          "days_active": ["saturday"]
+        },
+        {
+          "name": "saturday_eve",
+          "subwindows": [["19:00:00", "24:00:00"]],
+          "days_active": ["saturday"]
+        },
+        {
+          "name": "sunday_day",
+          "subwindows": [["07:00:00", "19:00:00"]],
+          "days_active": ["sunday"]
+        },
+        {
+          "name": "sunday_eve",
+          "subwindows": [["19:00:00", "24:00:00"]],
+          "days_active": ["sunday"]
+        }
+      ],
+      "default_route_type": 3,
+      "default_speed": 20
     }
 
 
@@ -88,7 +115,7 @@ Basically,
 - ``routes.txt`` is created from ``routes.csv``
 - ``shapes.txt`` is created from ``shapes.geojson``
 - ``agency.txt`` is created from ``config.json``
-- ``calendar.txt`` is created in a dumb way with exactly one all-week service that applies to all trips
+- ``calendar.txt`` is created from ``config.json`` from the set of ``days_active`` values
 - ``stops.txt`` is created by making a pair of stops for each shape which lie on the shape's endpoints.  This will lead to duplicate stops in case shapes share endpoints.
 - ``trips.txt`` and ``stop_times.txt`` are created by taking each route, each service window, each service subwindow, and each direction (0 and 1), and running a set of trips starting on the hour and operating at the route's speed and headway specified for that service subwindow.  In particular, there is always an even number (possibly zero) of trips running on a route at any given time, half going of in one direction and half going in the opposite direction.
 

@@ -1,5 +1,6 @@
 import unittest
 import zipfile
+from copy import deepcopy
 
 import pandas as pd 
 from pandas.util.testing import assert_frame_equal, assert_series_equal
@@ -11,20 +12,20 @@ from make_gtfs.make_gtfs import *
 akl = Feed('data/auckland_snippet/')
 
 class TestFeed(unittest.TestCase):
-    def test_seconds_to_timestr(self):
-        seconds = 3600 + 60 + 1
-        timestr = '01:01:01'
-        self.assertEqual(seconds_to_timestr(seconds), timestr)
-        self.assertEqual(seconds_to_timestr(timestr, inverse=True), seconds)
-        self.assertIsNone(seconds_to_timestr(timestr))
-        self.assertIsNone(seconds_to_timestr(seconds, inverse=True))
-        self.assertIsNone(seconds_to_timestr('01:01', inverse=True))
-
-    def test_timestr_mod_24(self):
+    def test_timestr_to_seconds(self):
         timestr1 = '01:01:01'
-        self.assertEqual(timestr_mod_24(timestr1), timestr1)
+        seconds1 = 3600 + 60 + 1
         timestr2 = '25:01:01'
-        self.assertEqual(timestr_mod_24(timestr2), timestr1)
+        seconds2 = 25*3600 + 60 + 1
+        self.assertEqual(timestr_to_seconds(timestr1), seconds1)
+        self.assertEqual(timestr_to_seconds(seconds1, inverse=True), timestr1)
+        self.assertEqual(timestr_to_seconds(seconds2, inverse=True), timestr2)
+        self.assertEqual(timestr_to_seconds(timestr2, mod24=True), seconds1)
+        self.assertEqual(
+          timestr_to_seconds(seconds2, mod24=True, inverse=True), timestr1)
+        # Test error handling
+        self.assertIsNone(timestr_to_seconds(seconds1))
+        self.assertIsNone(timestr_to_seconds(timestr1, inverse=True))
         
     def test_get_duration(self):
         ts1 = '01:01:01'
@@ -34,19 +35,13 @@ class TestFeed(unittest.TestCase):
         self.assertEqual(get, expect)
 
     def test_init(self):
-        feed = akl
+        feed = deepcopy(akl)
         self.assertIsInstance(feed.raw_routes, pd.core.frame.DataFrame)
         self.assertIsInstance(feed.config, dict)
         self.assertIsInstance(feed.raw_shapes, dict)
 
-    def test_get_window_duration(self):
-        feed = akl
-        get = feed.get_window_duration('weekday_peak', units='h')
-        expect = 4
-        self.assertEqual(get, expect)
-
     def test_create_routes(self):
-        feed = akl
+        feed = deepcopy(akl)
         feed.create_routes()      
         routes = feed.routes 
         # Should be a data frame
@@ -57,7 +52,7 @@ class TestFeed(unittest.TestCase):
         self.assertEqual(routes.shape, (expect_nrows, expect_ncols))
 
     def test_create_linestring_by_route(self):
-        feed = akl
+        feed = deepcopy(akl)
         linestring_by_route = feed.get_linestring_by_route(use_utm=False)
         # Should be a dictionary
         self.assertIsInstance(linestring_by_route, dict)
@@ -68,7 +63,7 @@ class TestFeed(unittest.TestCase):
         self.assertEqual(len(linestring_by_route), feed.raw_routes.shape[0])
 
     def test_create_shapes(self):
-        feed = akl
+        feed = deepcopy(akl)
         feed.create_shapes()
         shapes = feed.shapes
         # Should be a data frame
@@ -80,7 +75,7 @@ class TestFeed(unittest.TestCase):
         self.assertEqual(shapes.shape[1], expect_ncols)
 
     def test_create_stops(self):
-        feed = akl
+        feed = deepcopy(akl)
         feed.create_stops()
         stops = feed.stops
         # Should be a data frame
@@ -91,13 +86,12 @@ class TestFeed(unittest.TestCase):
         self.assertEqual(stops.shape, (expect_nrows, expect_ncols))
 
     def test_create_trips(self):
-        feed = akl
+        feed = deepcopy(akl)
         feed.create_trips()
         trips = feed.trips
         # Should be a data frame
         self.assertIsInstance(trips, pd.core.frame.DataFrame)
         # Should have correct shape
-        windows = feed.get_service_windows()
         expect_nrows = 0
         for index, row in feed.raw_routes.iterrows():
             # Number of trips for this route is the sum over each service
@@ -105,19 +99,20 @@ class TestFeed(unittest.TestCase):
             # Twice because have a trip running in both directions 
             # simulateously
             expect_nrows += 2*sum(
-              feed.get_window_duration(wname, units='min')//\
-              row[wname + '_headway'] for wname in windows)
+              sum(get_duration(*s, units='min') 
+              for s in window['subwindows'])//\
+              row[window['name'] + '_headway'] 
+              for window in feed.service_windows)
         expect_ncols = 5
         self.assertEqual(trips.shape, (expect_nrows, expect_ncols))
 
     def test_create_stop_times(self):
-        feed = akl
+        feed = deepcopy(akl)
         feed.create_stop_times()
         stop_times = feed.stop_times
         # Should be a data frame
         self.assertIsInstance(stop_times, pd.core.frame.DataFrame)
         # Should have correct shape
-        windows = feed.get_service_windows()
         expect_nrows = 0
         for index, row in feed.raw_routes.iterrows():
             # Number of trips for this route is the sum over each service
@@ -127,13 +122,15 @@ class TestFeed(unittest.TestCase):
             # Number of stop times is twice the number of trips,
             # because each trip has two stops.
             expect_nrows += 4*sum(
-              feed.get_window_duration(wname, units='min')//\
-              row[wname + '_headway'] for wname in windows)
+              sum(get_duration(*s, units='min') 
+              for s in window['subwindows'])//\
+              row[window['name'] + '_headway'] 
+              for window in feed.service_windows)
         expect_ncols = 5
         self.assertEqual(stop_times.shape, (expect_nrows, expect_ncols))
 
     def test_create_all(self):
-        feed = akl
+        feed = deepcopy(akl)
         feed.create_all()
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
           'stop_times', 'shapes']
@@ -141,25 +138,27 @@ class TestFeed(unittest.TestCase):
             self.assertTrue(hasattr(feed, name))
 
     def test_export(self):
-        feed = akl
+        feed = deepcopy(akl)
         
         # Should raise an error if try to export before create files
-        self.assertRaises(AssertionError, feed.export())
+        with self.assertRaises(AssertionError):
+            feed.export()
         
         # Should create the necessary files. 
         # Already know they're CSV because rely on Pandas for CSV export.
         feed.create_all()
         odir = 'tests/'
-        feed.export(odir)
+        feed.export(output_dir=odir)
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
           'stop_times', 'shapes']
         for name in names:
             path = os.path.join(odir, name + '.txt')
             self.assertTrue(os.path.exists(path))
+            print('hello', path)
             os.remove(path) # Clean up
 
-        # Should create a zip archive this time
-        feed.export(odir, as_zip=True)
+        # # Should create a zip archive this time
+        feed.export(output_dir=odir, as_zip=True)
         zip_path = os.path.join(odir, 'gtfs.zip')
         self.assertTrue(zipfile.is_zipfile(zip_path))
     
