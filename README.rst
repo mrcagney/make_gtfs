@@ -45,6 +45,7 @@ The CSV file contains the columns
 - ``route_short_name`` (required): a unique short name for the route, e.g. '51X'
 - ``route_desc`` (optional): a description of the route
 - ``route_type`` (required): the `GTFS type of the route <https://developers.google.com/transit/gtfs/reference#routes_fields>`
+- ``shape_id`` (required): unique shape ID of the route that links to ``shapes.geojson``
 - ``service_window_id`` (required): a service window ID for the route taken from the file ``service_windows.csv`` 
 - ``frequency`` (required): the frequency of the route during the service window in vehicles per hour
 - ``is_bidirectional`` (required): 0 or 1 indicating whether the route travels in both directions along its shape (1) or not (0). If this field is 1, then trips will be created that travel in both directions along the route's path, each direction operating at the given frequency.  Otherwise, trips will be created that travel in only one direction, the direction of the route's path, operating at the given frequency. 
