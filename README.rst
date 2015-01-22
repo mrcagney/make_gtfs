@@ -80,6 +80,7 @@ Basically,
 - ``stops.txt`` is created by making a pair of stops for each shape which lie on the shape's endpoints.  This will lead to duplicate stops in case shapes share endpoints.
 - ``trips.txt`` and ``stop_times.txt`` are created by taking each route, each service window, and running a set of trips starting on the hour and operating at the route's speed and frequency specified for that service window.  If the route is bidirectional then two sets of trips in opposing directions will be created, each operating at the route's frequency. 
 
+
 Examples
 =========
 Play with ``examples/examples.ipynb`` in an iPython notebook or view the notebook as HTML `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.html>`_.

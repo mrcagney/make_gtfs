@@ -1,9 +1,9 @@
 route_short_name,route_desc,route_type,shape_id,service_window_id,frequency,is_bidirectional
-1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,s1,weekday_peak_1,12,1
-1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,s1,weekday_peak_2,12,1
-1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,s1,weekday_offpeak,8,1
-1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,s1,saturday,6,0
-2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,s2,weekday_peak_1,6,1
-2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,s2,weekday_peak_2,4,1
-2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,s2,weekday_offpeak,2,1
-2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,s2,saturday,2,0
+1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,weekday_peak_1,12,1
+1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,weekday_peak_2,12,1
+1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,weekday_offpeak,4,0
+1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,saturday,6,0
+2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,shp2,weekday_peak_1,6,1
+2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,shp2,weekday_peak_2,4,1
+2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,shp2,weekday_offpeak,2,1
+2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,shp2,saturday,2,0

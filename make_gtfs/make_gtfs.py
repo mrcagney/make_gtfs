@@ -175,7 +175,7 @@ class Feed(object):
         Create the service IDs from the distinct weekly activities of the 
         service windows.
         Also save the dictionary service window ID -> service ID to
-        ``self.service_by_service_window``.
+        ``self.service_by_window``.
         """
         windows = self.service_windows
         # Create a service ID for each distinct days_active field and map the
@@ -193,7 +193,7 @@ class Feed(object):
             bitlist = window[weekdays].tolist()
             d[window['service_window_id']] = get_sid(bitlist)
             bitlists.add(tuple(bitlist))
-        self.service_by_service_window = d
+        self.service_by_window = d
 
         # Create calendar
         start_date =  self.meta['start_date'].iat[0]
@@ -334,31 +334,37 @@ class Feed(object):
 
         # Create trip IDs and directions
         F = []
-        shape_by_route = self.shape_by_route
-        for index, row in pd.merge(self.proto_routes, self.routes).iterrows():
+        # Put together the route and service data
+        routes = pd.merge(self.routes[['route_id', 'route_short_name']], 
+          self.proto_routes)
+        routes = pd.merge(routes, self.service_windows)
+
+        # For each row in routes add unidirectional or bidirectional
+        # trips at the specified frequency
+        for index, row in routes.iterrows():
             route = row['route_id']
-            shape = shape_by_route[route]
-            for sw in self.service_windows:
-                swname = sw['name']
-                headway = row[swname + '_headway']
-                service = self.service_by_service_window[swname]
-                for subwindow in sw['subwindows']:
-                    start = subwindow[0]
-                    duration = get_duration(*subwindow, units='s') 
-                    try:
-                        num_trips_per_direction = int(duration/(headway*60))
-                    except ValueError:
-                        num_trips_per_direction = 0
-                    for direction in range(2):
-                        for i in range(num_trips_per_direction):
-                            F.append([
-                              route, 
-                              SEP.join(['t', route, swname, start, 
-                              str(direction), str(i)]), 
-                              direction,
-                              shape,
-                              service,
-                              ])
+            shape = row['shape_id']
+            window = row['service_window_id']
+            start, end = row[['start_time', 'end_time']].values
+            duration = get_duration(start, end, 'h')
+            # Rounding down occurs here if the duration isn't integral
+            # (bad input)
+            num_trips_per_direction = int(row['frequency']*duration)
+            service = self.service_by_window[window]
+            if row['is_bidirectional']:
+                directions = [0, 1]
+            else:
+                directions = [0] 
+            for direction in directions:
+                for i in range(num_trips_per_direction):
+                    F.append([
+                      route, 
+                      SEP.join(['t', route, window, start, 
+                      str(direction), str(i)]), 
+                      direction,
+                      shape,
+                      service,
+                      ])
         f = pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id', 
           'shape_id', 'service_id'])
 
@@ -382,31 +388,31 @@ class Feed(object):
         linestring_by_route = self.get_linestring_by_route(use_utm=True)
         # Store arrival and departure times as seconds past midnight and
         # convert to strings at the end
-        f = pd.merge(self.proto_routes, 
-          self.routes[['route_id', 'route_short_name']])
-        for route, group in pd.merge(f, self.trips).groupby(
-          'route_id'):
+        trips = pd.merge(self.routes[['route_id', 'route_short_name']], 
+          self.proto_routes)
+        trips = pd.merge(trips, self.trips)
+        for route, group in trips.groupby('route_id'):
             if route not in linestring_by_route:
                 continue
             length = linestring_by_route[route].length/1000  # kilometers
             speed = group['speed'].iat[0]  # kph
             duration = int((length/speed)*3600)  # seconds
-            sids_tmp = get_stop_ids(route)
-            sids_by_direction = {0: sids_tmp, 1: sids_tmp[::-1]}
+            stops_tmp = get_stop_ids(route)
+            stops_by_direction = {0: stops_tmp, 1: stops_tmp[::-1]}
             for index, row in group.iterrows():
                 trip = row['trip_id']
-                junk, route, swname, base_timestr, direction, i =\
+                junk, route, window, base_timestr, direction, i =\
                   trip.split(SEP)
                 direction = int(direction)
                 i = int(i)
-                sids = sids_by_direction[direction]
+                stops = stops_by_direction[direction]
                 base_time = timestr_to_seconds(base_timestr)
-                headway = row[swname + '_headway']
-                start_time = base_time + headway*60*i
+                headway = 3600/row['frequency']  # seconds
+                start_time = base_time + headway*i
                 end_time = start_time + duration
                 # Get end time from route length
-                entry0 = [trip, sids[0], 0, start_time, start_time]
-                entry1 = [trip, sids[1], 1, end_time, end_time]
+                entry0 = [trip, stops[0], 0, start_time, start_time]
+                entry1 = [trip, stops[1], 1, end_time, end_time]
                 F.extend([entry0, entry1])
         g = pd.DataFrame(F, columns=['trip_id', 'stop_id', 'stop_sequence',
           'arrival_time', 'departure_time'])
