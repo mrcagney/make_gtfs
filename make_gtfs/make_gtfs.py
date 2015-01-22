@@ -11,21 +11,8 @@ import utm
 # Program description
 DESC = """
   This is a Python 3.4 command line program that makes a GTFS Feed
-  from a GeoJSON file of route shapes (named 'shapes.geojson') and 
-  a CSV file of route names and headways (named 'routes.csv'). 
-  A configuration file (named 'config.json') is also required.        
+  from a few CSV files of route information ('service_windows.csv', 'routes.csv', 'meta.csv') and a GeoJSON file of route shapes ('shapes.geojson').
   """
-
-# Weekday name to integer correspondence from GTFS
-INT_BY_WEEKDAY = {
-    'monday': 0,
-    'tuesday': 1,
-    'wednesday': 2,
-    'thursday': 3,
-    'friday': 4,
-    'saturday': 5,
-    'sunday': 6,
-}
 
 # Character to separate different chunks within an ID
 SEP = '#'
@@ -60,18 +47,6 @@ def timestr_to_seconds(x, inverse=False, mod24=False):
             result = None
     return result
 
-def get_bitlist(days_active):
-    """
-    Given a list of weekday names (e.g. ['sunday', 'tuesday']),
-    convert the weekday names to their corresponding integers 
-    ('monday'=0, 'tuesday'=1, ..., 'sunday'=6) to form a second list
-    ``s``, and return a list of seven bits, where a 1 in position ``i``
-    indicates that ``i`` lies in ``s`` and a 0 indicates otherwise.
-    Used to help create the GTFS file ``calendar.txt``.
-    """
-    days_active = {INT_BY_WEEKDAY[d] for d in days_active}
-    return [int(j in days_active) for j in range(7)]
-
 def get_duration(timestr1, timestr2, units='s'):
     """
     Return the duration of the time period between the first and second 
@@ -91,9 +66,6 @@ def get_duration(timestr1, timestr2, units='s'):
         return duration/60
     else:
         return duration/3600
-
-def get_shape_id(route_id):
-    return SEP.join(['shp', route_id])
 
 def get_stop_ids(route_id):
     return [SEP.join(['stp', route_id, str(i)]) for i in range(2)]
@@ -152,34 +124,38 @@ class Feed(object):
         self.input_dir = input_dir
 
         # Import files
-        self.config = json.load(open(
-          os.path.join(input_dir, 'config.json'), 'r'))
-        self.service_windows = self.config['service_windows']
-        self.raw_shapes = json.load(open(
-          os.path.join(input_dir,'shapes.geojson'), 'r'))        
-        raw_routes = pd.read_csv(
+        service_windows = pd.read_csv(
+          os.path.join(input_dir, 'service_windows.csv'))
+        proto_routes = pd.read_csv(
           os.path.join(input_dir, 'routes.csv'), 
-          dtype={'route_short_name': str})
+          dtype={'route_short_name': str, 'service_window_id': str, 
+          'shape_id': str})
+        meta = pd.read_csv(
+          os.path.join(input_dir, 'meta.csv'),
+          dtype={'start_date': str, 'end_date': str})
+        proto_shapes = json.load(open(
+          os.path.join(input_dir, 'shapes.geojson'), 'r'))        
 
         # Clean up raw routes
-        cols = raw_routes.columns
+        cols = proto_routes.columns
         if 'route_desc' not in cols:
-            raw_routes['route_desc'] = np.nan
-        # Create route type and fill in missing values with default
-        # types from config
-        if 'route_type' not in cols:
-            raw_routes['route_type'] = np.nan
-        raw_routes['route_type'].fillna(
-          int(self.config['default_route_type']), inplace=True)
-        raw_routes['route_type'] = raw_routes['route_type'].astype(int)
+            proto_routes['route_desc'] = np.nan
+
+        # Fill missing route types with 3 (bus)
+        proto_routes['route_type'].fillna(3, inplace=True)
+        proto_routes['route_type'] = proto_routes['route_type'].astype(int)
+        
         # Create route speeds and fill in missing values with default speeds
-        # from config
         if 'speed' not in cols:
-            raw_routes['speed'] = np.nan
-        raw_routes['speed'].fillna(
-          int(self.config['default_speed']), inplace=True)
+            proto_routes['speed'] = np.nan
+        proto_routes['speed'].fillna(meta['default_route_speed'].iat[0], 
+          inplace=True)
+        
         # Save
-        self.raw_routes = raw_routes
+        self.proto_routes = proto_routes
+        self.service_windows = service_windows
+        self.meta = meta
+        self.proto_shapes = proto_shapes
 
     def create_agency(self):
         """
@@ -187,58 +163,64 @@ class Feed(object):
         ``self.agency``.
         """
         self.agency = pd.DataFrame({
-          'agency_name': self.config['agency_name'], 
-          'agency_url': self.config['agency_url'],
-          'agency_timezone': self.config['agency_timezone']
+          'agency_name': self.meta['agency_name'].iat[0], 
+          'agency_url': self.meta['agency_url'].iat[0],
+          'agency_timezone': self.meta['agency_timezone'].iat[0],
           }, index=[0])
 
     def create_calendar(self):
         """
         Create a Pandas data frame representing ``calendar.txt`` and save it to
         ``self.calendar``.
-        Create the services from the distinct ``days_active`` fields of 
-        ``self.service_windows``.
-        Also create a dictionary ``self.service_by_swname`` with the structure
-        service window name -> service ID.
+        Create the service IDs from the distinct weekly activities of the 
+        service windows.
+        Also save the dictionary service window ID -> service ID to
+        ``self.service_by_service_window``.
         """
+        windows = self.service_windows
         # Create a service ID for each distinct days_active field and map the
         # service windows to those service IDs
         def get_sid(bitlist):
             return 'srv' + ''.join([str(b) for b in bitlist])
 
+        weekdays = ['monday', 'tuesday', 'wednesday', 'thursday','friday',
+          'saturday', 'sunday']
         bitlists = set()
-        d = dict()
-        for sw in self.service_windows:
-            bitlist = get_bitlist(sw['days_active'])
-            bitlists.add(tuple(bitlist))
-            d[sw['name']] = get_sid(bitlist)
 
-        # Save d
-        self.service_by_swname = d
+        # Create a dictionary service window ID -> service ID
+        d = dict()
+        for index, window in windows.iterrows():
+            bitlist = window[weekdays].tolist()
+            d[window['service_window_id']] = get_sid(bitlist)
+            bitlists.add(tuple(bitlist))
+        self.service_by_service_window = d
 
         # Create calendar
-        start_date =  self.config['start_date']
-        end_date = self.config['end_date']
+        start_date =  self.meta['start_date'].iat[0]
+        end_date = self.meta['end_date'].iat[0]
         F = []
         for bitlist in bitlists: 
             F.append([get_sid(bitlist)] + list(bitlist) +\
               [start_date, end_date])
-        self.calendar = pd.DataFrame(F, columns=[
-          'service_id', 'monday', 'tuesday', 'wednesday', 'thursday','friday',
-          'saturday', 'sunday', 'start_date', 'end_date'])
+        self.calendar = pd.DataFrame(F, columns=
+          ['service_id'] + weekdays + ['start_date', 'end_date'])
 
     def create_routes(self):
         """
         Create a Pandas data frame representing ``routes.txt`` and save it
         to ``self.routes``.
+        Also create a dictionary with structure route ID -> shape ID and
+        save it to ``self.shape_by_route``.
         """
-        f = self.raw_routes[['route_short_name', 'route_desc', 
-          'route_type']].copy()
+        f = self.proto_routes[['route_short_name', 'route_desc', 
+          'route_type', 'shape_id']].drop_duplicates().copy()
 
         # Create route IDs
         f['route_id'] = ['r' + str(i) for i in range(f.shape[0])]
         
         # Save
+        self.shape_by_route = dict(f[['route_id', 'shape_id']].values)
+        del f['shape_id']
         self.routes = f 
 
     def get_linestring_by_route(self, use_utm=False):
@@ -271,10 +253,12 @@ class Feed(object):
             def proj(lon, lat):
                 return lon, lat
             
-        rid_by_rsn = dict(self.routes[['route_short_name', 'route_id']].values)
-        return {rid_by_rsn[f['properties']['route_short_name']]: 
+        linestring_by_shape = {f['properties']['shape_id']: 
           transform(proj, shape(f['geometry'])) 
-          for f in self.raw_shapes['features']}
+          for f in self.proto_shapes['features']}
+        shape_by_route = self.shape_by_route
+        return {route: linestring_by_shape[shape_by_route[route]] 
+          for route in self.routes['route_id'].values}
 
     def create_shapes(self):
         """
@@ -289,12 +273,13 @@ class Feed(object):
 
         F = []
         linestring_by_route = self.get_linestring_by_route(use_utm=False)
+        shape_by_route = self.shape_by_route
         for index, row in self.routes.iterrows():
             route = row['route_id']
             if route not in linestring_by_route:
                 continue
             linestring = linestring_by_route[route]
-            shape = get_shape_id(route)
+            shape = shape_by_route[route]
             rows = [[shape, i, lon, lat] 
               for i, (lon, lat) in enumerate(linestring.coords)]
             F.extend(rows)
@@ -349,13 +334,14 @@ class Feed(object):
 
         # Create trip IDs and directions
         F = []
-        for index, row in pd.merge(self.raw_routes, self.routes).iterrows():
+        shape_by_route = self.shape_by_route
+        for index, row in pd.merge(self.proto_routes, self.routes).iterrows():
             route = row['route_id']
-            shape = get_shape_id(route)
+            shape = shape_by_route[route]
             for sw in self.service_windows:
                 swname = sw['name']
                 headway = row[swname + '_headway']
-                service = self.service_by_swname[swname]
+                service = self.service_by_service_window[swname]
                 for subwindow in sw['subwindows']:
                     start = subwindow[0]
                     duration = get_duration(*subwindow, units='s') 
@@ -396,7 +382,7 @@ class Feed(object):
         linestring_by_route = self.get_linestring_by_route(use_utm=True)
         # Store arrival and departure times as seconds past midnight and
         # convert to strings at the end
-        f = pd.merge(self.raw_routes, 
+        f = pd.merge(self.proto_routes, 
           self.routes[['route_id', 'route_short_name']])
         for route, group in pd.merge(f, self.trips).groupby(
           'route_id'):
