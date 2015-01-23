@@ -1,2 +1,0 @@
-agency_name,agency_timezone,agency_url
-Auckland Transport,Pacific/Auckland,https://at.govt.nz/

@@ -1,2 +1,0 @@
-end_date,friday,monday,saturday,service_id,start_date,sunday,thursday,tuesday,wednesday
-20150101,1,1,1,c0,20140101,1,1,1,1
