@@ -21,7 +21,8 @@ setup(
         from a few CSV files of route information 
         ('service_windows.csv', 'routes.csv', 'meta.csv') 
         and a GeoJSON file of route shapes ('shapes.geojson').
-    """
+    """,
+    
     long_description=long_description,
 
     # The project's main homepage.
