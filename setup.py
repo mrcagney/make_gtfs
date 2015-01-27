@@ -14,11 +14,14 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.4',
+    version='0.5',
 
-    description='A Python 3.4 command line program that makes a GTFS feed'\
-      'from a CSV file of route headways, a GeoJSON file of route shapes,'\
-      'and a configuration file of metadata',
+    description="""
+        A Python 3.4 command line program that makes a GTFS Feed
+        from a few CSV files of route information 
+        ('service_windows.csv', 'routes.csv', 'meta.csv') 
+        and a GeoJSON file of route shapes ('shapes.geojson').
+    """
     long_description=long_description,
 
     # The project's main homepage.
@@ -59,8 +62,8 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
     install_requires=[
-      'Shapely>=1.4.0', 
-      'pandas>=0.14.1',
+      'Shapely==1.5.2', 
+      'pandas>=0.15.2',
       'utm>=0.3.1',
        ],
 

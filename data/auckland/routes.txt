@@ -1,3 +1,0 @@
-route_short_name,route_desc,route_type,route_id
-1,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,r0
-2,"Inner Link. Britomart, Three Lamps, Ponsonby, Grafton, Newmarket, Parnell and to Britomart",2,r1
