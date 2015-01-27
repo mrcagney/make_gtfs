@@ -58,12 +58,11 @@ class TestFeed(unittest.TestCase):
         linestring_by_route = feed.get_linestring_by_route(use_utm=False)
         # Should be a dictionary
         self.assertIsInstance(linestring_by_route, dict)
-        # The first element should be a Shapely linestring
-        self.assertIsInstance(list(linestring_by_route.values())[0], 
-          LineString)
-        # Should contain one shape for each route
-        expect_nshapes = feed.routes.shape[0]
-        self.assertEqual(len(linestring_by_route), expect_nshapes)
+        # The elements should be Shapely linestrings
+        for x in linestring_by_route.values():
+            self.assertIsInstance(x, LineString)
+        # Should contain at most one shape for each route
+        self.assertTrue(len(linestring_by_route) <= feed.routes.shape[0])
 
     def test_create_shapes(self):
         feed = deepcopy(akl)
@@ -72,7 +71,7 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(shapes, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nshapes = feed.routes.shape[0]
+        expect_nshapes = len(feed.get_linestring_by_route())
         expect_ncols = 4
         self.assertEqual(shapes.groupby('shape_id').ngroups, expect_nshapes)
         self.assertEqual(shapes.shape[1], expect_ncols)
@@ -84,7 +83,8 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(stops, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nrows = 2*feed.routes.shape[0]
+        nlinestrings = len(feed.get_linestring_by_route())
+        expect_nrows = 2*nlinestrings
         expect_ncols = 4
         self.assertEqual(stops.shape, (expect_nrows, expect_ncols))
 
@@ -98,10 +98,14 @@ class TestFeed(unittest.TestCase):
         f = pd.merge(feed.routes[['route_id', 'route_short_name']], 
           feed.proto_routes)
         f = pd.merge(f, feed.service_windows)
+        linestring_by_route = feed.get_linestring_by_route()
         expect_ntrips = 0
         for index, row in f.iterrows():
             # Get number of trips corresponding to this row
             # and add it to the total
+            route = row['route_id']
+            if route not in linestring_by_route:
+                continue
             frequency = row['frequency']
             start, end = row[['start_time', 'end_time']].values
             duration = get_duration(start, end, 'h')

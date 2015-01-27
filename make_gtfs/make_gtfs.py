@@ -4,8 +4,9 @@ import shutil
 
 import pandas as pd
 import numpy as np
+import shapely as sh
 from shapely.ops import transform
-from shapely.geometry import shape, mapping
+from shapely.geometry import shape as sh_shape
 import utm
 
 # Program description
@@ -225,18 +226,16 @@ class Feed(object):
 
     def get_linestring_by_route(self, use_utm=False):
         """
-        Given a GeoJSON feature collection of linestrings tagged with 
-        route short names, return a dictionary with structure
+        Return a dictionary of the form
         route ID -> Shapely linestring of shape.
+        Route IDs without shapes in ``shapes.geojson`` will not appear
+        in the dictionary.
         If ``use_utm == True``, then return each linestring in
         in UTM coordinates.
         Otherwise, return each linestring in WGS84 longitude-latitude
         coordinates.
 
         Will create ``self.routes`` if it does not already exist.
-
-        The route IDs of routes without shapes (routes in ``routes.csv`` but 
-        not in ``shapes.geojson``) will not appear in the resulting dictionary.
         """
         if not hasattr(self, 'routes'):
             self.create_routes()
@@ -254,17 +253,23 @@ class Feed(object):
                 return lon, lat
             
         linestring_by_shape = {f['properties']['shape_id']: 
-          transform(proj, shape(f['geometry'])) 
+          transform(proj, sh_shape(f['geometry'])) 
           for f in self.proto_shapes['features']}
         shape_by_route = self.shape_by_route
-        return {route: linestring_by_shape[shape_by_route[route]] 
-          for route in self.routes['route_id'].values}
+        result = {}
+        for route in self.routes['route_id'].values:
+            shape = shape_by_route[route]
+            if shape in linestring_by_shape:
+                result[route] = linestring_by_shape[shape]
+        return result
 
     def create_shapes(self):
         """
         Create a Pandas data frame representing ``shapes.txt`` and save it 
         to ``self.shapes``.
-        Each route has one shape that is used for both directions of travel. 
+        Routes without shapes in ``shapes.geojson`` will be ignored.
+        Each route with a shape has one shape that is used for 
+        both directions of travel. 
         
         Will create ``self.routes`` if it does not already exist.
         """
@@ -276,6 +281,7 @@ class Feed(object):
         shape_by_route = self.shape_by_route
         for index, row in self.routes.iterrows():
             route = row['route_id']
+            # Don't make shapes for routes without linestrings
             if route not in linestring_by_route:
                 continue
             linestring = linestring_by_route[route]
@@ -295,6 +301,8 @@ class Feed(object):
         This will create duplicate stops in case shapes share endpoints.
 
         Will create ``self.routes`` if it does not already exist.
+
+        Will not create stops for routes without linestrings.
         """
         if not hasattr(self, 'routes'):
             self.create_routes()
@@ -324,6 +332,8 @@ class Feed(object):
 
         Will create ``self.calendar``, ``self.routes``, and ``self.shapes`` 
         if they don't already exist.
+
+        Will not create trips for routes with null linestrings.
         """
         if not hasattr(self, 'calendar'):
             self.create_calendar()
@@ -341,8 +351,12 @@ class Feed(object):
         # add unidirectional or bidirectional trips at the specified frequency
         F = []
         num_trips = 0
+        linestring_by_route = self.get_linestring_by_route()
         for index, row in routes.iterrows():
             route = row['route_id']
+            # Don't create trips for routes with null linestrings
+            if route not in linestring_by_route:
+                continue
             shape = row['shape_id']
             window = row['service_window_id']
             start, end = row[['start_time', 'end_time']].values
