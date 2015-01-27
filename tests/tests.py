@@ -9,7 +9,7 @@ from shapely.geometry import Point, LineString, mapping
 from make_gtfs.make_gtfs import *
 
 # Load test feeds
-akl = Feed('data/auckland_snippet/')
+akl = Feed('data/auckland/')
 
 class TestFeed(unittest.TestCase):
     def test_timestr_to_seconds(self):
@@ -36,9 +36,10 @@ class TestFeed(unittest.TestCase):
 
     def test_init(self):
         feed = deepcopy(akl)
-        self.assertIsInstance(feed.raw_routes, pd.core.frame.DataFrame)
-        self.assertIsInstance(feed.config, dict)
-        self.assertIsInstance(feed.raw_shapes, dict)
+        self.assertIsInstance(feed.proto_routes, pd.core.frame.DataFrame)
+        self.assertIsInstance(feed.service_windows, pd.core.frame.DataFrame)
+        self.assertIsInstance(feed.meta, pd.core.frame.DataFrame)
+        self.assertIsInstance(feed.proto_shapes, dict)
 
     def test_create_routes(self):
         feed = deepcopy(akl)
@@ -47,7 +48,8 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(routes, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nrows = feed.raw_routes.shape[0]
+        expect_nrows = feed.proto_routes.drop_duplicates(
+          'route_short_name').shape[0]
         expect_ncols = 4
         self.assertEqual(routes.shape, (expect_nrows, expect_ncols))
 
@@ -60,7 +62,8 @@ class TestFeed(unittest.TestCase):
         self.assertIsInstance(list(linestring_by_route.values())[0], 
           LineString)
         # Should contain one shape for each route
-        self.assertEqual(len(linestring_by_route), feed.raw_routes.shape[0])
+        expect_nshapes = feed.routes.shape[0]
+        self.assertEqual(len(linestring_by_route), expect_nshapes)
 
     def test_create_shapes(self):
         feed = deepcopy(akl)
@@ -69,7 +72,7 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(shapes, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nshapes = feed.raw_routes.shape[0]
+        expect_nshapes = feed.routes.shape[0]
         expect_ncols = 4
         self.assertEqual(shapes.groupby('shape_id').ngroups, expect_nshapes)
         self.assertEqual(shapes.shape[1], expect_ncols)
@@ -81,7 +84,7 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(stops, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nrows = 2*feed.raw_routes.shape[0]
+        expect_nrows = 2*feed.routes.shape[0]
         expect_ncols = 4
         self.assertEqual(stops.shape, (expect_nrows, expect_ncols))
 
@@ -92,19 +95,20 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(trips, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nrows = 0
-        for index, row in feed.raw_routes.iterrows():
-            # Number of trips for this route is the sum over each service
-            # window of twice the window duration divided by the headway. 
-            # Twice because have a trip running in both directions 
-            # simulateously
-            expect_nrows += 2*sum(
-              sum(get_duration(*s, units='min') 
-              for s in window['subwindows'])//\
-              row[window['name'] + '_headway'] 
-              for window in feed.service_windows)
+        f = pd.merge(feed.routes[['route_id', 'route_short_name']], 
+          feed.proto_routes)
+        f = pd.merge(f, feed.service_windows)
+        expect_ntrips = 0
+        for index, row in f.iterrows():
+            # Get number of trips corresponding to this row
+            # and add it to the total
+            frequency = row['frequency']
+            start, end = row[['start_time', 'end_time']].values
+            duration = get_duration(start, end, 'h')
+            bidir = row['is_bidirectional']
+            expect_ntrips += int(duration*frequency)*(bidir + 1)
         expect_ncols = 5
-        self.assertEqual(trips.shape, (expect_nrows, expect_ncols))
+        self.assertEqual(trips.shape, (expect_ntrips, expect_ncols))
 
     def test_create_stop_times(self):
         feed = deepcopy(akl)
@@ -113,19 +117,9 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(stop_times, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nrows = 0
-        for index, row in feed.raw_routes.iterrows():
-            # Number of trips for this route is the sum over each service
-            # window of twice the window duration divided by the headway. 
-            # Twice because have a trip running in both directions 
-            # simulateously.
-            # Number of stop times is twice the number of trips,
-            # because each trip has two stops.
-            expect_nrows += 4*sum(
-              sum(get_duration(*s, units='min') 
-              for s in window['subwindows'])//\
-              row[window['name'] + '_headway'] 
-              for window in feed.service_windows)
+        # Number of stop times is twice the number of trips, 
+        # because each trip has two stops
+        expect_nrows = 2*feed.trips.shape[0]
         expect_ncols = 5
         self.assertEqual(stop_times.shape, (expect_nrows, expect_ncols))
 
@@ -148,13 +142,12 @@ class TestFeed(unittest.TestCase):
         # Already know they're CSV because rely on Pandas for CSV export.
         feed.create_all()
         odir = 'tests/'
-        feed.export(output_dir=odir)
+        feed.export(output_dir=odir, as_zip=False)
         names = ['agency', 'calendar', 'routes', 'stops', 'trips',
           'stop_times', 'shapes']
         for name in names:
             path = os.path.join(odir, name + '.txt')
             self.assertTrue(os.path.exists(path))
-            print('hello', path)
             os.remove(path) # Clean up
 
         # # Should create a zip archive this time
