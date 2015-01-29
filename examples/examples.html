@@ -1678,14 +1678,15 @@ div#notebook {
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[22]:
+In&nbsp;[27]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight"><pre><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="n">home</span> <span class="o">=</span> <span class="s">&#39;/home/araichev/make_gtfs/&#39;</span>
-
+<span class="n">home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">home</span><span class="p">)</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">home</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">make_gtfs.make_gtfs</span> <span class="kn">import</span> <span class="o">*</span>
 
@@ -1704,6 +1705,7 @@ In&nbsp;[22]:
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
+/home/araichev/make_gtfs
 The autoreload extension is already loaded. To reload it, use:
   %reload_ext autoreload
 
@@ -1718,11 +1720,11 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[23]:
+In&nbsp;[28]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight"><pre><span class="n">path</span> <span class="o">=</span> <span class="n">home</span> <span class="o">+</span> <span class="s">&#39;data/auckland_snippet/&#39;</span>
+<div class="highlight"><pre><span class="n">path</span> <span class="o">=</span> <span class="n">home</span> <span class="o">+</span> <span class="s">&#39;/data/auckland/&#39;</span>
 <span class="n">feed</span> <span class="o">=</span> <span class="n">Feed</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </pre></div>
 
@@ -1734,7 +1736,7 @@ In&nbsp;[23]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[24]:
+In&nbsp;[29]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1752,7 +1754,7 @@ In&nbsp;[24]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[24]:</div>
+    Out[29]:</div>
 
 <div class="output_html rendered_html output_subarea output_pyout">
 <div style="max-height:1000px;max-width:1500px;overflow:auto;">
@@ -1786,7 +1788,7 @@ In&nbsp;[24]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[28]:
+In&nbsp;[30]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1803,7 +1805,7 @@ In&nbsp;[28]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[28]:</div>
+    Out[30]:</div>
 
 <div class="output_html rendered_html output_subarea output_pyout">
 <div style="max-height:1000px;max-width:1500px;overflow:auto;">
@@ -1826,19 +1828,6 @@ In&nbsp;[28]:
   <tbody>
     <tr>
       <th>0</th>
-      <td> srv0000001</td>
-      <td> 0</td>
-      <td> 0</td>
-      <td> 0</td>
-      <td> 0</td>
-      <td> 0</td>
-      <td> 0</td>
-      <td> 1</td>
-      <td> 20160101</td>
-      <td> 20170101</td>
-    </tr>
-    <tr>
-      <th>1</th>
       <td> srv1111100</td>
       <td> 1</td>
       <td> 1</td>
@@ -1847,11 +1836,11 @@ In&nbsp;[28]:
       <td> 1</td>
       <td> 0</td>
       <td> 0</td>
-      <td> 20160101</td>
-      <td> 20170101</td>
+      <td> 20140101</td>
+      <td> 2015010</td>
     </tr>
     <tr>
-      <th>2</th>
+      <th>1</th>
       <td> srv0000010</td>
       <td> 0</td>
       <td> 0</td>
@@ -1860,8 +1849,8 @@ In&nbsp;[28]:
       <td> 0</td>
       <td> 1</td>
       <td> 0</td>
-      <td> 20160101</td>
-      <td> 20170101</td>
+      <td> 20140101</td>
+      <td> 2015010</td>
     </tr>
   </tbody>
 </table>
@@ -1877,7 +1866,7 @@ In&nbsp;[28]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[29]:
+In&nbsp;[31]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1894,7 +1883,7 @@ In&nbsp;[29]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[29]:</div>
+    Out[31]:</div>
 
 <div class="output_html rendered_html output_subarea output_pyout">
 <div style="max-height:1000px;max-width:1500px;overflow:auto;">
@@ -1911,45 +1900,24 @@ In&nbsp;[29]:
   <tbody>
     <tr>
       <th>0</th>
-      <td> 010</td>
+      <td> A</td>
       <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
       <td> 3</td>
-      <td> r0</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td> 020</td>
-      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
-      <td> 3</td>
-      <td> r1</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td> 030</td>
-      <td> Grey Lynn to Auckland University via Richmond ...</td>
-      <td> 3</td>
-      <td> r2</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td> 031</td>
-      <td> St Lukes to Auckland University via Richmond R...</td>
-      <td> 3</td>
-      <td> r3</td>
+      <td> rA</td>
     </tr>
     <tr>
       <th>4</th>
-      <td> 032</td>
-      <td> Westmere to Auckland University via Williamson...</td>
-      <td> 3</td>
-      <td> r4</td>
+      <td> B</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> 2</td>
+      <td> rB</td>
     </tr>
     <tr>
-      <th>5</th>
-      <td> 033</td>
-      <td> Benson Rd to Karangahape Rd via Remuera, Hobso...</td>
-      <td> 3</td>
-      <td> r5</td>
+      <th>8</th>
+      <td> C</td>
+      <td>                               Route with no shape</td>
+      <td> 2</td>
+      <td> rC</td>
     </tr>
   </tbody>
 </table>
@@ -1965,7 +1933,7 @@ In&nbsp;[29]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[30]:
+In&nbsp;[32]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -1982,7 +1950,7 @@ In&nbsp;[30]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[30]:</div>
+    Out[32]:</div>
 
 <div class="output_html rendered_html output_subarea output_pyout">
 <div style="max-height:1000px;max-width:1500px;overflow:auto;">
@@ -1998,211 +1966,211 @@ In&nbsp;[30]:
   </thead>
   <tbody>
     <tr>
-      <th>0  </th>
-      <td> shp#r0</td>
+      <th>0 </th>
+      <td> shp1</td>
       <td>  0</td>
       <td> 174.767029</td>
       <td>-36.844440</td>
     </tr>
     <tr>
-      <th>1  </th>
-      <td> shp#r0</td>
+      <th>1 </th>
+      <td> shp1</td>
       <td>  1</td>
       <td> 174.767401</td>
       <td>-36.843364</td>
     </tr>
     <tr>
-      <th>2  </th>
-      <td> shp#r0</td>
+      <th>2 </th>
+      <td> shp1</td>
       <td>  2</td>
       <td> 174.768695</td>
       <td>-36.843668</td>
     </tr>
     <tr>
-      <th>3  </th>
-      <td> shp#r0</td>
+      <th>3 </th>
+      <td> shp1</td>
       <td>  3</td>
       <td> 174.768113</td>
       <td>-36.845003</td>
     </tr>
     <tr>
-      <th>4  </th>
-      <td> shp#r0</td>
+      <th>4 </th>
+      <td> shp1</td>
       <td>  4</td>
       <td> 174.767631</td>
       <td>-36.844886</td>
     </tr>
     <tr>
-      <th>5  </th>
-      <td> shp#r0</td>
+      <th>5 </th>
+      <td> shp1</td>
       <td>  5</td>
       <td> 174.766853</td>
       <td>-36.844619</td>
     </tr>
     <tr>
-      <th>6  </th>
-      <td> shp#r0</td>
+      <th>6 </th>
+      <td> shp1</td>
       <td>  6</td>
       <td> 174.765414</td>
       <td>-36.849031</td>
     </tr>
     <tr>
-      <th>7  </th>
-      <td> shp#r0</td>
+      <th>7 </th>
+      <td> shp1</td>
       <td>  7</td>
       <td> 174.763086</td>
       <td>-36.854224</td>
     </tr>
     <tr>
-      <th>8  </th>
-      <td> shp#r0</td>
+      <th>8 </th>
+      <td> shp1</td>
       <td>  8</td>
       <td> 174.762292</td>
       <td>-36.853955</td>
     </tr>
     <tr>
-      <th>9  </th>
-      <td> shp#r0</td>
+      <th>9 </th>
+      <td> shp1</td>
       <td>  9</td>
       <td> 174.761962</td>
       <td>-36.853794</td>
     </tr>
     <tr>
-      <th>10 </th>
-      <td> shp#r0</td>
+      <th>10</th>
+      <td> shp1</td>
       <td> 10</td>
       <td> 174.758882</td>
       <td>-36.856034</td>
     </tr>
     <tr>
-      <th>11 </th>
-      <td> shp#r0</td>
+      <th>11</th>
+      <td> shp1</td>
       <td> 11</td>
       <td> 174.759072</td>
       <td>-36.857619</td>
     </tr>
     <tr>
-      <th>12 </th>
-      <td> shp#r0</td>
+      <th>12</th>
+      <td> shp1</td>
       <td> 12</td>
       <td> 174.760359</td>
       <td>-36.857912</td>
     </tr>
     <tr>
-      <th>13 </th>
-      <td> shp#r0</td>
+      <th>13</th>
+      <td> shp1</td>
       <td> 13</td>
       <td> 174.761580</td>
       <td>-36.857914</td>
     </tr>
     <tr>
-      <th>14 </th>
-      <td> shp#r0</td>
+      <th>14</th>
+      <td> shp1</td>
       <td> 14</td>
       <td> 174.765362</td>
       <td>-36.848887</td>
     </tr>
     <tr>
-      <th>15 </th>
-      <td> shp#r0</td>
+      <th>15</th>
+      <td> shp1</td>
       <td> 15</td>
       <td> 174.767029</td>
       <td>-36.844440</td>
     </tr>
     <tr>
-      <th>16 </th>
-      <td> shp#r1</td>
+      <th>16</th>
+      <td> shp2</td>
       <td>  0</td>
       <td> 174.744138</td>
       <td>-36.847422</td>
     </tr>
     <tr>
-      <th>17 </th>
-      <td> shp#r1</td>
+      <th>17</th>
+      <td> shp2</td>
       <td>  1</td>
       <td> 174.743802</td>
       <td>-36.848536</td>
     </tr>
     <tr>
-      <th>18 </th>
-      <td> shp#r1</td>
+      <th>18</th>
+      <td> shp2</td>
       <td>  2</td>
       <td> 174.744437</td>
       <td>-36.850401</td>
     </tr>
     <tr>
-      <th>19 </th>
-      <td> shp#r1</td>
+      <th>19</th>
+      <td> shp2</td>
       <td>  3</td>
       <td> 174.744949</td>
       <td>-36.852240</td>
     </tr>
     <tr>
-      <th>20 </th>
-      <td> shp#r1</td>
+      <th>20</th>
+      <td> shp2</td>
       <td>  4</td>
       <td> 174.745351</td>
       <td>-36.853356</td>
     </tr>
     <tr>
-      <th>21 </th>
-      <td> shp#r1</td>
+      <th>21</th>
+      <td> shp2</td>
       <td>  5</td>
       <td> 174.746586</td>
       <td>-36.856383</td>
     </tr>
     <tr>
-      <th>22 </th>
-      <td> shp#r1</td>
+      <th>22</th>
+      <td> shp2</td>
       <td>  6</td>
       <td> 174.749513</td>
       <td>-36.857891</td>
     </tr>
     <tr>
-      <th>23 </th>
-      <td> shp#r1</td>
+      <th>23</th>
+      <td> shp2</td>
       <td>  7</td>
       <td> 174.751020</td>
       <td>-36.858745</td>
     </tr>
     <tr>
-      <th>24 </th>
-      <td> shp#r1</td>
+      <th>24</th>
+      <td> shp2</td>
       <td>  8</td>
       <td> 174.752800</td>
       <td>-36.859625</td>
     </tr>
     <tr>
-      <th>25 </th>
-      <td> shp#r1</td>
+      <th>25</th>
+      <td> shp2</td>
       <td>  9</td>
       <td> 174.754449</td>
       <td>-36.858743</td>
     </tr>
     <tr>
-      <th>26 </th>
-      <td> shp#r1</td>
+      <th>26</th>
+      <td> shp2</td>
       <td> 10</td>
       <td> 174.758345</td>
       <td>-36.857714</td>
     </tr>
     <tr>
-      <th>27 </th>
-      <td> shp#r1</td>
+      <th>27</th>
+      <td> shp2</td>
       <td> 11</td>
       <td> 174.759975</td>
       <td>-36.857934</td>
     </tr>
     <tr>
-      <th>28 </th>
-      <td> shp#r1</td>
+      <th>28</th>
+      <td> shp2</td>
       <td> 12</td>
       <td> 174.762143</td>
       <td>-36.857998</td>
     </tr>
     <tr>
-      <th>29 </th>
-      <td> shp#r1</td>
+      <th>29</th>
+      <td> shp2</td>
       <td> 13</td>
       <td> 174.762377</td>
       <td>-36.857951</td>
@@ -2215,218 +2183,218 @@ In&nbsp;[30]:
       <td>...</td>
     </tr>
     <tr>
-      <th>188</th>
-      <td> shp#r5</td>
+      <th>41</th>
+      <td> shp2</td>
+      <td> 25</td>
+      <td> 174.781841</td>
+      <td>-36.861990</td>
+    </tr>
+    <tr>
+      <th>42</th>
+      <td> shp2</td>
+      <td> 26</td>
+      <td> 174.782643</td>
+      <td>-36.860773</td>
+    </tr>
+    <tr>
+      <th>43</th>
+      <td> shp2</td>
+      <td> 27</td>
+      <td> 174.782887</td>
+      <td>-36.858941</td>
+    </tr>
+    <tr>
+      <th>44</th>
+      <td> shp2</td>
+      <td> 28</td>
+      <td> 174.781213</td>
+      <td>-36.856564</td>
+    </tr>
+    <tr>
+      <th>45</th>
+      <td> shp2</td>
+      <td> 29</td>
+      <td> 174.778722</td>
+      <td>-36.852603</td>
+    </tr>
+    <tr>
+      <th>46</th>
+      <td> shp2</td>
+      <td> 30</td>
+      <td> 174.778063</td>
+      <td>-36.851994</td>
+    </tr>
+    <tr>
+      <th>47</th>
+      <td> shp2</td>
+      <td> 31</td>
+      <td> 174.775938</td>
+      <td>-36.851178</td>
+    </tr>
+    <tr>
+      <th>48</th>
+      <td> shp2</td>
+      <td> 32</td>
+      <td> 174.774518</td>
+      <td>-36.850486</td>
+    </tr>
+    <tr>
+      <th>49</th>
+      <td> shp2</td>
+      <td> 33</td>
+      <td> 174.774569</td>
+      <td>-36.849787</td>
+    </tr>
+    <tr>
+      <th>50</th>
+      <td> shp2</td>
+      <td> 34</td>
+      <td> 174.774394</td>
+      <td>-36.848658</td>
+    </tr>
+    <tr>
+      <th>51</th>
+      <td> shp2</td>
+      <td> 35</td>
+      <td> 174.773665</td>
+      <td>-36.847417</td>
+    </tr>
+    <tr>
+      <th>52</th>
+      <td> shp2</td>
+      <td> 36</td>
+      <td> 174.772680</td>
+      <td>-36.846450</td>
+    </tr>
+    <tr>
+      <th>53</th>
+      <td> shp2</td>
+      <td> 37</td>
+      <td> 174.771760</td>
+      <td>-36.845896</td>
+    </tr>
+    <tr>
+      <th>54</th>
+      <td> shp2</td>
+      <td> 38</td>
+      <td> 174.770930</td>
+      <td>-36.845632</td>
+    </tr>
+    <tr>
+      <th>55</th>
+      <td> shp2</td>
+      <td> 39</td>
+      <td> 174.769794</td>
+      <td>-36.845490</td>
+    </tr>
+    <tr>
+      <th>56</th>
+      <td> shp2</td>
+      <td> 40</td>
+      <td> 174.767472</td>
+      <td>-36.844944</td>
+    </tr>
+    <tr>
+      <th>57</th>
+      <td> shp2</td>
+      <td> 41</td>
+      <td> 174.765344</td>
+      <td>-36.844280</td>
+    </tr>
+    <tr>
+      <th>58</th>
+      <td> shp2</td>
+      <td> 42</td>
+      <td> 174.764025</td>
+      <td>-36.844294</td>
+    </tr>
+    <tr>
+      <th>59</th>
+      <td> shp2</td>
+      <td> 43</td>
+      <td> 174.762390</td>
+      <td>-36.844776</td>
+    </tr>
+    <tr>
+      <th>60</th>
+      <td> shp2</td>
+      <td> 44</td>
+      <td> 174.761424</td>
+      <td>-36.845411</td>
+    </tr>
+    <tr>
+      <th>61</th>
+      <td> shp2</td>
+      <td> 45</td>
+      <td> 174.759115</td>
+      <td>-36.845826</td>
+    </tr>
+    <tr>
+      <th>62</th>
+      <td> shp2</td>
       <td> 46</td>
-      <td> 174.796266</td>
-      <td>-36.864332</td>
+      <td> 174.756675</td>
+      <td>-36.846161</td>
     </tr>
     <tr>
-      <th>189</th>
-      <td> shp#r5</td>
+      <th>63</th>
+      <td> shp2</td>
       <td> 47</td>
-      <td> 174.796057</td>
-      <td>-36.869880</td>
+      <td> 174.752991</td>
+      <td>-36.845157</td>
     </tr>
     <tr>
-      <th>190</th>
-      <td> shp#r5</td>
+      <th>64</th>
+      <td> shp2</td>
       <td> 48</td>
-      <td> 174.795016</td>
-      <td>-36.872022</td>
+      <td> 174.751725</td>
+      <td>-36.847100</td>
     </tr>
     <tr>
-      <th>191</th>
-      <td> shp#r5</td>
+      <th>65</th>
+      <td> shp2</td>
       <td> 49</td>
-      <td> 174.793710</td>
-      <td>-36.874369</td>
+      <td> 174.751048</td>
+      <td>-36.848250</td>
     </tr>
     <tr>
-      <th>192</th>
-      <td> shp#r5</td>
+      <th>66</th>
+      <td> shp2</td>
       <td> 50</td>
-      <td> 174.793534</td>
-      <td>-36.876916</td>
+      <td> 174.749652</td>
+      <td>-36.848449</td>
     </tr>
     <tr>
-      <th>193</th>
-      <td> shp#r5</td>
+      <th>67</th>
+      <td> shp2</td>
       <td> 51</td>
-      <td> 174.792132</td>
-      <td>-36.878138</td>
+      <td> 174.747900</td>
+      <td>-36.848519</td>
     </tr>
     <tr>
-      <th>194</th>
-      <td> shp#r5</td>
+      <th>68</th>
+      <td> shp2</td>
       <td> 52</td>
-      <td> 174.792132</td>
-      <td>-36.879126</td>
+      <td> 174.746635</td>
+      <td>-36.847883</td>
     </tr>
     <tr>
-      <th>195</th>
-      <td> shp#r5</td>
+      <th>69</th>
+      <td> shp2</td>
       <td> 53</td>
-      <td> 174.791957</td>
-      <td>-36.879468</td>
+      <td> 174.745532</td>
+      <td>-36.847517</td>
     </tr>
     <tr>
-      <th>196</th>
-      <td> shp#r5</td>
+      <th>70</th>
+      <td> shp2</td>
       <td> 54</td>
-      <td> 174.793922</td>
-      <td>-36.880120</td>
-    </tr>
-    <tr>
-      <th>197</th>
-      <td> shp#r5</td>
-      <td> 55</td>
-      <td> 174.795005</td>
-      <td>-36.880445</td>
-    </tr>
-    <tr>
-      <th>198</th>
-      <td> shp#r5</td>
-      <td> 56</td>
-      <td> 174.798411</td>
-      <td>-36.880790</td>
-    </tr>
-    <tr>
-      <th>199</th>
-      <td> shp#r5</td>
-      <td> 57</td>
-      <td> 174.802646</td>
-      <td>-36.881171</td>
-    </tr>
-    <tr>
-      <th>200</th>
-      <td> shp#r5</td>
-      <td> 58</td>
-      <td> 174.803601</td>
-      <td>-36.878973</td>
-    </tr>
-    <tr>
-      <th>201</th>
-      <td> shp#r5</td>
-      <td> 59</td>
-      <td> 174.803845</td>
-      <td>-36.878279</td>
-    </tr>
-    <tr>
-      <th>202</th>
-      <td> shp#r5</td>
-      <td> 60</td>
-      <td> 174.803175</td>
-      <td>-36.875512</td>
-    </tr>
-    <tr>
-      <th>203</th>
-      <td> shp#r5</td>
-      <td> 61</td>
-      <td> 174.803801</td>
-      <td>-36.873947</td>
-    </tr>
-    <tr>
-      <th>204</th>
-      <td> shp#r5</td>
-      <td> 62</td>
-      <td> 174.804556</td>
-      <td>-36.873543</td>
-    </tr>
-    <tr>
-      <th>205</th>
-      <td> shp#r5</td>
-      <td> 63</td>
-      <td> 174.804932</td>
-      <td>-36.873094</td>
-    </tr>
-    <tr>
-      <th>206</th>
-      <td> shp#r5</td>
-      <td> 64</td>
-      <td> 174.807461</td>
-      <td>-36.872700</td>
-    </tr>
-    <tr>
-      <th>207</th>
-      <td> shp#r5</td>
-      <td> 65</td>
-      <td> 174.808938</td>
-      <td>-36.872679</td>
-    </tr>
-    <tr>
-      <th>208</th>
-      <td> shp#r5</td>
-      <td> 66</td>
-      <td> 174.809801</td>
-      <td>-36.873316</td>
-    </tr>
-    <tr>
-      <th>209</th>
-      <td> shp#r5</td>
-      <td> 67</td>
-      <td> 174.810851</td>
-      <td>-36.874252</td>
-    </tr>
-    <tr>
-      <th>210</th>
-      <td> shp#r5</td>
-      <td> 68</td>
-      <td> 174.812804</td>
-      <td>-36.875530</td>
-    </tr>
-    <tr>
-      <th>211</th>
-      <td> shp#r5</td>
-      <td> 69</td>
-      <td> 174.813968</td>
-      <td>-36.875701</td>
-    </tr>
-    <tr>
-      <th>212</th>
-      <td> shp#r5</td>
-      <td> 70</td>
-      <td> 174.813582</td>
-      <td>-36.877264</td>
-    </tr>
-    <tr>
-      <th>213</th>
-      <td> shp#r5</td>
-      <td> 71</td>
-      <td> 174.808934</td>
-      <td>-36.876616</td>
-    </tr>
-    <tr>
-      <th>214</th>
-      <td> shp#r5</td>
-      <td> 72</td>
-      <td> 174.808617</td>
-      <td>-36.876251</td>
-    </tr>
-    <tr>
-      <th>215</th>
-      <td> shp#r5</td>
-      <td> 73</td>
-      <td> 174.808918</td>
-      <td>-36.875324</td>
-    </tr>
-    <tr>
-      <th>216</th>
-      <td> shp#r5</td>
-      <td> 74</td>
-      <td> 174.809021</td>
-      <td>-36.874493</td>
-    </tr>
-    <tr>
-      <th>217</th>
-      <td> shp#r5</td>
-      <td> 75</td>
-      <td> 174.809914</td>
-      <td>-36.873762</td>
+      <td> 174.744298</td>
+      <td>-36.847422</td>
     </tr>
   </tbody>
 </table>
-<p>218 rows × 4 columns</p>
+<p>71 rows × 4 columns</p>
 </div>
 </div>
 
@@ -2472,88 +2440,32 @@ In&nbsp;[33]:
   </thead>
   <tbody>
     <tr>
-      <th>0 </th>
-      <td> stp#r4#0</td>
-      <td> Route 032 stop 0</td>
-      <td> 174.766889</td>
-      <td>-36.844595</td>
+      <th>0</th>
+      <td> stp#shp1#0</td>
+      <td> Stop 0 on shape shp1 </td>
+      <td> 174.767029</td>
+      <td>-36.844440</td>
     </tr>
     <tr>
-      <th>1 </th>
-      <td> stp#r4#1</td>
-      <td> Route 032 stop 1</td>
-      <td> 174.723916</td>
-      <td>-36.851549</td>
+      <th>1</th>
+      <td> stp#shp1#1</td>
+      <td> Stop 1 on shape shp1 </td>
+      <td> 174.767029</td>
+      <td>-36.844440</td>
     </tr>
     <tr>
-      <th>2 </th>
-      <td> stp#r3#0</td>
-      <td> Route 031 stop 0</td>
-      <td> 174.737212</td>
-      <td>-36.864404</td>
-    </tr>
-    <tr>
-      <th>3 </th>
-      <td> stp#r3#1</td>
-      <td> Route 031 stop 1</td>
-      <td> 174.735337</td>
-      <td>-36.884476</td>
-    </tr>
-    <tr>
-      <th>4 </th>
-      <td> stp#r1#0</td>
-      <td> Route 020 stop 0</td>
+      <th>2</th>
+      <td> stp#shp2#0</td>
+      <td> Stop 0 on shape shp2 </td>
       <td> 174.744138</td>
       <td>-36.847422</td>
     </tr>
     <tr>
-      <th>5 </th>
-      <td> stp#r1#1</td>
-      <td> Route 020 stop 1</td>
+      <th>3</th>
+      <td> stp#shp2#1</td>
+      <td> Stop 1 on shape shp2 </td>
       <td> 174.744298</td>
       <td>-36.847422</td>
-    </tr>
-    <tr>
-      <th>6 </th>
-      <td> stp#r2#0</td>
-      <td> Route 030 stop 0</td>
-      <td> 174.768581</td>
-      <td>-36.851434</td>
-    </tr>
-    <tr>
-      <th>7 </th>
-      <td> stp#r2#1</td>
-      <td> Route 030 stop 1</td>
-      <td> 174.737459</td>
-      <td>-36.864505</td>
-    </tr>
-    <tr>
-      <th>8 </th>
-      <td> stp#r0#0</td>
-      <td> Route 010 stop 0</td>
-      <td> 174.767029</td>
-      <td>-36.844440</td>
-    </tr>
-    <tr>
-      <th>9 </th>
-      <td> stp#r0#1</td>
-      <td> Route 010 stop 1</td>
-      <td> 174.767029</td>
-      <td>-36.844440</td>
-    </tr>
-    <tr>
-      <th>10</th>
-      <td> stp#r5#0</td>
-      <td> Route 033 stop 0</td>
-      <td> 174.759375</td>
-      <td>-36.857818</td>
-    </tr>
-    <tr>
-      <th>11</th>
-      <td> stp#r5#1</td>
-      <td> Route 033 stop 1</td>
-      <td> 174.809914</td>
-      <td>-36.873762</td>
     </tr>
   </tbody>
 </table>
@@ -2573,8 +2485,9 @@ In&nbsp;[34]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
-<div class="highlight"><pre><span class="n">feed</span><span class="o">.</span><span class="n">create_trips</span><span class="p">()</span>
-<span class="n">feed</span><span class="o">.</span><span class="n">trips</span>
+<div class="highlight"><pre><span class="n">f</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">feed</span><span class="o">.</span><span class="n">routes</span><span class="p">[[</span><span class="s">&#39;route_id&#39;</span><span class="p">,</span> <span class="s">&#39;route_short_name&#39;</span><span class="p">]],</span> <span class="n">feed</span><span class="o">.</span><span class="n">frequencies</span><span class="p">)</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">feed</span><span class="o">.</span><span class="n">service_windows</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s">&#39;route_id&#39;</span><span class="p">)</span>
+<span class="n">f</span>
 </pre></div>
 
 </div>
@@ -2595,504 +2508,217 @@ In&nbsp;[34]:
     <tr style="text-align: right;">
       <th></th>
       <th>route_id</th>
-      <th>trip_id</th>
-      <th>direction_id</th>
+      <th>route_short_name</th>
+      <th>route_desc</th>
+      <th>route_type</th>
       <th>shape_id</th>
-      <th>service_id</th>
+      <th>service_window_id</th>
+      <th>frequency</th>
+      <th>direction</th>
+      <th>speed</th>
+      <th>start_time</th>
+      <th>end_time</th>
+      <th>monday</th>
+      <th>tuesday</th>
+      <th>wednesday</th>
+      <th>thursday</th>
+      <th>friday</th>
+      <th>saturday</th>
+      <th>sunday</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>0   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#0</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>1   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#1</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>2   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#2</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>3   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#3</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>4   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#4</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>5   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#5</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>6   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#6</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>7   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#7</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>8   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#8</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>9   </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#0#9</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>10  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#10</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>11  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#11</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>12  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#12</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>13  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#13</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>14  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#14</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>15  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#15</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>16  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#16</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>17  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#17</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>18  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#18</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>19  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#19</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>20  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#20</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>21  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#21</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>22  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#22</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>23  </th>
-      <td> r0</td>
-      <td> t#r0#weekday_peak#07:00:00#0#23</td>
-      <td> 0</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>24  </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#1#0</td>
+      <th>0</th>
+      <td> rA</td>
+      <td> A</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> 3</td>
+      <td> shp1</td>
+      <td>  weekday_peak_1</td>
+      <td> 12</td>
       <td> 1</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>25  </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#1#1</td>
+      <td> 20</td>
+      <td> 07:00:00</td>
+      <td> 09:00:00</td>
       <td> 1</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>26  </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#1#2</td>
       <td> 1</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>27  </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#1#3</td>
       <td> 1</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>28  </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#1#4</td>
       <td> 1</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>29  </th>
-      <td> r0</td>
-      <td>  t#r0#weekday_peak#07:00:00#1#5</td>
       <td> 1</td>
-      <td> shp#r0</td>
-      <td> srv1111100</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>2018</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#0#4</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2019</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#0#5</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
     </tr>
     <tr>
-      <th>2020</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#0#6</td>
+      <th>2</th>
+      <td> rA</td>
+      <td> A</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> 3</td>
+      <td> shp1</td>
+      <td>  weekday_peak_2</td>
+      <td> 12</td>
+      <td> 1</td>
+      <td> 20</td>
+      <td> 15:00:00</td>
+      <td> 17:00:00</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2021</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#0#7</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
     </tr>
     <tr>
-      <th>2022</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#0#8</td>
+      <th>4</th>
+      <td> rA</td>
+      <td> A</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> 3</td>
+      <td> shp1</td>
+      <td> weekday_offpeak</td>
+      <td>  4</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2023</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#0#9</td>
+      <td> 20</td>
+      <td> 09:00:00</td>
+      <td> 15:00:00</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2024</th>
-      <td> r5</td>
-      <td>   t#r5#sunday_day#07:00:00#0#10</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
     </tr>
     <tr>
-      <th>2025</th>
-      <td> r5</td>
-      <td>   t#r5#sunday_day#07:00:00#0#11</td>
+      <th>6</th>
+      <td> rA</td>
+      <td> A</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> 3</td>
+      <td> shp1</td>
+      <td>        saturday</td>
+      <td>  6</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2026</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#0</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2027</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#1</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2028</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#2</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2029</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#3</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2030</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#4</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2031</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#5</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2032</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#6</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2033</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#7</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2034</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#8</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2035</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_day#07:00:00#1#9</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2036</th>
-      <td> r5</td>
-      <td>   t#r5#sunday_day#07:00:00#1#10</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2037</th>
-      <td> r5</td>
-      <td>   t#r5#sunday_day#07:00:00#1#11</td>
-      <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2038</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#0#0</td>
+      <td> 20</td>
+      <td> 09:00:00</td>
+      <td> 19:00:00</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2039</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#0#1</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2040</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#0#2</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2041</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#0#3</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
-    </tr>
-    <tr>
-      <th>2042</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#0#4</td>
       <td> 0</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
+      <td> 1</td>
+      <td> 0</td>
     </tr>
     <tr>
-      <th>2043</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#1#0</td>
+      <th>1</th>
+      <td> rB</td>
+      <td> B</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> 2</td>
+      <td> shp2</td>
+      <td>  weekday_peak_1</td>
+      <td>  6</td>
+      <td> 2</td>
+      <td> 20</td>
+      <td> 07:00:00</td>
+      <td> 09:00:00</td>
       <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 0</td>
+      <td> 0</td>
     </tr>
     <tr>
-      <th>2044</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#1#1</td>
+      <th>3</th>
+      <td> rB</td>
+      <td> B</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> 2</td>
+      <td> shp2</td>
+      <td>  weekday_peak_2</td>
+      <td>  4</td>
+      <td> 2</td>
+      <td> 20</td>
+      <td> 15:00:00</td>
+      <td> 17:00:00</td>
       <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 0</td>
+      <td> 0</td>
     </tr>
     <tr>
-      <th>2045</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#1#2</td>
+      <th>5</th>
+      <td> rB</td>
+      <td> B</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> 2</td>
+      <td> shp2</td>
+      <td> weekday_offpeak</td>
+      <td>  2</td>
       <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
+      <td> 20</td>
+      <td> 09:00:00</td>
+      <td> 15:00:00</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 1</td>
+      <td> 0</td>
+      <td> 0</td>
     </tr>
     <tr>
-      <th>2046</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#1#3</td>
+      <th>7</th>
+      <td> rB</td>
+      <td> B</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> 2</td>
+      <td> shp2</td>
+      <td>        saturday</td>
+      <td>  2</td>
+      <td> 0</td>
+      <td> 20</td>
+      <td> 09:00:00</td>
+      <td> 19:00:00</td>
+      <td> 0</td>
+      <td> 0</td>
+      <td> 0</td>
+      <td> 0</td>
+      <td> 0</td>
       <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
+      <td> 0</td>
     </tr>
     <tr>
-      <th>2047</th>
-      <td> r5</td>
-      <td>    t#r5#sunday_eve#19:00:00#1#4</td>
+      <th>8</th>
+      <td> rC</td>
+      <td> C</td>
+      <td>                               Route with no shape</td>
+      <td> 2</td>
+      <td> shp3</td>
+      <td>        saturday</td>
+      <td>  2</td>
+      <td> 0</td>
+      <td> 20</td>
+      <td> 09:00:00</td>
+      <td> 19:00:00</td>
+      <td> 0</td>
+      <td> 0</td>
+      <td> 0</td>
+      <td> 0</td>
+      <td> 0</td>
       <td> 1</td>
-      <td> shp#r5</td>
-      <td> srv0000001</td>
+      <td> 0</td>
     </tr>
   </tbody>
 </table>
-<p>2048 rows × 5 columns</p>
 </div>
 </div>
 
@@ -3105,7 +2731,908 @@ In&nbsp;[34]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[35]:
+In&nbsp;[38]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight"><pre><span class="n">feed</span><span class="o">.</span><span class="n">create_trips</span><span class="p">()</span>
+<span class="n">feed</span><span class="o">.</span><span class="n">trips</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[38]:</div>
+
+<div class="output_html rendered_html output_subarea output_pyout">
+<div style="max-height:1000px;max-width:1500px;overflow:auto;">
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>route_id</th>
+      <th>trip_id</th>
+      <th>direction_id</th>
+      <th>shape_id</th>
+      <th>service_id</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#0</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>1  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#1</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>2  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#2</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>3  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#3</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>4  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#4</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>5  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#5</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>6  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#6</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>7  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#7</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>8  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#8</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>9  </th>
+      <td> rA</td>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#9</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>10 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#10</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>11 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#11</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>12 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#12</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>13 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#13</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>14 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#14</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>15 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#15</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>16 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#16</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>17 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#17</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>18 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#18</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>19 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#19</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>20 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#20</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>21 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#21</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>22 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#22</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>23 </th>
+      <td> rA</td>
+      <td> t#rA#weekday_peak_1#07:00:00#1#23</td>
+      <td> 1</td>
+      <td> shp1</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>24 </th>
+      <td> rB</td>
+      <td>  t#rB#weekday_peak_1#07:00:00#0#0</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>25 </th>
+      <td> rB</td>
+      <td>  t#rB#weekday_peak_1#07:00:00#0#1</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>26 </th>
+      <td> rB</td>
+      <td>  t#rB#weekday_peak_1#07:00:00#0#2</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>27 </th>
+      <td> rB</td>
+      <td>  t#rB#weekday_peak_1#07:00:00#0#3</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>28 </th>
+      <td> rB</td>
+      <td>  t#rB#weekday_peak_1#07:00:00#0#4</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>29 </th>
+      <td> rB</td>
+      <td>  t#rB#weekday_peak_1#07:00:00#0#5</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv1111100</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>174</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#50</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>175</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#51</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>176</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#52</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>177</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#53</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>178</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#54</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>179</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#55</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>180</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#56</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>181</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#57</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>182</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#58</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>183</th>
+      <td> rA</td>
+      <td>       t#rA#saturday#09:00:00#0#59</td>
+      <td> 0</td>
+      <td> shp1</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>184</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#0</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>185</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#1</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>186</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#2</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>187</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#3</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>188</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#4</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>189</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#5</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>190</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#6</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>191</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#7</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>192</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#8</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>193</th>
+      <td> rB</td>
+      <td>        t#rB#saturday#09:00:00#0#9</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>194</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#10</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>195</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#11</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>196</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#12</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>197</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#13</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>198</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#14</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>199</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#15</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>200</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#16</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>201</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#17</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>202</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#18</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+    <tr>
+      <th>203</th>
+      <td> rB</td>
+      <td>       t#rB#saturday#09:00:00#0#19</td>
+      <td> 0</td>
+      <td> shp2</td>
+      <td> srv0000010</td>
+    </tr>
+  </tbody>
+</table>
+<p>204 rows × 5 columns</p>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[37]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight"><pre><span class="n">f</span> <span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">trips</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">f</span><span class="p">[</span><span class="s">&#39;service_window_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">f</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">feed</span><span class="o">.</span><span class="n">routes</span><span class="p">[[</span><span class="s">&#39;route_id&#39;</span><span class="p">,</span> <span class="s">&#39;route_short_name&#39;</span><span class="p">]],</span> <span class="n">feed</span><span class="o">.</span><span class="n">frequencies</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">g</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+204
+
+</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[37]:</div>
+
+<div class="output_html rendered_html output_subarea output_pyout">
+<div style="max-height:1000px;max-width:1500px;overflow:auto;">
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>0</th>
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>
+      <th>4</th>
+      <th>5</th>
+      <th>6</th>
+      <th>7</th>
+      <th>8</th>
+      <th>9</th>
+      <th>...</th>
+      <th>194</th>
+      <th>195</th>
+      <th>196</th>
+      <th>197</th>
+      <th>198</th>
+      <th>199</th>
+      <th>200</th>
+      <th>201</th>
+      <th>202</th>
+      <th>203</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>route_id</th>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>                                                rA</td>
+      <td>...</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+      <td>                                                rB</td>
+    </tr>
+    <tr>
+      <th>route_short_name</th>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>                                                 A</td>
+      <td>...</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+      <td>                                                 B</td>
+    </tr>
+    <tr>
+      <th>route_desc</th>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td> City Link, Wynyard Quarter to Karangahape Rd v...</td>
+      <td>...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+      <td> Inner Link. Britomart, Three Lamps, Ponsonby, ...</td>
+    </tr>
+    <tr>
+      <th>route_type</th>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>                                                 3</td>
+      <td>...</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+    </tr>
+    <tr>
+      <th>shape_id</th>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>                                              shp1</td>
+      <td>...</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+      <td>                                              shp2</td>
+    </tr>
+    <tr>
+      <th>service_window_id</th>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>                                    weekday_peak_1</td>
+      <td>...</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+      <td>                                          saturday</td>
+    </tr>
+    <tr>
+      <th>frequency</th>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>                                                12</td>
+      <td>...</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+      <td>                                                 2</td>
+    </tr>
+    <tr>
+      <th>direction</th>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>...</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+    </tr>
+    <tr>
+      <th>speed</th>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>...</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+      <td>                                                20</td>
+    </tr>
+    <tr>
+      <th>trip_id</th>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#0</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#1</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#2</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#3</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#4</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#5</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#6</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#7</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#8</td>
+      <td>                  t#rA#weekday_peak_1#07:00:00#1#9</td>
+      <td>...</td>
+      <td>                       t#rB#saturday#09:00:00#0#10</td>
+      <td>                       t#rB#saturday#09:00:00#0#11</td>
+      <td>                       t#rB#saturday#09:00:00#0#12</td>
+      <td>                       t#rB#saturday#09:00:00#0#13</td>
+      <td>                       t#rB#saturday#09:00:00#0#14</td>
+      <td>                       t#rB#saturday#09:00:00#0#15</td>
+      <td>                       t#rB#saturday#09:00:00#0#16</td>
+      <td>                       t#rB#saturday#09:00:00#0#17</td>
+      <td>                       t#rB#saturday#09:00:00#0#18</td>
+      <td>                       t#rB#saturday#09:00:00#0#19</td>
+    </tr>
+    <tr>
+      <th>direction_id</th>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>                                                 1</td>
+      <td>...</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+      <td>                                                 0</td>
+    </tr>
+    <tr>
+      <th>service_id</th>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>                                        srv1111100</td>
+      <td>...</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+      <td>                                        srv0000010</td>
+    </tr>
+  </tbody>
+</table>
+<p>12 rows × 204 columns</p>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[39]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -3122,7 +3649,7 @@ In&nbsp;[35]:
 
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[35]:</div>
+    Out[39]:</div>
 
 <div class="output_html rendered_html output_subarea output_pyout">
 <div style="max-height:1000px;max-width:1500px;overflow:auto;">
@@ -3139,241 +3666,241 @@ In&nbsp;[35]:
   </thead>
   <tbody>
     <tr>
-      <th>0   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#0</td>
-      <td> stp#r0#0</td>
+      <th>0  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#0</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:00:00</td>
       <td> 07:00:00</td>
     </tr>
     <tr>
-      <th>1   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#0</td>
-      <td> stp#r0#1</td>
+      <th>1  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#0</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:12:17</td>
       <td> 07:12:17</td>
     </tr>
     <tr>
-      <th>2   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#1</td>
-      <td> stp#r0#0</td>
+      <th>2  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#1</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:05:00</td>
       <td> 07:05:00</td>
     </tr>
     <tr>
-      <th>3   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#1</td>
-      <td> stp#r0#1</td>
+      <th>3  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#1</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:17:17</td>
       <td> 07:17:17</td>
     </tr>
     <tr>
-      <th>4   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#2</td>
-      <td> stp#r0#0</td>
+      <th>4  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#2</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:10:00</td>
       <td> 07:10:00</td>
     </tr>
     <tr>
-      <th>5   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#2</td>
-      <td> stp#r0#1</td>
+      <th>5  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#2</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:22:17</td>
       <td> 07:22:17</td>
     </tr>
     <tr>
-      <th>6   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#3</td>
-      <td> stp#r0#0</td>
+      <th>6  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#3</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:15:00</td>
       <td> 07:15:00</td>
     </tr>
     <tr>
-      <th>7   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#3</td>
-      <td> stp#r0#1</td>
+      <th>7  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#3</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:27:17</td>
       <td> 07:27:17</td>
     </tr>
     <tr>
-      <th>8   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#4</td>
-      <td> stp#r0#0</td>
+      <th>8  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#4</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:20:00</td>
       <td> 07:20:00</td>
     </tr>
     <tr>
-      <th>9   </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#4</td>
-      <td> stp#r0#1</td>
+      <th>9  </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#4</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:32:17</td>
       <td> 07:32:17</td>
     </tr>
     <tr>
-      <th>10  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#5</td>
-      <td> stp#r0#0</td>
+      <th>10 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#5</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:25:00</td>
       <td> 07:25:00</td>
     </tr>
     <tr>
-      <th>11  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#5</td>
-      <td> stp#r0#1</td>
+      <th>11 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#5</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:37:17</td>
       <td> 07:37:17</td>
     </tr>
     <tr>
-      <th>12  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#6</td>
-      <td> stp#r0#0</td>
+      <th>12 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#6</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:30:00</td>
       <td> 07:30:00</td>
     </tr>
     <tr>
-      <th>13  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#6</td>
-      <td> stp#r0#1</td>
+      <th>13 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#6</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:42:17</td>
       <td> 07:42:17</td>
     </tr>
     <tr>
-      <th>14  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#7</td>
-      <td> stp#r0#0</td>
+      <th>14 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#7</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:35:00</td>
       <td> 07:35:00</td>
     </tr>
     <tr>
-      <th>15  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#7</td>
-      <td> stp#r0#1</td>
+      <th>15 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#7</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:47:17</td>
       <td> 07:47:17</td>
     </tr>
     <tr>
-      <th>16  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#8</td>
-      <td> stp#r0#0</td>
+      <th>16 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#8</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:40:00</td>
       <td> 07:40:00</td>
     </tr>
     <tr>
-      <th>17  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#8</td>
-      <td> stp#r0#1</td>
+      <th>17 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#8</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:52:17</td>
       <td> 07:52:17</td>
     </tr>
     <tr>
-      <th>18  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#9</td>
-      <td> stp#r0#0</td>
+      <th>18 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#9</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:45:00</td>
       <td> 07:45:00</td>
     </tr>
     <tr>
-      <th>19  </th>
-      <td>  t#r0#weekday_peak#07:00:00#0#9</td>
-      <td> stp#r0#1</td>
+      <th>19 </th>
+      <td>  t#rA#weekday_peak_1#07:00:00#1#9</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 07:57:17</td>
       <td> 07:57:17</td>
     </tr>
     <tr>
-      <th>20  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#10</td>
-      <td> stp#r0#0</td>
+      <th>20 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#10</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:50:00</td>
       <td> 07:50:00</td>
     </tr>
     <tr>
-      <th>21  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#10</td>
-      <td> stp#r0#1</td>
+      <th>21 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#10</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 08:02:17</td>
       <td> 08:02:17</td>
     </tr>
     <tr>
-      <th>22  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#11</td>
-      <td> stp#r0#0</td>
+      <th>22 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#11</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 07:55:00</td>
       <td> 07:55:00</td>
     </tr>
     <tr>
-      <th>23  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#11</td>
-      <td> stp#r0#1</td>
+      <th>23 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#11</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 08:07:17</td>
       <td> 08:07:17</td>
     </tr>
     <tr>
-      <th>24  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#12</td>
-      <td> stp#r0#0</td>
+      <th>24 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#12</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 08:00:00</td>
       <td> 08:00:00</td>
     </tr>
     <tr>
-      <th>25  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#12</td>
-      <td> stp#r0#1</td>
+      <th>25 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#12</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 08:12:17</td>
       <td> 08:12:17</td>
     </tr>
     <tr>
-      <th>26  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#13</td>
-      <td> stp#r0#0</td>
+      <th>26 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#13</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 08:05:00</td>
       <td> 08:05:00</td>
     </tr>
     <tr>
-      <th>27  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#13</td>
-      <td> stp#r0#1</td>
+      <th>27 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#13</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 08:17:17</td>
       <td> 08:17:17</td>
     </tr>
     <tr>
-      <th>28  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#14</td>
-      <td> stp#r0#0</td>
+      <th>28 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#14</td>
+      <td> stp#shp1#1</td>
       <td> 0</td>
       <td> 08:10:00</td>
       <td> 08:10:00</td>
     </tr>
     <tr>
-      <th>29  </th>
-      <td> t#r0#weekday_peak#07:00:00#0#14</td>
-      <td> stp#r0#1</td>
+      <th>29 </th>
+      <td> t#rA#weekday_peak_1#07:00:00#1#14</td>
+      <td> stp#shp1#0</td>
       <td> 1</td>
       <td> 08:22:17</td>
       <td> 08:22:17</td>
@@ -3387,248 +3914,248 @@ In&nbsp;[35]:
       <td>...</td>
     </tr>
     <tr>
-      <th>4066</th>
-      <td>    t#r5#sunday_day#07:00:00#1#7</td>
-      <td> stp#r5#1</td>
+      <th>378</th>
+      <td>        t#rB#saturday#09:00:00#0#5</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 11:30:00</td>
+      <td> 11:30:00</td>
+    </tr>
+    <tr>
+      <th>379</th>
+      <td>        t#rB#saturday#09:00:00#0#5</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 12:00:59</td>
+      <td> 12:00:59</td>
+    </tr>
+    <tr>
+      <th>380</th>
+      <td>        t#rB#saturday#09:00:00#0#6</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 12:00:00</td>
+      <td> 12:00:00</td>
+    </tr>
+    <tr>
+      <th>381</th>
+      <td>        t#rB#saturday#09:00:00#0#6</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 12:30:59</td>
+      <td> 12:30:59</td>
+    </tr>
+    <tr>
+      <th>382</th>
+      <td>        t#rB#saturday#09:00:00#0#7</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 12:30:00</td>
+      <td> 12:30:00</td>
+    </tr>
+    <tr>
+      <th>383</th>
+      <td>        t#rB#saturday#09:00:00#0#7</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 13:00:59</td>
+      <td> 13:00:59</td>
+    </tr>
+    <tr>
+      <th>384</th>
+      <td>        t#rB#saturday#09:00:00#0#8</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 13:00:00</td>
+      <td> 13:00:00</td>
+    </tr>
+    <tr>
+      <th>385</th>
+      <td>        t#rB#saturday#09:00:00#0#8</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 13:30:59</td>
+      <td> 13:30:59</td>
+    </tr>
+    <tr>
+      <th>386</th>
+      <td>        t#rB#saturday#09:00:00#0#9</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 13:30:00</td>
+      <td> 13:30:00</td>
+    </tr>
+    <tr>
+      <th>387</th>
+      <td>        t#rB#saturday#09:00:00#0#9</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 14:00:59</td>
+      <td> 14:00:59</td>
+    </tr>
+    <tr>
+      <th>388</th>
+      <td>       t#rB#saturday#09:00:00#0#10</td>
+      <td> stp#shp2#0</td>
       <td> 0</td>
       <td> 14:00:00</td>
       <td> 14:00:00</td>
     </tr>
     <tr>
-      <th>4067</th>
-      <td>    t#r5#sunday_day#07:00:00#1#7</td>
-      <td> stp#r5#0</td>
+      <th>389</th>
+      <td>       t#rB#saturday#09:00:00#0#10</td>
+      <td> stp#shp2#1</td>
       <td> 1</td>
-      <td> 14:46:02</td>
-      <td> 14:46:02</td>
+      <td> 14:30:59</td>
+      <td> 14:30:59</td>
     </tr>
     <tr>
-      <th>4068</th>
-      <td>    t#r5#sunday_day#07:00:00#1#8</td>
-      <td> stp#r5#1</td>
+      <th>390</th>
+      <td>       t#rB#saturday#09:00:00#0#11</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 14:30:00</td>
+      <td> 14:30:00</td>
+    </tr>
+    <tr>
+      <th>391</th>
+      <td>       t#rB#saturday#09:00:00#0#11</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 15:00:59</td>
+      <td> 15:00:59</td>
+    </tr>
+    <tr>
+      <th>392</th>
+      <td>       t#rB#saturday#09:00:00#0#12</td>
+      <td> stp#shp2#0</td>
       <td> 0</td>
       <td> 15:00:00</td>
       <td> 15:00:00</td>
     </tr>
     <tr>
-      <th>4069</th>
-      <td>    t#r5#sunday_day#07:00:00#1#8</td>
-      <td> stp#r5#0</td>
+      <th>393</th>
+      <td>       t#rB#saturday#09:00:00#0#12</td>
+      <td> stp#shp2#1</td>
       <td> 1</td>
-      <td> 15:46:02</td>
-      <td> 15:46:02</td>
+      <td> 15:30:59</td>
+      <td> 15:30:59</td>
     </tr>
     <tr>
-      <th>4070</th>
-      <td>    t#r5#sunday_day#07:00:00#1#9</td>
-      <td> stp#r5#1</td>
+      <th>394</th>
+      <td>       t#rB#saturday#09:00:00#0#13</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 15:30:00</td>
+      <td> 15:30:00</td>
+    </tr>
+    <tr>
+      <th>395</th>
+      <td>       t#rB#saturday#09:00:00#0#13</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 16:00:59</td>
+      <td> 16:00:59</td>
+    </tr>
+    <tr>
+      <th>396</th>
+      <td>       t#rB#saturday#09:00:00#0#14</td>
+      <td> stp#shp2#0</td>
       <td> 0</td>
       <td> 16:00:00</td>
       <td> 16:00:00</td>
     </tr>
     <tr>
-      <th>4071</th>
-      <td>    t#r5#sunday_day#07:00:00#1#9</td>
-      <td> stp#r5#0</td>
+      <th>397</th>
+      <td>       t#rB#saturday#09:00:00#0#14</td>
+      <td> stp#shp2#1</td>
       <td> 1</td>
-      <td> 16:46:02</td>
-      <td> 16:46:02</td>
+      <td> 16:30:59</td>
+      <td> 16:30:59</td>
     </tr>
     <tr>
-      <th>4072</th>
-      <td>   t#r5#sunday_day#07:00:00#1#10</td>
-      <td> stp#r5#1</td>
+      <th>398</th>
+      <td>       t#rB#saturday#09:00:00#0#15</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 16:30:00</td>
+      <td> 16:30:00</td>
+    </tr>
+    <tr>
+      <th>399</th>
+      <td>       t#rB#saturday#09:00:00#0#15</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 17:00:59</td>
+      <td> 17:00:59</td>
+    </tr>
+    <tr>
+      <th>400</th>
+      <td>       t#rB#saturday#09:00:00#0#16</td>
+      <td> stp#shp2#0</td>
       <td> 0</td>
       <td> 17:00:00</td>
       <td> 17:00:00</td>
     </tr>
     <tr>
-      <th>4073</th>
-      <td>   t#r5#sunday_day#07:00:00#1#10</td>
-      <td> stp#r5#0</td>
+      <th>401</th>
+      <td>       t#rB#saturday#09:00:00#0#16</td>
+      <td> stp#shp2#1</td>
       <td> 1</td>
-      <td> 17:46:02</td>
-      <td> 17:46:02</td>
+      <td> 17:30:59</td>
+      <td> 17:30:59</td>
     </tr>
     <tr>
-      <th>4074</th>
-      <td>   t#r5#sunday_day#07:00:00#1#11</td>
-      <td> stp#r5#1</td>
+      <th>402</th>
+      <td>       t#rB#saturday#09:00:00#0#17</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 17:30:00</td>
+      <td> 17:30:00</td>
+    </tr>
+    <tr>
+      <th>403</th>
+      <td>       t#rB#saturday#09:00:00#0#17</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 18:00:59</td>
+      <td> 18:00:59</td>
+    </tr>
+    <tr>
+      <th>404</th>
+      <td>       t#rB#saturday#09:00:00#0#18</td>
+      <td> stp#shp2#0</td>
       <td> 0</td>
       <td> 18:00:00</td>
       <td> 18:00:00</td>
     </tr>
     <tr>
-      <th>4075</th>
-      <td>   t#r5#sunday_day#07:00:00#1#11</td>
-      <td> stp#r5#0</td>
+      <th>405</th>
+      <td>       t#rB#saturday#09:00:00#0#18</td>
+      <td> stp#shp2#1</td>
       <td> 1</td>
-      <td> 18:46:02</td>
-      <td> 18:46:02</td>
+      <td> 18:30:59</td>
+      <td> 18:30:59</td>
     </tr>
     <tr>
-      <th>4076</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#0</td>
-      <td> stp#r5#0</td>
+      <th>406</th>
+      <td>       t#rB#saturday#09:00:00#0#19</td>
+      <td> stp#shp2#0</td>
       <td> 0</td>
-      <td> 19:00:00</td>
-      <td> 19:00:00</td>
+      <td> 18:30:00</td>
+      <td> 18:30:00</td>
     </tr>
     <tr>
-      <th>4077</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#0</td>
-      <td> stp#r5#1</td>
+      <th>407</th>
+      <td>       t#rB#saturday#09:00:00#0#19</td>
+      <td> stp#shp2#1</td>
       <td> 1</td>
-      <td> 19:46:02</td>
-      <td> 19:46:02</td>
-    </tr>
-    <tr>
-      <th>4078</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#1</td>
-      <td> stp#r5#0</td>
-      <td> 0</td>
-      <td> 20:00:00</td>
-      <td> 20:00:00</td>
-    </tr>
-    <tr>
-      <th>4079</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#1</td>
-      <td> stp#r5#1</td>
-      <td> 1</td>
-      <td> 20:46:02</td>
-      <td> 20:46:02</td>
-    </tr>
-    <tr>
-      <th>4080</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#2</td>
-      <td> stp#r5#0</td>
-      <td> 0</td>
-      <td> 21:00:00</td>
-      <td> 21:00:00</td>
-    </tr>
-    <tr>
-      <th>4081</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#2</td>
-      <td> stp#r5#1</td>
-      <td> 1</td>
-      <td> 21:46:02</td>
-      <td> 21:46:02</td>
-    </tr>
-    <tr>
-      <th>4082</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#3</td>
-      <td> stp#r5#0</td>
-      <td> 0</td>
-      <td> 22:00:00</td>
-      <td> 22:00:00</td>
-    </tr>
-    <tr>
-      <th>4083</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#3</td>
-      <td> stp#r5#1</td>
-      <td> 1</td>
-      <td> 22:46:02</td>
-      <td> 22:46:02</td>
-    </tr>
-    <tr>
-      <th>4084</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#4</td>
-      <td> stp#r5#0</td>
-      <td> 0</td>
-      <td> 23:00:00</td>
-      <td> 23:00:00</td>
-    </tr>
-    <tr>
-      <th>4085</th>
-      <td>    t#r5#sunday_eve#19:00:00#0#4</td>
-      <td> stp#r5#1</td>
-      <td> 1</td>
-      <td> 23:46:02</td>
-      <td> 23:46:02</td>
-    </tr>
-    <tr>
-      <th>4086</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#0</td>
-      <td> stp#r5#1</td>
-      <td> 0</td>
-      <td> 19:00:00</td>
-      <td> 19:00:00</td>
-    </tr>
-    <tr>
-      <th>4087</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#0</td>
-      <td> stp#r5#0</td>
-      <td> 1</td>
-      <td> 19:46:02</td>
-      <td> 19:46:02</td>
-    </tr>
-    <tr>
-      <th>4088</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#1</td>
-      <td> stp#r5#1</td>
-      <td> 0</td>
-      <td> 20:00:00</td>
-      <td> 20:00:00</td>
-    </tr>
-    <tr>
-      <th>4089</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#1</td>
-      <td> stp#r5#0</td>
-      <td> 1</td>
-      <td> 20:46:02</td>
-      <td> 20:46:02</td>
-    </tr>
-    <tr>
-      <th>4090</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#2</td>
-      <td> stp#r5#1</td>
-      <td> 0</td>
-      <td> 21:00:00</td>
-      <td> 21:00:00</td>
-    </tr>
-    <tr>
-      <th>4091</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#2</td>
-      <td> stp#r5#0</td>
-      <td> 1</td>
-      <td> 21:46:02</td>
-      <td> 21:46:02</td>
-    </tr>
-    <tr>
-      <th>4092</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#3</td>
-      <td> stp#r5#1</td>
-      <td> 0</td>
-      <td> 22:00:00</td>
-      <td> 22:00:00</td>
-    </tr>
-    <tr>
-      <th>4093</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#3</td>
-      <td> stp#r5#0</td>
-      <td> 1</td>
-      <td> 22:46:02</td>
-      <td> 22:46:02</td>
-    </tr>
-    <tr>
-      <th>4094</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#4</td>
-      <td> stp#r5#1</td>
-      <td> 0</td>
-      <td> 23:00:00</td>
-      <td> 23:00:00</td>
-    </tr>
-    <tr>
-      <th>4095</th>
-      <td>    t#r5#sunday_eve#19:00:00#1#4</td>
-      <td> stp#r5#0</td>
-      <td> 1</td>
-      <td> 23:46:02</td>
-      <td> 23:46:02</td>
+      <td> 19:00:59</td>
+      <td> 19:00:59</td>
     </tr>
   </tbody>
 </table>
-<p>4096 rows × 5 columns</p>
+<p>408 rows × 5 columns</p>
 </div>
 </div>
 
@@ -3641,12 +4168,380 @@ In&nbsp;[35]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[22]:
+In&nbsp;[43]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight"><pre><span class="c"># Spot check</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">stop_times</span>
+<span class="n">f</span><span class="p">[</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s">&#39;rB#saturday&#39;</span><span class="p">)]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">
+    Out[43]:</div>
+
+<div class="output_html rendered_html output_subarea output_pyout">
+<div style="max-height:1000px;max-width:1500px;overflow:auto;">
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>trip_id</th>
+      <th>stop_id</th>
+      <th>stop_sequence</th>
+      <th>arrival_time</th>
+      <th>departure_time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>368</th>
+      <td>  t#rB#saturday#09:00:00#0#0</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 09:00:00</td>
+      <td> 09:00:00</td>
+    </tr>
+    <tr>
+      <th>369</th>
+      <td>  t#rB#saturday#09:00:00#0#0</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 09:30:59</td>
+      <td> 09:30:59</td>
+    </tr>
+    <tr>
+      <th>370</th>
+      <td>  t#rB#saturday#09:00:00#0#1</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 09:30:00</td>
+      <td> 09:30:00</td>
+    </tr>
+    <tr>
+      <th>371</th>
+      <td>  t#rB#saturday#09:00:00#0#1</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 10:00:59</td>
+      <td> 10:00:59</td>
+    </tr>
+    <tr>
+      <th>372</th>
+      <td>  t#rB#saturday#09:00:00#0#2</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 10:00:00</td>
+      <td> 10:00:00</td>
+    </tr>
+    <tr>
+      <th>373</th>
+      <td>  t#rB#saturday#09:00:00#0#2</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 10:30:59</td>
+      <td> 10:30:59</td>
+    </tr>
+    <tr>
+      <th>374</th>
+      <td>  t#rB#saturday#09:00:00#0#3</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 10:30:00</td>
+      <td> 10:30:00</td>
+    </tr>
+    <tr>
+      <th>375</th>
+      <td>  t#rB#saturday#09:00:00#0#3</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 11:00:59</td>
+      <td> 11:00:59</td>
+    </tr>
+    <tr>
+      <th>376</th>
+      <td>  t#rB#saturday#09:00:00#0#4</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 11:00:00</td>
+      <td> 11:00:00</td>
+    </tr>
+    <tr>
+      <th>377</th>
+      <td>  t#rB#saturday#09:00:00#0#4</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 11:30:59</td>
+      <td> 11:30:59</td>
+    </tr>
+    <tr>
+      <th>378</th>
+      <td>  t#rB#saturday#09:00:00#0#5</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 11:30:00</td>
+      <td> 11:30:00</td>
+    </tr>
+    <tr>
+      <th>379</th>
+      <td>  t#rB#saturday#09:00:00#0#5</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 12:00:59</td>
+      <td> 12:00:59</td>
+    </tr>
+    <tr>
+      <th>380</th>
+      <td>  t#rB#saturday#09:00:00#0#6</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 12:00:00</td>
+      <td> 12:00:00</td>
+    </tr>
+    <tr>
+      <th>381</th>
+      <td>  t#rB#saturday#09:00:00#0#6</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 12:30:59</td>
+      <td> 12:30:59</td>
+    </tr>
+    <tr>
+      <th>382</th>
+      <td>  t#rB#saturday#09:00:00#0#7</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 12:30:00</td>
+      <td> 12:30:00</td>
+    </tr>
+    <tr>
+      <th>383</th>
+      <td>  t#rB#saturday#09:00:00#0#7</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 13:00:59</td>
+      <td> 13:00:59</td>
+    </tr>
+    <tr>
+      <th>384</th>
+      <td>  t#rB#saturday#09:00:00#0#8</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 13:00:00</td>
+      <td> 13:00:00</td>
+    </tr>
+    <tr>
+      <th>385</th>
+      <td>  t#rB#saturday#09:00:00#0#8</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 13:30:59</td>
+      <td> 13:30:59</td>
+    </tr>
+    <tr>
+      <th>386</th>
+      <td>  t#rB#saturday#09:00:00#0#9</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 13:30:00</td>
+      <td> 13:30:00</td>
+    </tr>
+    <tr>
+      <th>387</th>
+      <td>  t#rB#saturday#09:00:00#0#9</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 14:00:59</td>
+      <td> 14:00:59</td>
+    </tr>
+    <tr>
+      <th>388</th>
+      <td> t#rB#saturday#09:00:00#0#10</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 14:00:00</td>
+      <td> 14:00:00</td>
+    </tr>
+    <tr>
+      <th>389</th>
+      <td> t#rB#saturday#09:00:00#0#10</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 14:30:59</td>
+      <td> 14:30:59</td>
+    </tr>
+    <tr>
+      <th>390</th>
+      <td> t#rB#saturday#09:00:00#0#11</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 14:30:00</td>
+      <td> 14:30:00</td>
+    </tr>
+    <tr>
+      <th>391</th>
+      <td> t#rB#saturday#09:00:00#0#11</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 15:00:59</td>
+      <td> 15:00:59</td>
+    </tr>
+    <tr>
+      <th>392</th>
+      <td> t#rB#saturday#09:00:00#0#12</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 15:00:00</td>
+      <td> 15:00:00</td>
+    </tr>
+    <tr>
+      <th>393</th>
+      <td> t#rB#saturday#09:00:00#0#12</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 15:30:59</td>
+      <td> 15:30:59</td>
+    </tr>
+    <tr>
+      <th>394</th>
+      <td> t#rB#saturday#09:00:00#0#13</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 15:30:00</td>
+      <td> 15:30:00</td>
+    </tr>
+    <tr>
+      <th>395</th>
+      <td> t#rB#saturday#09:00:00#0#13</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 16:00:59</td>
+      <td> 16:00:59</td>
+    </tr>
+    <tr>
+      <th>396</th>
+      <td> t#rB#saturday#09:00:00#0#14</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 16:00:00</td>
+      <td> 16:00:00</td>
+    </tr>
+    <tr>
+      <th>397</th>
+      <td> t#rB#saturday#09:00:00#0#14</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 16:30:59</td>
+      <td> 16:30:59</td>
+    </tr>
+    <tr>
+      <th>398</th>
+      <td> t#rB#saturday#09:00:00#0#15</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 16:30:00</td>
+      <td> 16:30:00</td>
+    </tr>
+    <tr>
+      <th>399</th>
+      <td> t#rB#saturday#09:00:00#0#15</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 17:00:59</td>
+      <td> 17:00:59</td>
+    </tr>
+    <tr>
+      <th>400</th>
+      <td> t#rB#saturday#09:00:00#0#16</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 17:00:00</td>
+      <td> 17:00:00</td>
+    </tr>
+    <tr>
+      <th>401</th>
+      <td> t#rB#saturday#09:00:00#0#16</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 17:30:59</td>
+      <td> 17:30:59</td>
+    </tr>
+    <tr>
+      <th>402</th>
+      <td> t#rB#saturday#09:00:00#0#17</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 17:30:00</td>
+      <td> 17:30:00</td>
+    </tr>
+    <tr>
+      <th>403</th>
+      <td> t#rB#saturday#09:00:00#0#17</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 18:00:59</td>
+      <td> 18:00:59</td>
+    </tr>
+    <tr>
+      <th>404</th>
+      <td> t#rB#saturday#09:00:00#0#18</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 18:00:00</td>
+      <td> 18:00:00</td>
+    </tr>
+    <tr>
+      <th>405</th>
+      <td> t#rB#saturday#09:00:00#0#18</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 18:30:59</td>
+      <td> 18:30:59</td>
+    </tr>
+    <tr>
+      <th>406</th>
+      <td> t#rB#saturday#09:00:00#0#19</td>
+      <td> stp#shp2#0</td>
+      <td> 0</td>
+      <td> 18:30:00</td>
+      <td> 18:30:00</td>
+    </tr>
+    <tr>
+      <th>407</th>
+      <td> t#rB#saturday#09:00:00#0#19</td>
+      <td> stp#shp2#1</td>
+      <td> 1</td>
+      <td> 19:00:59</td>
+      <td> 19:00:59</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[13]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
 <div class="highlight"><pre><span class="n">feed</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span>
-<span class="n">feed</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">home</span> <span class="o">+</span> <span class="s">&#39;examples/&#39;</span><span class="p">,</span> <span class="n">as_zip</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">feed</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">as_zip</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -3657,7 +4552,7 @@ In&nbsp;[22]:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[12]:
+In&nbsp;[218]:
 </div>
 <div class="inner_cell">
     <div class="input_area">

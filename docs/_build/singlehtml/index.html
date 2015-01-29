@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>make_gtfs 0.5.1 documentation</title>
+    <title>make_gtfs 0.6 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.5.1',
+        VERSION:     '0.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -29,7 +29,7 @@
     <div class="related">
       <h3>Navigation</h3>
       <ul>
-        <li><a href="index.html#document-index">make_gtfs 0.5.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html#document-index">make_gtfs 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -80,9 +80,7 @@ Also save the dictionary service window ID -&gt; service ID to
 <dt id="make_gtfs.make_gtfs.Feed.create_routes">
 <tt class="descname">create_routes</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_routes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">routes.txt</span></tt> and save it
-to <tt class="docutils literal"><span class="pre">self.routes</span></tt>.
-Also create a dictionary with structure route ID -&gt; shape ID and
-save it to <tt class="docutils literal"><span class="pre">self.shape_by_route</span></tt>.</p>
+to <tt class="docutils literal"><span class="pre">self.routes</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -90,10 +88,8 @@ save it to <tt class="docutils literal"><span class="pre">self.shape_by_route</s
 <tt class="descname">create_shapes</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_shapes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">shapes.txt</span></tt> and save it 
 to <tt class="docutils literal"><span class="pre">self.shapes</span></tt>.
-Routes without shapes in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt> will be ignored.
-Each route with a shape has one shape that is used for 
-both directions of travel.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.routes</span></tt> if it does not already exist.</p>
+Shape IDs in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> that are not in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt>
+will be ignored.</p>
 </dd></dl>
 
 <dl class="method">
@@ -101,8 +97,8 @@ both directions of travel.</p>
 <tt class="descname">create_stop_times</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_stop_times" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">stop_times.txt</span></tt> and save it
 to <tt class="docutils literal"><span class="pre">self.stop_times</span></tt>.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.stops</span></tt> and <tt class="docutils literal"><span class="pre">self.trips</span></tt> if they don&#8217;t already 
-exist.</p>
+<p>Will create <tt class="docutils literal"><span class="pre">self.stops</span></tt>, <tt class="docutils literal"><span class="pre">self.trips</span></tt>, <tt class="docutils literal"><span class="pre">self.shapes</span></tt> 
+if they don&#8217;t already exist.</p>
 </dd></dl>
 
 <dl class="method">
@@ -111,10 +107,9 @@ exist.</p>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">stops.txt</span></tt> and save it to
 <tt class="docutils literal"><span class="pre">self.stops</span></tt>.
 Create one stop at the beginning (the first point) of each shape 
-and one at the end (the last point) of each shape.
-This will create duplicate stops in case shapes share endpoints.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.routes</span></tt> if it does not already exist.</p>
-<p>Will not create stops for routes without linestrings.</p>
+and one at the end (the last point) of each shape.</p>
+<p>Will not create stops for shape IDs listed in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> 
+but not present in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt></p>
 </dd></dl>
 
 <dl class="method">
@@ -122,8 +117,8 @@ This will create duplicate stops in case shapes share endpoints.</p>
 <tt class="descname">create_trips</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_trips" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">trips.txt</span></tt> and save it to
 <tt class="docutils literal"><span class="pre">self.trips</span></tt>.
-Trip IDs encode direction, service window, and trip number within that
-direction and service window to make it easy to compute stop times.</p>
+Trip IDs encode route, direction, and service window information 
+to make it easy to compute stop times later.</p>
 <p>Will create <tt class="docutils literal"><span class="pre">self.calendar</span></tt>, <tt class="docutils literal"><span class="pre">self.routes</span></tt>, and <tt class="docutils literal"><span class="pre">self.shapes</span></tt> 
 if they don&#8217;t already exist.</p>
 <p>Will not create trips for routes with null linestrings.</p>
@@ -141,17 +136,16 @@ If <tt class="docutils literal"><span class="pre">output_dir</span> <span class=
 </dd></dl>
 
 <dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.get_linestring_by_route">
-<tt class="descname">get_linestring_by_route</tt><big>(</big><em>use_utm=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_linestring_by_route" title="Permalink to this definition">¶</a></dt>
+<dt id="make_gtfs.make_gtfs.Feed.get_linestring_by_shape">
+<tt class="descname">get_linestring_by_shape</tt><big>(</big><em>use_utm=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_linestring_by_shape" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a dictionary of the form
-route ID -&gt; Shapely linestring of shape.
-Route IDs without shapes in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt> will not appear
-in the dictionary.
+shape ID -&gt; Shapely linestring of shape.
+Shape IDs in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> that are not in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt>
+will not appear in the dictionary.
 If <tt class="docutils literal"><span class="pre">use_utm</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then return each linestring in
 in UTM coordinates.
 Otherwise, return each linestring in WGS84 longitude-latitude
 coordinates.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.routes</span></tt> if it does not already exist.</p>
 </dd></dl>
 
 </dd></dl>
@@ -167,12 +161,12 @@ Assume <tt class="docutils literal"><span class="pre">timestr1</span> <span clas
 
 <dl class="function">
 <dt id="make_gtfs.make_gtfs.get_stop_ids">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_ids</tt><big>(</big><em>route_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_ids" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_ids</tt><big>(</big><em>shape_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_ids" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="make_gtfs.make_gtfs.get_stop_names">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_names</tt><big>(</big><em>route_short_name</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_names" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_names</tt><big>(</big><em>shape_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_names" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -231,7 +225,7 @@ seconds modulo <tt class="docutils literal"><span class="pre">24*3600</span></tt
     <div class="related">
       <h3>Navigation</h3>
       <ul>
-        <li><a href="index.html#document-index">make_gtfs 0.5.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html#document-index">make_gtfs 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
