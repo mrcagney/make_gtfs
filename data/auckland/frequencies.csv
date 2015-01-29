@@ -1,4 +1,4 @@
-route_short_name,route_desc,route_type,shape_id,service_window_id,frequency,is_direction
+route_short_name,route_desc,route_type,shape_id,service_window_id,frequency,direction
 A,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,weekday_peak_1,12,1
 A,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,weekday_peak_2,12,1
 A,"City Link, Wynyard Quarter to Karangahape Rd via Queen St",3,shp1,weekday_offpeak,4,0

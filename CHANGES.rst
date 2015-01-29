@@ -19,4 +19,4 @@ Eliminated stops and trips for routes that have no linestrings
 
 v0.6, 2015-01-29
 -------------------
-Added direction field and renamed ``routes.csv`` to ``frequencies.csv``
+Added direction field and renamed ``routes.csv`` to ``frequencies.csv``. Simplified the code some too.

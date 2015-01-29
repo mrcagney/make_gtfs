@@ -36,7 +36,7 @@ class TestFeed(unittest.TestCase):
 
     def test_init(self):
         feed = deepcopy(akl)
-        self.assertIsInstance(feed.proto_routes, pd.core.frame.DataFrame)
+        self.assertIsInstance(feed.frequencies, pd.core.frame.DataFrame)
         self.assertIsInstance(feed.service_windows, pd.core.frame.DataFrame)
         self.assertIsInstance(feed.meta, pd.core.frame.DataFrame)
         self.assertIsInstance(feed.proto_shapes, dict)
@@ -48,21 +48,22 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(routes, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nrows = feed.proto_routes.drop_duplicates(
+        expect_nrows = feed.frequencies.drop_duplicates(
           'route_short_name').shape[0]
         expect_ncols = 4
         self.assertEqual(routes.shape, (expect_nrows, expect_ncols))
 
-    def test_create_linestring_by_route(self):
+    def test_create_linestring_by_shape(self):
         feed = deepcopy(akl)
-        linestring_by_route = feed.get_linestring_by_route(use_utm=False)
+        linestring_by_shape = feed.get_linestring_by_shape(use_utm=False)
         # Should be a dictionary
-        self.assertIsInstance(linestring_by_route, dict)
+        self.assertIsInstance(linestring_by_shape, dict)
         # The elements should be Shapely linestrings
-        for x in linestring_by_route.values():
+        for x in linestring_by_shape.values():
             self.assertIsInstance(x, LineString)
         # Should contain at most one shape for each route
-        self.assertTrue(len(linestring_by_route) <= feed.routes.shape[0])
+        nshapes = feed.frequencies['shape_id'].unique().shape[0]
+        self.assertTrue(len(linestring_by_shape) <= nshapes)
 
     def test_create_shapes(self):
         feed = deepcopy(akl)
@@ -71,7 +72,7 @@ class TestFeed(unittest.TestCase):
         # Should be a data frame
         self.assertIsInstance(shapes, pd.core.frame.DataFrame)
         # Should have correct shape
-        expect_nshapes = len(feed.get_linestring_by_route())
+        expect_nshapes = len(feed.get_linestring_by_shape())
         expect_ncols = 4
         self.assertEqual(shapes.groupby('shape_id').ngroups, expect_nshapes)
         self.assertEqual(shapes.shape[1], expect_ncols)
@@ -79,12 +80,13 @@ class TestFeed(unittest.TestCase):
     def test_create_stops(self):
         feed = deepcopy(akl)
         feed.create_stops()
+        feed.create_shapes()
         stops = feed.stops
         # Should be a data frame
         self.assertIsInstance(stops, pd.core.frame.DataFrame)
         # Should have correct shape
-        nlinestrings = len(feed.get_linestring_by_route())
-        expect_nrows = 2*nlinestrings
+        nshapes = feed.shapes['shape_id'].unique().shape[0]
+        expect_nrows = 2*nshapes
         expect_ncols = 4
         self.assertEqual(stops.shape, (expect_nrows, expect_ncols))
 
@@ -96,21 +98,25 @@ class TestFeed(unittest.TestCase):
         self.assertIsInstance(trips, pd.core.frame.DataFrame)
         # Should have correct shape
         f = pd.merge(feed.routes[['route_id', 'route_short_name']], 
-          feed.proto_routes)
+          feed.frequencies)
         f = pd.merge(f, feed.service_windows)
-        linestring_by_route = feed.get_linestring_by_route()
+        shapes = set(feed.shapes['shape_id'].unique())
         expect_ntrips = 0
         for index, row in f.iterrows():
             # Get number of trips corresponding to this row
             # and add it to the total
-            route = row['route_id']
-            if route not in linestring_by_route:
+            shape = row['shape_id']
+            if shape not in shapes:
                 continue
             frequency = row['frequency']
             start, end = row[['start_time', 'end_time']].values
             duration = get_duration(start, end, 'h')
-            bidir = row['is_bidirectional']
-            expect_ntrips += int(duration*frequency)*(bidir + 1)
+            direction = row['direction']
+            if direction == 0:
+                trip_mult = 1
+            else:
+                trip_mult = direction
+            expect_ntrips += int(duration*frequency)*trip_mult
         expect_ncols = 5
         self.assertEqual(trips.shape, (expect_ntrips, expect_ncols))
 
