@@ -16,3 +16,7 @@ Changed from headways to frequencies and replaced ``config.json`` with CSV files
 v0.5.1, 2015-01-28
 -------------------
 Eliminated stops and trips for routes that have no linestrings
+
+v0.6, 2015-01-29
+-------------------
+Added direction field and renamed ``routes.csv`` to ``frequencies.csv``

@@ -12,7 +12,7 @@ import utm
 # Program description
 DESC = """
   This is a Python 3.4 command line program that makes a GTFS Feed
-  from a few CSV files of route information ('service_windows.csv', 'routes.csv', 'meta.csv') and a GeoJSON file of route shapes ('shapes.geojson').
+  from a few CSV files of route information ('service_windows.csv', 'frequencies.csv', 'meta.csv') and a GeoJSON file of route shapes ('shapes.geojson').
   """
 
 # Character to separate different chunks within an ID
@@ -127,8 +127,8 @@ class Feed(object):
         # Import files
         service_windows = pd.read_csv(
           os.path.join(input_dir, 'service_windows.csv'))
-        proto_routes = pd.read_csv(
-          os.path.join(input_dir, 'routes.csv'), 
+        frequencies = pd.read_csv(
+          os.path.join(input_dir, 'frequencies.csv'), 
           dtype={'route_short_name': str, 'service_window_id': str, 
           'shape_id': str})
         meta = pd.read_csv(
@@ -137,23 +137,23 @@ class Feed(object):
         proto_shapes = json.load(open(
           os.path.join(input_dir, 'shapes.geojson'), 'r'))        
 
-        # Clean up raw routes
-        cols = proto_routes.columns
+        # Clean up frequencies
+        cols = frequencies.columns
         if 'route_desc' not in cols:
-            proto_routes['route_desc'] = np.nan
+            frequencies['route_desc'] = np.nan
 
         # Fill missing route types with 3 (bus)
-        proto_routes['route_type'].fillna(3, inplace=True)
-        proto_routes['route_type'] = proto_routes['route_type'].astype(int)
+        frequencies['route_type'].fillna(3, inplace=True)
+        frequencies['route_type'] = frequencies['route_type'].astype(int)
         
         # Create route speeds and fill in missing values with default speeds
         if 'speed' not in cols:
-            proto_routes['speed'] = np.nan
-        proto_routes['speed'].fillna(meta['default_route_speed'].iat[0], 
+            frequencies['speed'] = np.nan
+        frequencies['speed'].fillna(meta['default_route_speed'].iat[0], 
           inplace=True)
         
         # Save
-        self.proto_routes = proto_routes
+        self.frequencies = frequencies
         self.service_windows = service_windows
         self.meta = meta
         self.proto_shapes = proto_shapes
@@ -210,36 +210,28 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``routes.txt`` and save it
         to ``self.routes``.
-        Also create a dictionary with structure route ID -> shape ID and
-        save it to ``self.shape_by_route``.
         """
-        f = self.proto_routes[['route_short_name', 'route_desc', 
+        f = self.frequencies[['route_short_name', 'route_desc', 
           'route_type', 'shape_id']].drop_duplicates().copy()
 
         # Create route IDs
-        f['route_id'] = ['r' + str(i) for i in range(f.shape[0])]
+        f['route_id'] = 'r' + f['route_short_name'].map(str)
         
         # Save
-        self.shape_by_route = dict(f[['route_id', 'shape_id']].values)
         del f['shape_id']
         self.routes = f 
 
-    def get_linestring_by_route(self, use_utm=False):
+    def get_linestring_by_shape(self, use_utm=False):
         """
         Return a dictionary of the form
-        route ID -> Shapely linestring of shape.
-        Route IDs without shapes in ``shapes.geojson`` will not appear
-        in the dictionary.
+        shape ID -> Shapely linestring of shape.
+        Shape IDs in ``frequencies.csv`` that are not in ``shapes.geojson``
+        will not appear in the dictionary.
         If ``use_utm == True``, then return each linestring in
         in UTM coordinates.
         Otherwise, return each linestring in WGS84 longitude-latitude
         coordinates.
-
-        Will create ``self.routes`` if it does not already exist.
         """
-        if not hasattr(self, 'routes'):
-            self.create_routes()
-
         # Note the output for conversion to UTM with the utm package:
         # >>> u = utm.from_latlon(47.9941214, 7.8509671)
         # >>> print u
@@ -252,16 +244,9 @@ class Feed(object):
             def proj(lon, lat):
                 return lon, lat
             
-        linestring_by_shape = {f['properties']['shape_id']: 
+        return {f['properties']['shape_id']: 
           transform(proj, sh_shape(f['geometry'])) 
           for f in self.proto_shapes['features']}
-        shape_by_route = self.shape_by_route
-        result = {}
-        for route in self.routes['route_id'].values:
-            shape = shape_by_route[route]
-            if shape in linestring_by_shape:
-                result[route] = linestring_by_shape[shape]
-        return result
 
     def create_shapes(self):
         """
@@ -344,7 +329,7 @@ class Feed(object):
 
         # Put together the route and service data
         routes = pd.merge(self.routes[['route_id', 'route_short_name']], 
-          self.proto_routes)
+          self.frequencies)
         routes = pd.merge(routes, self.service_windows)
 
         # For each row in route and service window, 
@@ -406,7 +391,7 @@ class Feed(object):
 
         # Get the table of trips and add frequency and service window details
         routes = pd.merge(self.routes[['route_id', 'route_short_name']], 
-          self.proto_routes)
+          self.frequencies)
         trips = self.trips.copy()
         trips['service_window_id'] = trips['trip_id'].map(
           lambda x: x.split('#')[2])

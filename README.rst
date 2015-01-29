@@ -21,7 +21,7 @@ Usage
 The input directory must contain the following three files
 
 - ``service_windows.csv``
-- ``routes.csv``
+- ``frequencies.csv``
 - ``meta.csv``
 - ``shapes.geojson``
 
@@ -37,19 +37,20 @@ The CSV file contains the columns
 - ``monday``, ``tuesday``, ``wednesday``, ``thursday`` ``friday``, ``saturday``, ``sunday`` (required): 0 or 1, indicating whether the service is active on the given day (1) or not (0) 
 
 
-routes.csv
+frequencies.csv
 -----------
-This is a CSV file containing route information.
+This is a CSV file containing route frequency information.
 The CSV file contains the columns
 
 - ``route_short_name`` (required): a unique short name for the route, e.g. '51X'
 - ``route_desc`` (optional): a description of the route
 - ``route_type`` (required): the `GTFS type of the route <https://developers.google.com/transit/gtfs/reference#routes_fields>`
-- ``shape_id`` (required): unique shape ID of the route that links to ``shapes.geojson``
 - ``service_window_id`` (required): a service window ID for the route taken from the file ``service_windows.csv`` 
+- ``direction`` (required): 0, 1, or 2, indicating whether the route travels in GTFS direction 0, GTFS direction 1, or in both directions.
+In the latter case, trips will be created that travel in both directions along the route's path, each direction operating at the given frequency.  Otherwise, trips will be created that travel in only the given direction.
 - ``frequency`` (required): the frequency of the route during the service window in vehicles per hour
-- ``is_bidirectional`` (required): 0 or 1 indicating whether the route travels in both directions along its shape (1) or not (0). If this field is 1, then trips will be created that travel in both directions along the route's path, each direction operating at the given frequency.  Otherwise, trips will be created that travel in only one direction, the direction of the route's path, operating at the given frequency. 
 - ``speed`` (optional): the speed of the route in kilometers per hour
+- ``shape_id`` (required): shape ID in ``shapes.geojson`` that corresponds to the linestring of the (route, direction, service window) tuple. In particular different directions and service windows for the same route could have different shapes.
 
 
 shapes.geojson
@@ -78,18 +79,16 @@ Basically,
 - ``agency.txt`` is created from ``meta.csv``
 - ``calendar.txt`` is created in a dumb way with exactly one all-week service that applies to all trips
 - ``stops.txt`` is created by making a pair of stops for each shape which lie on the shape's endpoints.  This will lead to duplicate stops in case shapes share endpoints.
-- ``trips.txt`` and ``stop_times.txt`` are created by taking each route, each service window, and running a set of trips starting on the hour and operating at the route's speed and frequency specified for that service window.  If the route is bidirectional then two sets of trips in opposing directions will be created, each operating at the route's frequency. 
+- ``trips.txt`` and ``stop_times.txt`` are created by taking each route, service window, and direction, and running a set of trips starting on the hour and operating at the route's speed and frequency specified for that service window.  If the route direction is 2, then two sets of trips in opposing directions will be created, each operating at the route's frequency. 
 
 
 Examples
 =========
-Play with ``examples/examples.ipynb`` in an iPython notebook or view the notebook as HTML `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.html>`_.
+See ``data/auckland`` for example files.
+You can also play with ``examples/examples.ipynb`` in an iPython notebook or view the notebook as HTML `here <https://rawgit.com/araichev/make_gtfs/master/examples/examples.html>`_.
 
 
 Documentation
 ===============
 Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/html/index.html>`_.
 
-Todo
-=====
-- Allow for route shape variations by using MultiLineString features instead of LineStrings
