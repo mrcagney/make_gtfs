@@ -12,7 +12,7 @@ import utm
 # Program description
 DESC = """
   This is a Python 3.4 command line program that makes a GTFS Feed
-  from a few CSV files of route information ('service_windows.csv', 'routes.csv', 'meta.csv') and a GeoJSON file of route shapes ('shapes.geojson').
+  from a few CSV files of route information ('service_windows.csv', 'frequencies.csv', 'meta.csv') and a GeoJSON file of route shapes ('shapes.geojson').
   """
 
 # Character to separate different chunks within an ID
@@ -68,11 +68,11 @@ def get_duration(timestr1, timestr2, units='s'):
     else:
         return duration/3600
 
-def get_stop_ids(route_id):
-    return [SEP.join(['stp', route_id, str(i)]) for i in range(2)]
+def get_stop_ids(shape_id):
+    return [SEP.join(['stp', shape_id, str(i)]) for i in range(2)]
 
-def get_stop_names(route_short_name):
-    return ['Route {!s} stop {!s}'.format(route_short_name, i)
+def get_stop_names(shape_id):
+    return ['Stop {!s} on shape {!s} '.format(i, shape_id)
       for i in range(2)]
 
 def parse_args():
@@ -127,8 +127,8 @@ class Feed(object):
         # Import files
         service_windows = pd.read_csv(
           os.path.join(input_dir, 'service_windows.csv'))
-        proto_routes = pd.read_csv(
-          os.path.join(input_dir, 'routes.csv'), 
+        frequencies = pd.read_csv(
+          os.path.join(input_dir, 'frequencies.csv'), 
           dtype={'route_short_name': str, 'service_window_id': str, 
           'shape_id': str})
         meta = pd.read_csv(
@@ -137,23 +137,23 @@ class Feed(object):
         proto_shapes = json.load(open(
           os.path.join(input_dir, 'shapes.geojson'), 'r'))        
 
-        # Clean up raw routes
-        cols = proto_routes.columns
+        # Clean up frequencies
+        cols = frequencies.columns
         if 'route_desc' not in cols:
-            proto_routes['route_desc'] = np.nan
+            frequencies['route_desc'] = np.nan
 
         # Fill missing route types with 3 (bus)
-        proto_routes['route_type'].fillna(3, inplace=True)
-        proto_routes['route_type'] = proto_routes['route_type'].astype(int)
+        frequencies['route_type'].fillna(3, inplace=True)
+        frequencies['route_type'] = frequencies['route_type'].astype(int)
         
         # Create route speeds and fill in missing values with default speeds
         if 'speed' not in cols:
-            proto_routes['speed'] = np.nan
-        proto_routes['speed'].fillna(meta['default_route_speed'].iat[0], 
+            frequencies['speed'] = np.nan
+        frequencies['speed'].fillna(meta['default_route_speed'].iat[0], 
           inplace=True)
         
         # Save
-        self.proto_routes = proto_routes
+        self.frequencies = frequencies
         self.service_windows = service_windows
         self.meta = meta
         self.proto_shapes = proto_shapes
@@ -210,36 +210,28 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``routes.txt`` and save it
         to ``self.routes``.
-        Also create a dictionary with structure route ID -> shape ID and
-        save it to ``self.shape_by_route``.
         """
-        f = self.proto_routes[['route_short_name', 'route_desc', 
+        f = self.frequencies[['route_short_name', 'route_desc', 
           'route_type', 'shape_id']].drop_duplicates().copy()
 
         # Create route IDs
-        f['route_id'] = ['r' + str(i) for i in range(f.shape[0])]
+        f['route_id'] = 'r' + f['route_short_name'].map(str)
         
         # Save
-        self.shape_by_route = dict(f[['route_id', 'shape_id']].values)
         del f['shape_id']
         self.routes = f 
 
-    def get_linestring_by_route(self, use_utm=False):
+    def get_linestring_by_shape(self, use_utm=False):
         """
         Return a dictionary of the form
-        route ID -> Shapely linestring of shape.
-        Route IDs without shapes in ``shapes.geojson`` will not appear
-        in the dictionary.
+        shape ID -> Shapely linestring of shape.
+        Shape IDs in ``frequencies.csv`` that are not in ``shapes.geojson``
+        will not appear in the dictionary.
         If ``use_utm == True``, then return each linestring in
         in UTM coordinates.
         Otherwise, return each linestring in WGS84 longitude-latitude
         coordinates.
-
-        Will create ``self.routes`` if it does not already exist.
         """
-        if not hasattr(self, 'routes'):
-            self.create_routes()
-
         # Note the output for conversion to UTM with the utm package:
         # >>> u = utm.from_latlon(47.9941214, 7.8509671)
         # >>> print u
@@ -252,40 +244,20 @@ class Feed(object):
             def proj(lon, lat):
                 return lon, lat
             
-        linestring_by_shape = {f['properties']['shape_id']: 
+        return {f['properties']['shape_id']: 
           transform(proj, sh_shape(f['geometry'])) 
           for f in self.proto_shapes['features']}
-        shape_by_route = self.shape_by_route
-        result = {}
-        for route in self.routes['route_id'].values:
-            shape = shape_by_route[route]
-            if shape in linestring_by_shape:
-                result[route] = linestring_by_shape[shape]
-        return result
 
     def create_shapes(self):
         """
         Create a Pandas data frame representing ``shapes.txt`` and save it 
         to ``self.shapes``.
-        Routes without shapes in ``shapes.geojson`` will be ignored.
-        Each route with a shape has one shape that is used for 
-        both directions of travel. 
-        
-        Will create ``self.routes`` if it does not already exist.
+        Shape IDs in ``frequencies.csv`` that are not in ``shapes.geojson``
+        will be ignored.
         """
-        if not hasattr(self, 'routes'):
-            self.create_routes()
-
         F = []
-        linestring_by_route = self.get_linestring_by_route(use_utm=False)
-        shape_by_route = self.shape_by_route
-        for index, row in self.routes.iterrows():
-            route = row['route_id']
-            # Don't make shapes for routes without linestrings
-            if route not in linestring_by_route:
-                continue
-            linestring = linestring_by_route[route]
-            shape = shape_by_route[route]
+        linestring_by_shape = self.get_linestring_by_shape(use_utm=False)
+        for shape, linestring in linestring_by_shape.items():
             rows = [[shape, i, lon, lat] 
               for i, (lon, lat) in enumerate(linestring.coords)]
             F.extend(rows)
@@ -298,22 +270,15 @@ class Feed(object):
         ``self.stops``.
         Create one stop at the beginning (the first point) of each shape 
         and one at the end (the last point) of each shape.
-        This will create duplicate stops in case shapes share endpoints.
 
-        Will create ``self.routes`` if it does not already exist.
-
-        Will not create stops for routes without linestrings.
+        Will not create stops for shape IDs listed in ``frequencies.csv`` 
+        but not present in ``shapes.geojson``
         """
-        if not hasattr(self, 'routes'):
-            self.create_routes()
-
-        linestring_by_route = self.get_linestring_by_route(use_utm=False)
-        rsn_by_rid = dict(self.routes[['route_id', 'route_short_name']].values)
+        linestring_by_shape = self.get_linestring_by_shape(use_utm=False)
         F = []
-        for rid, linestring in linestring_by_route.items():
-            rsn = rsn_by_rid[rid] 
-            stop_ids = get_stop_ids(rid)
-            stop_names = get_stop_names(rsn)
+        for shape, linestring in linestring_by_shape.items():
+            stop_ids = get_stop_ids(shape)
+            stop_names = get_stop_names(shape)
             for i in range(2):
                 stop_id = stop_ids[i]
                 stop_name = stop_names[i]
@@ -327,8 +292,8 @@ class Feed(object):
         """
         Create a Pandas data frame representing ``trips.txt`` and save it to
         ``self.trips``.
-        Trip IDs encode direction, service window, and trip number within that
-        direction and service window to make it easy to compute stop times.
+        Trip IDs encode route, direction, and service window information 
+        to make it easy to compute stop times later.
 
         Will create ``self.calendar``, ``self.routes``, and ``self.shapes`` 
         if they don't already exist.
@@ -344,20 +309,19 @@ class Feed(object):
 
         # Put together the route and service data
         routes = pd.merge(self.routes[['route_id', 'route_short_name']], 
-          self.proto_routes)
+          self.frequencies)
         routes = pd.merge(routes, self.service_windows)
 
-        # For each row in route and service window, 
-        # add unidirectional or bidirectional trips at the specified frequency
+        # For each row in routes, 
+        # add trips at the specified frequency in the specified direction
         F = []
-        num_trips = 0
-        linestring_by_route = self.get_linestring_by_route()
+        shapes = set(self.shapes['shape_id'].unique())
         for index, row in routes.iterrows():
-            route = row['route_id']
-            # Don't create trips for routes with null linestrings
-            if route not in linestring_by_route:
-                continue
             shape = row['shape_id']
+            # Don't create trips for shapes that don't exist
+            if shape not in shapes:
+                continue
+            route = row['route_id']
             window = row['service_window_id']
             start, end = row[['start_time', 'end_time']].values
             duration = get_duration(start, end, 'h')
@@ -366,12 +330,11 @@ class Feed(object):
             frequency = row['frequency']
             num_trips_per_direction = int(frequency*duration)
             service = self.service_by_window[window]
-            bidir = row['is_bidirectional']
-            num_trips += duration*frequency*(bidir + 1)
-            if bidir == 1:
+            direction = row['direction']
+            if direction == 2:
                 directions = [0, 1]
             else:
-                directions = [0] 
+                directions = [direction]
             for direction in directions:
                 F.extend([[
                   route, 
@@ -394,32 +357,33 @@ class Feed(object):
         Create a Pandas data frame representing ``stop_times.txt`` and save it
         to ``self.stop_times``.
 
-        Will create ``self.stops`` and ``self.trips`` if they don't already 
-        exist.
+        Will create ``self.stops``, ``self.trips``, ``self.shapes`` 
+        if they don't already exist.
         """
         if not hasattr(self, 'stops'):
             self.create_stops()
         if not hasattr(self, 'trips'):
             self.create_trips()
-
-        linestring_by_route = self.get_linestring_by_route(use_utm=True)
+        if not hasattr(self, 'shapes'):
+            self.create_shapes()
 
         # Get the table of trips and add frequency and service window details
         routes = pd.merge(self.routes[['route_id', 'route_short_name']], 
-          self.proto_routes)
+          self.frequencies)
         trips = self.trips.copy()
         trips['service_window_id'] = trips['trip_id'].map(
           lambda x: x.split('#')[2])
         trips = pd.merge(routes, trips)
 
+        linestring_by_shape = self.get_linestring_by_shape(use_utm=True)
+
         # Iterate through trips and set stop times based on stop ID
-        # and service window frequency
+        # and service window frequency.
+        # Remember that every trip has a valid shape ID.
         F = []
         for index, row in trips.iterrows():
-            route = row['route_id']
-            if route not in linestring_by_route:
-                continue
-            length = linestring_by_route[route].length/1000  # kilometers
+            shape = row['shape_id']
+            length = linestring_by_shape[shape].length/1000  # kilometers
             speed = row['speed']  # kph
             duration = int((length/speed)*3600)  # seconds
             frequency = row['frequency']
@@ -428,7 +392,7 @@ class Feed(object):
             junk, route, window, base_timestr, direction, i =\
               trip.split(SEP)
             direction = int(direction) 
-            stops = get_stop_ids(route)
+            stops = get_stop_ids(shape)
             if direction == 1:
                 stops.reverse()
             base_time = timestr_to_seconds(base_timestr)

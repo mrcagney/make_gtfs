@@ -14,12 +14,12 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.5.1',
+    version='0.6',
 
     description="""
         A Python 3.4 command line program that makes a GTFS Feed
         from a few CSV files of route information 
-        ('service_windows.csv', 'routes.csv', 'meta.csv') 
+        ('service_windows.csv', 'frequencies.csv', 'meta.csv') 
         and a GeoJSON file of route shapes ('shapes.geojson').
     """,
     
