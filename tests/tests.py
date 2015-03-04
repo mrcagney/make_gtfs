@@ -109,6 +109,8 @@ class TestFeed(unittest.TestCase):
             if shape not in shapes:
                 continue
             frequency = row['frequency']
+            if not frequency:
+                continue
             start, end = row[['start_time', 'end_time']].values
             duration = get_duration(start, end, 'h')
             direction = row['direction']

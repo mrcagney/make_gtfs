@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The make_gtfs Module &mdash; make_gtfs 0.3 documentation</title>
+    <title>The make_gtfs Module &mdash; make_gtfs 0.6.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.3',
+        VERSION:     '0.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="make_gtfs 0.3 documentation" href="index.html" />
+    <link rel="top" title="make_gtfs 0.6.1 documentation" href="index.html" />
     <link rel="prev" title="Welcome to make_gtfs’s documentation!" href="index.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to make_gtfs’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">make_gtfs 0.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">make_gtfs 0.6.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -76,8 +76,10 @@ The stop times object can be big.</p>
 <tt class="descname">create_calendar</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_calendar" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">calendar.txt</span></tt> and save it to
 <tt class="docutils literal"><span class="pre">self.calendar</span></tt>.
-It is a dumb calendar with one service that operates
-on every day of the week.</p>
+Create the service IDs from the distinct weekly activities of the 
+service windows.
+Also save the dictionary service window ID -&gt; service ID to
+<tt class="docutils literal"><span class="pre">self.service_by_window</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -92,8 +94,8 @@ to <tt class="docutils literal"><span class="pre">self.routes</span></tt>.</p>
 <tt class="descname">create_shapes</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_shapes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">shapes.txt</span></tt> and save it 
 to <tt class="docutils literal"><span class="pre">self.shapes</span></tt>.
-Each route has one shape that is used for both directions of travel.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.routes</span></tt> if it does not already exist.</p>
+Shape IDs in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> that are not in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt>
+will be ignored.</p>
 </dd></dl>
 
 <dl class="method">
@@ -101,8 +103,8 @@ Each route has one shape that is used for both directions of travel.</p>
 <tt class="descname">create_stop_times</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_stop_times" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">stop_times.txt</span></tt> and save it
 to <tt class="docutils literal"><span class="pre">self.stop_times</span></tt>.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.stops</span></tt> and <tt class="docutils literal"><span class="pre">self.trips</span></tt> if they don&#8217;t already 
-exist.</p>
+<p>Will create <tt class="docutils literal"><span class="pre">self.stops</span></tt>, <tt class="docutils literal"><span class="pre">self.trips</span></tt>, <tt class="docutils literal"><span class="pre">self.shapes</span></tt> 
+if they don&#8217;t already exist.</p>
 </dd></dl>
 
 <dl class="method">
@@ -111,9 +113,9 @@ exist.</p>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">stops.txt</span></tt> and save it to
 <tt class="docutils literal"><span class="pre">self.stops</span></tt>.
 Create one stop at the beginning (the first point) of each shape 
-and one at the end (the last point) of each shape.
-This will create duplicate stops in case shapes share endpoints.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.routes</span></tt> if it does not already exist.</p>
+and one at the end (the last point) of each shape.</p>
+<p>Will not create stops for shape IDs listed in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> 
+but not present in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt></p>
 </dd></dl>
 
 <dl class="method">
@@ -121,17 +123,18 @@ This will create duplicate stops in case shapes share endpoints.</p>
 <tt class="descname">create_trips</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_trips" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">trips.txt</span></tt> and save it to
 <tt class="docutils literal"><span class="pre">self.trips</span></tt>.
-Trip IDs encode direction, service window, and trip number within that
-direction and service window to make it easy to compute stop times.</p>
+Trip IDs encode route, direction, and service window information 
+to make it easy to compute stop times later.</p>
 <p>Will create <tt class="docutils literal"><span class="pre">self.calendar</span></tt>, <tt class="docutils literal"><span class="pre">self.routes</span></tt>, and <tt class="docutils literal"><span class="pre">self.shapes</span></tt> 
 if they don&#8217;t already exist.</p>
+<p>Will not create trips for routes with null linestrings.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="make_gtfs.make_gtfs.Feed.export">
-<tt class="descname">export</tt><big>(</big><em>output_dir=None</em>, <em>as_zip=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.export" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">export</tt><big>(</big><em>output_dir=None</em>, <em>as_zip=True</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.export" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assuming all the necessary data frames have been created
-(as in create_all()), export them to CSV files in the given output
+(as in create_all()), export them to CSV files to the given output
 directory.
 If <tt class="docutils literal"><span class="pre">as_zip</span></tt> is True, then instead write the files to a 
 zip archive called <tt class="docutils literal"><span class="pre">gtfs.zip</span></tt> in the given output directory.
@@ -139,29 +142,16 @@ If <tt class="docutils literal"><span class="pre">output_dir</span> <span class=
 </dd></dl>
 
 <dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.get_linestring_by_route">
-<tt class="descname">get_linestring_by_route</tt><big>(</big><em>use_utm=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_linestring_by_route" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a GeoJSON feature collection of linestrings tagged with 
-route short names, return a dictionary with structure
-route ID -&gt; Shapely linestring of shape.
+<dt id="make_gtfs.make_gtfs.Feed.get_linestring_by_shape">
+<tt class="descname">get_linestring_by_shape</tt><big>(</big><em>use_utm=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_linestring_by_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary of the form
+shape ID -&gt; Shapely linestring of shape.
+Shape IDs in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> that are not in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt>
+will not appear in the dictionary.
 If <tt class="docutils literal"><span class="pre">use_utm</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then return each linestring in
 in UTM coordinates.
 Otherwise, return each linestring in WGS84 longitude-latitude
 coordinates.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.routes</span></tt> if it does not already exist.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.get_service_windows">
-<tt class="descname">get_service_windows</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_service_windows" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return <tt class="docutils literal"><span class="pre">self.config['service_windows']</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.get_window_duration">
-<tt class="descname">get_window_duration</tt><big>(</big><em>window_name</em>, <em>units='s'</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_window_duration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the duration of the given service window in the given units.
-Allowable units are &#8216;s&#8217; (seconds), &#8216;min&#8217; (minutes), &#8216;h&#8217; (hours).</p>
 </dd></dl>
 
 </dd></dl>
@@ -176,18 +166,13 @@ Assume <tt class="docutils literal"><span class="pre">timestr1</span> <span clas
 </dd></dl>
 
 <dl class="function">
-<dt id="make_gtfs.make_gtfs.get_shape_id">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_shape_id</tt><big>(</big><em>route_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_shape_id" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="make_gtfs.make_gtfs.get_stop_ids">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_ids</tt><big>(</big><em>route_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_ids" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_ids</tt><big>(</big><em>shape_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_ids" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="make_gtfs.make_gtfs.get_stop_names">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_names</tt><big>(</big><em>route_short_name</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_names" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_names</tt><big>(</big><em>shape_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_names" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -205,18 +190,15 @@ a list of one output file path.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="make_gtfs.make_gtfs.seconds_to_timestr">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">seconds_to_timestr</tt><big>(</big><em>seconds</em>, <em>inverse=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.seconds_to_timestr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the given number of integer seconds as the time string &#8216;%H:%M:%S&#8217;.
+<dt id="make_gtfs.make_gtfs.timestr_to_seconds">
+<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">timestr_to_seconds</tt><big>(</big><em>x</em>, <em>inverse=False</em>, <em>mod24=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.timestr_to_seconds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a time string of the form &#8216;%H:%M:%S&#8217;, return the number of seconds
+past midnight that it represents.
+In keeping with GTFS standards, the hours entry may be greater than 23.
+If <tt class="docutils literal"><span class="pre">mod24</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then return the number of seconds modulo <tt class="docutils literal"><span class="pre">24*3600</span></tt>.
 If <tt class="docutils literal"><span class="pre">inverse</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then do the inverse operation.
-In keeping with GTFS standards, the hours entry may be greater than 23.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.timestr_mod_24">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">timestr_mod_24</tt><big>(</big><em>timestr</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.timestr_mod_24" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a GTFS time string in the format %H:%M:%S, return a timestring
-in the same format but with the hours taken modulo 24.</p>
+In this case, if <tt class="docutils literal"><span class="pre">mod24</span> <span class="pre">==</span> <span class="pre">True</span></tt> also, then first take the number of 
+seconds modulo <tt class="docutils literal"><span class="pre">24*3600</span></tt>.</p>
 </dd></dl>
 
 </div>
@@ -264,7 +246,7 @@ in the same format but with the hours taken modulo 24.</p>
         <li class="right" >
           <a href="index.html" title="Welcome to make_gtfs’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">make_gtfs 0.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">make_gtfs 0.6.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

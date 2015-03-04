@@ -1,0 +1,5 @@
+stop_id,stop_name,stop_lon,stop_lat
+stp#shp1#0,Stop 0 on shape shp1 ,174.767029,-36.84444
+stp#shp1#1,Stop 1 on shape shp1 ,174.767029,-36.84444
+stp#shp2#0,Stop 0 on shape shp2 ,174.744138,-36.847422
+stp#shp2#1,Stop 1 on shape shp2 ,174.744298,-36.847422

@@ -130,7 +130,7 @@ class Feed(object):
         frequencies = pd.read_csv(
           os.path.join(input_dir, 'frequencies.csv'), 
           dtype={'route_short_name': str, 'service_window_id': str, 
-          'shape_id': str})
+          'shape_id': str, 'direction': int, 'frequency': int})
         meta = pd.read_csv(
           os.path.join(input_dir, 'meta.csv'),
           dtype={'start_date': str, 'end_date': str})
@@ -325,9 +325,12 @@ class Feed(object):
             window = row['service_window_id']
             start, end = row[['start_time', 'end_time']].values
             duration = get_duration(start, end, 'h')
+            frequency = row['frequency']
+            if not frequency:
+                # No trips during this service window
+                continue
             # Rounding down occurs here if the duration isn't integral
             # (bad input)
-            frequency = row['frequency']
             num_trips_per_direction = int(frequency*duration)
             service = self.service_by_window[window]
             direction = row['direction']
@@ -387,6 +390,9 @@ class Feed(object):
             speed = row['speed']  # kph
             duration = int((length/speed)*3600)  # seconds
             frequency = row['frequency']
+            if not frequency:
+                # No stop times for this trip/frequency combo
+                continue
             headway = 3600/frequency  # seconds
             trip = row['trip_id']
             junk, route, window, base_timestr, direction, i =\
