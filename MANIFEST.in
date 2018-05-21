@@ -1,3 +1,0 @@
-global-include *.rst *.txt *.ipynb *.pdf *.csv
-recursive-include docs *
-prune tests/*.ipynb
