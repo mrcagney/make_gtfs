@@ -1,3 +1,4 @@
 {
+  "tests/test_cli.py::test_make_gtfs": true,
   "tests/tests.py": true
 }

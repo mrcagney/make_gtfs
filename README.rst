@@ -14,11 +14,9 @@ Installation
 
 Usage
 =====
-Use as a library or from the command line via
+Use as a library or from the command line by typing ``build_feed --help`` for instructions.
 
-``python make_gtfs.py [-h] [-o OUTPUT_FILE] [input_dir]``
-
-The input directory must contain the following three files
+To build a GTFS feed with this package you need to create a directory with the following files:
 
 - ``service_windows.csv``
 - ``frequencies.csv``
@@ -85,14 +83,10 @@ Basically,
   If the route direction is 2, then two sets of trips in opposing directions will be created, each operating at the route's frequency.
 
 
-Examples
-=========
-See ``data/auckland`` for example files and play with the Jupyter notebook at ``ipynb/examples.ipynb``.
-
-
 Documentation
 ===============
 Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/html/index.html>`_.
+Also see ``data/auckland`` for example files, and play with the Jupyter notebook at ``ipynb/examples.ipynb``.
 
 
 Authors
