@@ -9,7 +9,6 @@ addons:
     - libspatialindex-dev
 language: python
 python:
-  - "3.4"
   - "3.5"
   - "3.6"
 # command to install dependencies
@@ -18,4 +17,4 @@ install:
   - travis_retry travis_wait pipenv install
 
 # command to run tests
-script: pytest --runslow
+script: pytest
