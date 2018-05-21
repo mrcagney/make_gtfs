@@ -1,0 +1,21 @@
+notifications:
+  email: false
+addons:
+  apt:
+    packages:
+    - libgdal1h
+    - gdal-bin
+    - libgdal-dev
+    - libspatialindex-dev
+language: python
+python:
+  - "3.4"
+  - "3.5"
+  - "3.6"
+# command to install dependencies
+install:
+  - pip install pipenv
+  - travis_retry travis_wait pipenv install
+
+# command to run tests
+script: pytest --runslow

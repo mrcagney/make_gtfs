@@ -1,0 +1,11 @@
+[
+  "tests/test_main.py::test_get_duration",
+  "tests/test_main.py::test_init",
+  "tests/test_main.py::test_build_routes",
+  "tests/test_main.py::test_build_linestring_by_shape",
+  "tests/test_main.py::test_build_shapes",
+  "tests/test_main.py::test_build_stops",
+  "tests/test_main.py::test_build_trips",
+  "tests/test_main.py::test_build_stop_times",
+  "tests/test_main.py::test_build_feed"
+]

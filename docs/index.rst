@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to make_gtfs's documentation!
+Make GTFS |version| documentation
 =====================================
 
 Contents:
@@ -11,7 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   make_gtfs
+   modules
 
 
 Indices and tables
