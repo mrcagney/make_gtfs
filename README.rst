@@ -112,7 +112,7 @@ Changes
 
 1.0.0, 2018-05-21
 ------------------
-- Refactored to use GTFSTK, Pipenv, Pytest
+- Restructured code and used GTFSTK, Click, Pytest, Pipenv
 
 
 0.6.1, 2015-03-05
