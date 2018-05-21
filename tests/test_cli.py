@@ -24,10 +24,18 @@ def rm_paths(*paths):
 
 def test_make_gtfs():
     s_path = DATA_DIR/'auckland'
-    t_path = DATA_DIR/'auckland_gtfs.zip'
-    rm_paths(t_path)
+    t1_path = DATA_DIR/'bingo.zip'
+    t2_path = DATA_DIR/'bingo'
+    rm_paths(t1_path, t2_path)
 
-    result = runner.invoke(make_gtfs, [str(s_path), str(t_path)])
+    result = runner.invoke(make_gtfs, [str(s_path), str(t1_path)])
     assert result.exit_code == 0
+    assert t1_path.exists()
+    assert t1_path.is_file()
 
-    rm_paths(t_path)
+    result = runner.invoke(make_gtfs, [str(s_path), str(t2_path)])
+    assert result.exit_code == 0
+    assert t2_path.exists()
+    assert t2_path.is_dir()
+
+    rm_paths(t1_path, t2_path)

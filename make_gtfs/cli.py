@@ -11,14 +11,16 @@ import make_gtfs.main as m
   help="Number of decimal places to round to in output")
 def make_gtfs(source_path, target_path, ndigits):
     """
-    Create a GTFS feed from the files in the directory ``source_path``.
-    Save the feed to the file or directory ``target_path``.
-    If the target path ends in ‘.zip’, then write the feed as a zip
+    Create a GTFS feed from the files in the directory SOURCE_PATH.
+    See the project README for a description of the required source
+    files.
+    Save the feed to the file or directory TARGET_PATH.
+    If the target path ends in '.zip', then write the feed as a zip
     archive.
     Otherwise assume the path is a directory, and write the feed as a
     collection of CSV files to that directory, creating the directory
     if it does not exist.
-    Round all decimals to ndigits decimal places.
+    Round all decimals to ndigits decimal places (defaults to 6).
     All distances will be in kilometers.
     """
     feed = m.build_feed(source_path)

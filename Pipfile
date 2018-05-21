@@ -6,13 +6,14 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-pandas = "*"
 jupyter = "*"
 shapely = "*"
 utm = "*"
 gtfstk = "*"
 pytest = "*"
 click = "*"
+"e1839a8" = {path = ".", editable = true}
+pandas = "== 0.22.0"
 
 [requires]
 python_version = "3.5"
