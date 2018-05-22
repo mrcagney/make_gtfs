@@ -90,7 +90,7 @@ See ``data/auckland`` for example files and play with the Jupyter notebook at ``
 
 Documentation
 ===============
-Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/html/index.html>`_.
+Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/singlehtml/index.html>`_.
 
 
 Authors
