@@ -14,9 +14,9 @@ Installation
 
 Usage
 =====
-Use as a library or from the command line via ``make_gtfs --help`` and following the instructions.
+Use as a library, or use from the command line by typing ``make_gtfs --help`` and following the instructions.
 
-The source directory from which you create GTFS feeds, must contain the following files:
+The source directory from which you create GTFS feeds, must contain the files
 
 - ``service_windows.csv``
 - ``frequencies.csv``
