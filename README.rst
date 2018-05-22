@@ -62,22 +62,22 @@ The source directory from which you create GTFS feeds, must contain the files
     same route could have different shapes.
 
 - ``meta.csv``: A CSV file containing network metadata.
-    The CSV file contains the columns
+  The CSV file contains the columns
 
-    - ``agency_name`` (required): String. The name of the transport
-      agency
-    - ``agency_url`` (required): String. A fully qualified URL for
-      the transport agency
-    - ``agency_timezone`` (required): String. Timezone where the
-       transit agency is located. Timezone names never contain the
-       space character but may contain an underscore. Refer to
-       `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
-    - ``start_date``, ``end_date`` (required): Strings. The start
-      and end dates for which all this network information is valid
-      formated as YYYYMMDD strings
-    - ``default_route_speed`` (required): Float. Default speed in
-      kilometers per hour to assign to routes with no ``speed``
-      entry in the file ``routes.csv``
+  - ``agency_name`` (required): String. The name of the transport
+    agency
+  - ``agency_url`` (required): String. A fully qualified URL for
+    the transport agency
+  - ``agency_timezone`` (required): String. Timezone where the
+    transit agency is located. Timezone names never contain the
+    space character but may contain an underscore. Refer to
+    `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
+  - ``start_date``, ``end_date`` (required): Strings. The start
+    and end dates for which all this network information is valid
+    formated as YYYYMMDD strings
+  - ``default_route_speed`` (required): Float. Default speed in
+    kilometers per hour to assign to routes with no ``speed``
+    entry in the file ``routes.csv``
 
 - ``shapes.geojson``: A GeoJSON file containing route shapes.
   The file consists of one feature collection of LineString
