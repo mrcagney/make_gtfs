@@ -12,6 +12,8 @@ shapely = "*"
 utm = "*"
 gtfstk = "*"
 pytest = "*"
+twine = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.5"
