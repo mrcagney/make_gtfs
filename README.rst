@@ -14,11 +14,9 @@ Installation
 
 Usage
 =====
-Use as a library or from the command line via
+Use as a library, or use from the command line by typing ``make_gtfs --help`` and following the instructions.
 
-``python make_gtfs.py [-h] [-o OUTPUT_FILE] [input_dir]``
-
-The input directory must contain the following three files
+The source directory from which you create GTFS feeds, must contain the files
 
 - ``service_windows.csv``
 - ``frequencies.csv``
@@ -110,7 +108,7 @@ Notes
 Changes
 ========
 
-1.0.0, 2018-05-21
+1.0.0, 2018-05-22
 ------------------
 - Restructured code and used GTFSTK, Click, Pytest, Pipenv
 
