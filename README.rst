@@ -18,8 +18,7 @@ Use as a library, or use from the command line by typing ``make_gtfs --help`` an
 
 The source directory from which you create GTFS feeds, must contain the files
 
-- ``service_windows.csv``
-    A CSV file containing service window information.
+- ``service_windows.csv``: A CSV file containing service window information.
     A *service window* is a time interval and a set of days of the
     week during which all routes have constant service frequency,
     e.g. Saturday and Sunday 07:00 to 09:00.
@@ -35,8 +34,7 @@ The source directory from which you create GTFS feeds, must contain the files
       or 1. Indicates whether the service is active on the given day
       (1) or not (0)
 
-- ``frequencies.csv``
-    A CSV file containing route frequency information.
+- ``frequencies.csv``: A CSV file containing route frequency information.
     The CSV file contains the columns
 
     - ``route_short_name`` (required): String. A unique short name
@@ -63,8 +61,7 @@ The source directory from which you create GTFS feeds, must contain the files
       In particular different directions and service windows for the
       same route could have different shapes.
 
-- ``meta.csv``
-    A CSV file containing network metadata.
+- ``meta.csv``: A CSV file containing network metadata.
     The CSV file contains the columns
 
     - ``agency_name`` (required): String. The name of the transport
@@ -82,8 +79,7 @@ The source directory from which you create GTFS feeds, must contain the files
       kilometers per hour to assign to routes with no ``speed``
       entry in the file ``routes.csv``
 
-- ``shapes.geojson``
-    A GeoJSON file containing route shapes.
+- ``shapes.geojson``: A GeoJSON file containing route shapes.
     The file consists of one feature collection of LineString
     features, where each feature's properties contains at least the
     attribute ``shape_id``, which links the route's shape to the
