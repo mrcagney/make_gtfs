@@ -20,9 +20,7 @@ setup(
     license=license,
     install_requires=[
         'gtfstk >= 9.1.0',
-        # Avoid replace() bug in 0.23.0;
-        # see https://github.com/pandas-dev/pandas/issues/21159
-        'pandas < 0.23.0',
+        'pandas >= 0.22.0',
         'Shapely >= 1.6.4',
         'utm >= 0.4.2',
         'click >= 6.7',
