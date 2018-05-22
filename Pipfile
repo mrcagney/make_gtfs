@@ -6,7 +6,6 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-pandas = "*"
 jupyter = "*"
 shapely = "*"
 utm = "*"
@@ -14,6 +13,8 @@ gtfstk = "*"
 pytest = "*"
 twine = "*"
 sphinx = "*"
+pandas = "==0.22.0"
+"e1839a8" = {editable = true, path = "."}
 
 [requires]
 python_version = "3.5"

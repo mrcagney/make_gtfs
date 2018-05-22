@@ -17,23 +17,20 @@ SEP = '-'
 
 class ProtoFeed(object):
     """
-    An ProtoFeed instance simply holds together the source data from
-    which to create a GTFS feed.
-    """
-    def __init__(self, path):
-        """
-        Create a ProtoFeed from the files located at the given directory
-        path (string or Path object).
-        The directory must contain the following files:
+    An ProtoFeed instance simply holds the source data
+    from which to build a GTFS feed.
 
-        - ``service_windows.csv``
-        - ``frequencies.csv``
-        - ``meta.csv``
-        - ``shapes.geojson``
+    Attributes are
 
+    - ``service_windows``: DataFrame
+    - ``frequencies``: DataFrame; has speeds filled in
+    - ``meta``: DataFrame
+    - ``shapes``: dictionary
 
-        service_windows.csv
-        --------------------
+    These are built from the required source files located at the
+    given directory path (string or Path object):
+
+    - ``service_windows.csv``
         This is a CSV file containing service window information.
         A *service window* is a time interval and a set of days of the
         week during which all routes have constant service frequency,
@@ -46,22 +43,19 @@ class ProtoFeed(object):
           and end times of the service window in HH:MM:SS format where
           the hour is less than 24
         - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
-          ``friday``, ``saturday``, ``sunday`` (required):
-           Integer 0 or 1. Indicates whether the service is active on
-           the given day (1) or not (0)
+          ``friday``, ``saturday``, ``sunday`` (required): Integer 0
+          or 1. Indicates whether the service is active on the given day
+          (1) or not (0)
 
-
-        frequencies.csv
-        -----------
+    - ``frequencies.csv``
         This is a CSV file containing route frequency information.
         The CSV file contains the columns
 
         - ``route_short_name`` (required): String. A unique short name
            for the route, e.g. '51X'
         - ``route_desc`` (optional): String. A description of the route
-        - ``route_type`` (required): Integer. The `GTFS type of the
-           route
-           <https://developers.google.com/transit/gtfs/reference#routes_fields>`_
+        - ``route_type`` (required): Integer. The
+          `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
         - ``service_window_id`` (required): String. A service window ID
           for the route taken from the file ``service_windows.csv``
         - ``direction`` (required): Integer 0, 1, or 2. Indicates
@@ -81,17 +75,7 @@ class ProtoFeed(object):
           In particular different directions and service windows for the
           same route could have different shapes.
 
-
-        shapes.geojson
-        ---------------
-        This is a GeoJSON file containing route shapes.
-        The file consists of one feature collection of LineString
-        features, where each feature's properties contains at least the
-        attribute ``shape_id``, which links the route's shape to the
-        route's information in ``routes.csv``.
-
-        meta.csv
-        ------------
+    - ``meta.csv``
         This is a CSV file containing network metadata.
         The CSV file contains the columns
 
@@ -110,7 +94,16 @@ class ProtoFeed(object):
           kilometers per hour to assign to routes with no ``speed``
           entry in the file ``routes.csv``
 
-        """
+    - ``shapes.geojson``
+        This is a GeoJSON file containing route shapes.
+        The file consists of one feature collection of LineString
+        features, where each feature's properties contains at least the
+        attribute ``shape_id``, which links the route's shape to the
+        route's information in ``routes.csv``.
+
+    """
+
+    def __init__(self, path):
         # Read source files
         self.path = Path(path)
         self.service_windows = pd.read_csv(
