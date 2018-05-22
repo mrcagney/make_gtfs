@@ -1,209 +1,48 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>make_gtfs 0.6 documentation</title>
-    
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <title>make_gtfs 1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.6',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="None" href="index.html#document-index" /> 
-  </head>
-  <body>
-    <div class="related">
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
-        <li><a href="index.html#document-index">make_gtfs 0.6 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html#document-index">make_gtfs 1.0.0 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
-  <div class="section" id="welcome-to-make-gtfs-s-documentation">
-<h1>Welcome to make_gtfs&#8217;s documentation!<a class="headerlink" href="#welcome-to-make-gtfs-s-documentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="make-gtfs-version-documentation">
+<h1>Make GTFS 1.0.0 documentation<a class="headerlink" href="#make-gtfs-version-documentation" title="Permalink to this headline">¶</a></h1>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
-<span id="document-make_gtfs"></span><div class="section" id="module-make_gtfs.make_gtfs">
-<span id="the-make-gtfs-module"></span><h2>The make_gtfs Module<a class="headerlink" href="#module-make_gtfs.make_gtfs" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="make_gtfs.make_gtfs.Feed">
-<em class="property">class </em><tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">Feed</tt><big>(</big><em>input_dir</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<p>A class to gather all the GTFS files for a feed and store them in memory 
-as Pandas data frames.  
-Make sure you have enough memory!  
-The stop times object can be big.</p>
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_agency">
-<tt class="descname">create_agency</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_agency" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">agency.txt</span></tt> and save it to
-<tt class="docutils literal"><span class="pre">self.agency</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_all">
-<tt class="descname">create_all</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create all Pandas data frames necessary for a GTFS feed.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_calendar">
-<tt class="descname">create_calendar</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_calendar" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">calendar.txt</span></tt> and save it to
-<tt class="docutils literal"><span class="pre">self.calendar</span></tt>.
-Create the service IDs from the distinct weekly activities of the 
-service windows.
-Also save the dictionary service window ID -&gt; service ID to
-<tt class="docutils literal"><span class="pre">self.service_by_window</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_routes">
-<tt class="descname">create_routes</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_routes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">routes.txt</span></tt> and save it
-to <tt class="docutils literal"><span class="pre">self.routes</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_shapes">
-<tt class="descname">create_shapes</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_shapes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">shapes.txt</span></tt> and save it 
-to <tt class="docutils literal"><span class="pre">self.shapes</span></tt>.
-Shape IDs in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> that are not in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt>
-will be ignored.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_stop_times">
-<tt class="descname">create_stop_times</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_stop_times" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">stop_times.txt</span></tt> and save it
-to <tt class="docutils literal"><span class="pre">self.stop_times</span></tt>.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.stops</span></tt>, <tt class="docutils literal"><span class="pre">self.trips</span></tt>, <tt class="docutils literal"><span class="pre">self.shapes</span></tt> 
-if they don&#8217;t already exist.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_stops">
-<tt class="descname">create_stops</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_stops" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">stops.txt</span></tt> and save it to
-<tt class="docutils literal"><span class="pre">self.stops</span></tt>.
-Create one stop at the beginning (the first point) of each shape 
-and one at the end (the last point) of each shape.</p>
-<p>Will not create stops for shape IDs listed in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> 
-but not present in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.create_trips">
-<tt class="descname">create_trips</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.create_trips" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Pandas data frame representing <tt class="docutils literal"><span class="pre">trips.txt</span></tt> and save it to
-<tt class="docutils literal"><span class="pre">self.trips</span></tt>.
-Trip IDs encode route, direction, and service window information 
-to make it easy to compute stop times later.</p>
-<p>Will create <tt class="docutils literal"><span class="pre">self.calendar</span></tt>, <tt class="docutils literal"><span class="pre">self.routes</span></tt>, and <tt class="docutils literal"><span class="pre">self.shapes</span></tt> 
-if they don&#8217;t already exist.</p>
-<p>Will not create trips for routes with null linestrings.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.export">
-<tt class="descname">export</tt><big>(</big><em>output_dir=None</em>, <em>as_zip=True</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.export" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assuming all the necessary data frames have been created
-(as in create_all()), export them to CSV files to the given output
-directory.
-If <tt class="docutils literal"><span class="pre">as_zip</span></tt> is True, then instead write the files to a 
-zip archive called <tt class="docutils literal"><span class="pre">gtfs.zip</span></tt> in the given output directory.
-If <tt class="docutils literal"><span class="pre">output_dir</span> <span class="pre">is</span> <span class="pre">None</span></tt>, then write to <tt class="docutils literal"><span class="pre">self.input_dir</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="make_gtfs.make_gtfs.Feed.get_linestring_by_shape">
-<tt class="descname">get_linestring_by_shape</tt><big>(</big><em>use_utm=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.Feed.get_linestring_by_shape" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a dictionary of the form
-shape ID -&gt; Shapely linestring of shape.
-Shape IDs in <tt class="docutils literal"><span class="pre">frequencies.csv</span></tt> that are not in <tt class="docutils literal"><span class="pre">shapes.geojson</span></tt>
-will not appear in the dictionary.
-If <tt class="docutils literal"><span class="pre">use_utm</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then return each linestring in
-in UTM coordinates.
-Otherwise, return each linestring in WGS84 longitude-latitude
-coordinates.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.get_duration">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_duration</tt><big>(</big><em>timestr1</em>, <em>timestr2</em>, <em>units='s'</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_duration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the duration of the time period between the first and second 
-time string in the given units.
-Allowable units are &#8216;s&#8217; (seconds), &#8216;min&#8217; (minutes), &#8216;h&#8217; (hours).    
-Assume <tt class="docutils literal"><span class="pre">timestr1</span> <span class="pre">&lt;</span> <span class="pre">timestr2</span></tt>.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.get_stop_ids">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_ids</tt><big>(</big><em>shape_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_ids" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.get_stop_names">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">get_stop_names</tt><big>(</big><em>shape_id</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.get_stop_names" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.main">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.main" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get command line arguments, create feed, and export feed.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.parse_args">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">parse_args</tt><big>(</big><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.parse_args" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parse command line options and return an object with two attributes:
-<cite>input_dir</cite>, a list of one input directory path, and <cite>output_file</cite>, 
-a list of one output file path.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="make_gtfs.make_gtfs.timestr_to_seconds">
-<tt class="descclassname">make_gtfs.make_gtfs.</tt><tt class="descname">timestr_to_seconds</tt><big>(</big><em>x</em>, <em>inverse=False</em>, <em>mod24=False</em><big>)</big><a class="headerlink" href="#make_gtfs.make_gtfs.timestr_to_seconds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a time string of the form &#8216;%H:%M:%S&#8217;, return the number of seconds
-past midnight that it represents.
-In keeping with GTFS standards, the hours entry may be greater than 23.
-If <tt class="docutils literal"><span class="pre">mod24</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then return the number of seconds modulo <tt class="docutils literal"><span class="pre">24*3600</span></tt>.
-If <tt class="docutils literal"><span class="pre">inverse</span> <span class="pre">==</span> <span class="pre">True</span></tt>, then do the inverse operation.
-In this case, if <tt class="docutils literal"><span class="pre">mod24</span> <span class="pre">==</span> <span class="pre">True</span></tt> also, then first take the number of 
-seconds modulo <tt class="docutils literal"><span class="pre">24*3600</span></tt>.</p>
-</dd></dl>
-
+<span id="document-modules"></span><div class="section" id="the-make-gtfs-module">
+<h2>The make_gtfs Module<a class="headerlink" href="#the-make-gtfs-module" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
-<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
-<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
 </ul>
 </div>
 
@@ -211,26 +50,26 @@ seconds modulo <tt class="docutils literal"><span class="pre">24*3600</span></tt
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html#document-index">Table Of Contents</a></h3>
   <ul>
-<li class="toctree-l1"><a class="reference internal" href="index.html#document-make_gtfs">The make_gtfs Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-modules">The make_gtfs Module</a></li>
 </ul>
 
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
-        <li><a href="index.html#document-index">make_gtfs 0.6 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html#document-index">make_gtfs 1.0.0 documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2014, Alexander Raichev.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2014, Alexander Raichev.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
     </div>
   </body>
 </html>
