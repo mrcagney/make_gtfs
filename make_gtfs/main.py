@@ -256,26 +256,32 @@ def build_linestring_by_shape(pfeed, *, use_utm=False):
       so.transform(proj, sg.shape(f['geometry']))
       for f in pfeed.shapes['features']}
 
-def get_nearby_stops(geo_stops, linestring, side, one_sided_buffer=10):
+def get_nearby_stops(geo_stops, linestring, side, buffer=10):
     """
-    Given a GeoDataFrame of stops, a Shapely LineString, a side of
-    the LineString ('left' = left hand side of LineString,
-    'right' = right hand side of LineString), do the following.
+    Given a GeoDataFrame of stops in a meters-based coordinate system,
+    a Shapely LineString in a meters-based coordinate system,
+    a side of the LineString ('left' = left hand side of LineString,
+    'right' = right hand side of LineString, or 'both' = both sides),
+    do the following.
     Return a GeoDataFrame of all the stops that lie within
-    ``one_sided_buffer`` meters to the ``side`` of the LineString.
+    ``buffer`` meters to the ``side`` of the LineString.
     """
-    # Buffer linestring on one side
-    b0 = linestring.buffer(0.5, cap_style=3)  # Tiny buffer
-    b1 = linestring.buffer(one_sided_buffer, cap_style=2)  # Normal buffer
-    diff = b1.difference(b0)  # Split buffer into two one-sided buffers
-    polys = list(so.polygonize(diff))
-    if side == 'left':
-        b = polys[0]
-    else:
-        b = polys[1]
+    # Buffer linestring
+    b = linestring.buffer(buffer, cap_style=2)
+    if side != 'both':
+        # Make a tiny buffer to split the normal-size buffer
+        # in half across the linestring
+        b0 = linestring.buffer(0.5, cap_style=3)
+        diff = b.difference(b0)
+        polys = so.polygonize(diff)
+        if side == 'left':
+            b = list(polys)[0]
+        else:
+            b = list(polys)[1]
 
     # Collect stops
     return geo_stops.loc[geo_stops.intersects(b)].copy()
+
 def build_shapes(pfeed):
     """
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
