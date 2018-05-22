@@ -20,7 +20,8 @@ setup(
     license=license,
     install_requires=[
         'gtfstk >= 9.1.0',
-        'pandas >= 0.22.0',
+        # Avoid isinstance bug in Pandas 0.23.0 with Python 3.5.2
+        'pandas < 0.23.0',
         'Shapely >= 1.6.4',
         'utm >= 0.4.2',
         'click >= 6.7',

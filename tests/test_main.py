@@ -1,6 +1,3 @@
-import zipfile
-from copy import deepcopy
-
 import pandas as pd
 import gtfstk as gt
 import shapely.geometry as sg
@@ -23,7 +20,7 @@ def test_init():
     assert isinstance(pfeed.frequencies, pd.DataFrame)
     assert isinstance(pfeed.service_windows, pd.DataFrame)
     assert isinstance(pfeed.meta, pd.DataFrame)
-    assert isinstance(pfeed.proto_shapes, dict)
+    assert isinstance(pfeed.shapes, dict)
 
 def test_build_routes():
     routes = build_routes(pfeed)

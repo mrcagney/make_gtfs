@@ -1,12 +1,10 @@
 import json
-import os
-import shutil
 from pathlib import Path
 
 import pandas as pd
 import numpy as np
-from shapely.ops import transform
-from shapely.geometry import shape as sh_shape
+import shapely.ops as so
+import shapely.geometry as sg
 import utm
 import gtfstk as gt
 
@@ -100,7 +98,7 @@ class ProtoFeed(object):
 
     """
 
-    def __init__(self, path):
+    def __init__(self, path, *, use_stops_file=True):
         # Read source files
         self.path = Path(path)
         self.service_windows = pd.read_csv(
@@ -108,7 +106,19 @@ class ProtoFeed(object):
         self.meta = pd.read_csv(self.path/'meta.csv',
           dtype={'start_date': str, 'end_date': str})
         with (self.path/'shapes.geojson').open() as src:
-            self.proto_shapes = json.load(src)
+            self.shapes = json.load(src)
+        if use_stops_file and (self.path/'stops.csv').exists():
+            self.stops = pd.read_csv(self.path/'stops.csv', dtype={
+                'stop_id': str,
+                'stop_code': str,
+                'zone_id': str,
+                'location_type': int,
+                'parent_station': str,
+                'stop_timezone': str,
+                'wheelchair_boarding': int,
+            })
+        else:
+            self.stops = None
 
         # Read and clean frequencies
         frequencies = pd.read_csv(self.path/'frequencies.csv',
@@ -152,10 +162,10 @@ def get_duration(timestr1, timestr2, units='s'):
     else:
         return duration/3600
 
-def get_stop_ids(shape_id):
+def build_stop_ids(shape_id):
     return [SEP.join(['stp', shape_id, str(i)]) for i in range(2)]
 
-def get_stop_names(shape_id):
+def build_stop_names(shape_id):
     return ['Stop {!s} on shape {!s} '.format(i, shape_id)
       for i in range(2)]
 
@@ -225,7 +235,7 @@ def build_linestring_by_shape(pfeed, *, use_utm=False):
     Given a ProtoFeed, return a dictionary of the form
     <shape ID> -> <Shapely linestring of shape>.
     Only include shape IDs that occur in both ``pfeed.frequencies``
-    and ``pfeed.proto_shapes``.
+    and ``pfeed.shapes``.
 
     If ``use_utm``, then return each linestring in in UTM coordinates.
     Otherwise, return each linestring in WGS84 longitude-latitude
@@ -235,7 +245,6 @@ def build_linestring_by_shape(pfeed, *, use_utm=False):
     # >>> u = utm.from_latlon(47.9941214, 7.8509671)
     # >>> print u
     # (414278, 5316285, 32, 'T')
-    d = {}
     if use_utm:
         def proj(lon, lat):
             return utm.from_latlon(lat, lon)[:2]
@@ -244,14 +253,34 @@ def build_linestring_by_shape(pfeed, *, use_utm=False):
             return lon, lat
 
     return {f['properties']['shape_id']:
-      transform(proj, sh_shape(f['geometry']))
-      for f in pfeed.proto_shapes['features']}
+      so.transform(proj, sg.shape(f['geometry']))
+      for f in pfeed.shapes['features']}
 
+def get_nearby_stops(geo_stops, linestring, side, one_sided_buffer=10):
+    """
+    Given a GeoDataFrame of stops, a Shapely LineString, a side of
+    the LineString ('left' = left hand side of LineString,
+    'right' = right hand side of LineString), do the following.
+    Return a GeoDataFrame of all the stops that lie within
+    ``one_sided_buffer`` meters to the ``side`` of the LineString.
+    """
+    # Buffer linestring on one side
+    b0 = linestring.buffer(0.5, cap_style=3)  # Tiny buffer
+    b1 = linestring.buffer(one_sided_buffer, cap_style=2)  # Normal buffer
+    diff = b1.difference(b0)  # Split buffer into two one-sided buffers
+    polys = list(so.polygonize(diff))
+    if side == 'left':
+        b = polys[0]
+    else:
+        b = polys[1]
+
+    # Collect stops
+    return geo_stops.loc[geo_stops.intersects(b)].copy()
 def build_shapes(pfeed):
     """
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
     Only include shape IDs that occur in both ``pfeed.frequencies``
-    and ``pfeed.proto_shapes``.
+    and ``pfeed.shapes``.
     """
     F = []
     linestring_by_shape = build_linestring_by_shape(pfeed)
@@ -266,26 +295,31 @@ def build_shapes(pfeed):
 def build_stops(pfeed):
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
-    Create one stop at the beginning (the first point) of each shape
-    and one at the end (the last point) of each shape.
-
-    Only create stops for shape IDs that are listed in both
+    If ``pfeed.stops`` is not ``None``, then return that.
+    Otherwise, create one stop at the beginning (the first point) of each shape
+    and one at the end (the last point) of each shape, and
+    only create stops for shape IDs that are listed in both
     ``frequencies.csv`` and ``shapes.geojson``.
     """
-    linestring_by_shape = build_linestring_by_shape(pfeed)
-    F = []
-    for shape, linestring in linestring_by_shape.items():
-        stop_ids = get_stop_ids(shape)
-        stop_names = get_stop_names(shape)
-        for i in range(2):
-            stop_id = stop_ids[i]
-            stop_name = stop_names[i]
-            stop_lon, stop_lat = linestring.interpolate(i,
-              normalized=True).coords[0]
-            F.append([stop_id, stop_name, stop_lon, stop_lat])
+    if pfeed.stops is not None:
+        stops = pfeed.stops.copy()
+    else:
+        linestring_by_shape = build_linestring_by_shape(pfeed)
+        F = []
+        for shape, linestring in linestring_by_shape.items():
+            stop_ids = build_stop_ids(shape)
+            stop_names = build_stop_names(shape)
+            for i in range(2):
+                stop_id = stop_ids[i]
+                stop_name = stop_names[i]
+                stop_lon, stop_lat = linestring.interpolate(i,
+                  normalized=True).coords[0]
+                F.append([stop_id, stop_name, stop_lon, stop_lat])
 
-    return pd.DataFrame(F, columns=['stop_id', 'stop_name',
-      'stop_lon', 'stop_lat'])
+        stops = pd.DataFrame(F, columns=['stop_id', 'stop_name',
+          'stop_lon', 'stop_lat'])
+
+    return stops
 
 def build_trips(pfeed, routes, service_by_window, shapes):
     """
@@ -378,7 +412,7 @@ def build_stop_times(pfeed, routes, shapes, stops, trips):
         junk, route, window, base_timestr, direction, i =\
           trip.split(SEP)
         direction = int(direction)
-        stops = get_stop_ids(shape)
+        stops = build_stop_ids(shape)
         if direction == 1:
             stops.reverse()
         base_time = gt.timestr_to_seconds(base_timestr)
