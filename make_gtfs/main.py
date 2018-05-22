@@ -11,7 +11,7 @@ import gtfstk as gt
 
 # Character to separate different chunks within an ID
 SEP = '-'
-
+BUFFER = 10  # Meters to buffer trip paths to find stops
 
 class ProtoFeed(object):
     """
@@ -70,7 +70,7 @@ class ProtoFeed(object):
         ``shapes.geojson`` that corresponds to the linestring of the
         (route, direction, service window) tuple.
         In particular different directions and service windows for the
-        same route could have different shapes.
+        same route should have different shapes.
 
     - ``meta.csv``: A CSV file containing network metadata.
       The CSV file contains the columns
@@ -230,7 +230,7 @@ def build_routes(pfeed):
 
     return f
 
-def build_linestring_by_shape(pfeed, *, use_utm=False):
+def build_geometry_by_shape(pfeed, *, use_utm=False):
     """
     Given a ProtoFeed, return a dictionary of the form
     <shape ID> -> <Shapely linestring of shape>.
@@ -256,32 +256,6 @@ def build_linestring_by_shape(pfeed, *, use_utm=False):
       so.transform(proj, sg.shape(f['geometry']))
       for f in pfeed.shapes['features']}
 
-def get_nearby_stops(geo_stops, linestring, side, buffer=10):
-    """
-    Given a GeoDataFrame of stops in a meters-based coordinate system,
-    a Shapely LineString in a meters-based coordinate system,
-    a side of the LineString ('left' = left hand side of LineString,
-    'right' = right hand side of LineString, or 'both' = both sides),
-    do the following.
-    Return a GeoDataFrame of all the stops that lie within
-    ``buffer`` meters to the ``side`` of the LineString.
-    """
-    # Buffer linestring
-    b = linestring.buffer(buffer, cap_style=2)
-    if side != 'both':
-        # Make a tiny buffer to split the normal-size buffer
-        # in half across the linestring
-        b0 = linestring.buffer(0.5, cap_style=3)
-        diff = b.difference(b0)
-        polys = so.polygonize(diff)
-        if side == 'left':
-            b = list(polys)[0]
-        else:
-            b = list(polys)[1]
-
-    # Collect stops
-    return geo_stops.loc[geo_stops.intersects(b)].copy()
-
 def build_shapes(pfeed):
     """
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
@@ -289,8 +263,8 @@ def build_shapes(pfeed):
     and ``pfeed.shapes``.
     """
     F = []
-    linestring_by_shape = build_linestring_by_shape(pfeed)
-    for shape, linestring in linestring_by_shape.items():
+    geometry_by_shape = build_geometry_by_shape(pfeed)
+    for shape, linestring in geometry_by_shape.items():
         rows = [[shape, i, lon, lat]
           for i, (lon, lat) in enumerate(linestring.coords)]
         F.extend(rows)
@@ -310,9 +284,9 @@ def build_stops(pfeed):
     if pfeed.stops is not None:
         stops = pfeed.stops.copy()
     else:
-        linestring_by_shape = build_linestring_by_shape(pfeed)
+        geometry_by_shape = build_geometry_by_shape(pfeed)
         F = []
-        for shape, linestring in linestring_by_shape.items():
+        for shape, linestring in geometry_by_shape.items():
             stop_ids = build_stop_ids(shape)
             stop_names = build_stop_names(shape)
             for i in range(2):
@@ -334,10 +308,6 @@ def build_trips(pfeed, routes, service_by_window, shapes):
     return a DataFrame representing ``trips.txt``.
     Trip IDs encode route, direction, and service window information
     to make it easy to compute stop times later.
-
-    Will create ``calendar``, ``routes``, and ``shapes``
-    if they don't already exist.
-
     Will not create trips for routes with null linestrings.
     """
     # Put together the route and service data
@@ -347,7 +317,7 @@ def build_trips(pfeed, routes, service_by_window, shapes):
 
     # For each row in routes, add trips at the specified frequency in
     # the specified direction
-    F = []
+    rows = []
     shapes = set(shapes['shape_id'].unique())
     for index, row in routes.iterrows():
         shape = row['shape_id']
@@ -372,7 +342,7 @@ def build_trips(pfeed, routes, service_by_window, shapes):
         else:
             directions = [direction]
         for direction in directions:
-            F.extend([[
+            rows.extend([[
               route,
               SEP.join(['t', route, window, start,
               str(direction), str(i)]),
@@ -381,10 +351,36 @@ def build_trips(pfeed, routes, service_by_window, shapes):
               service
             ] for i in range(num_trips_per_direction)])
 
-    return pd.DataFrame(F, columns=['route_id', 'trip_id', 'direction_id',
+    return pd.DataFrame(rows, columns=['route_id', 'trip_id', 'direction_id',
       'shape_id', 'service_id'])
 
-def build_stop_times(pfeed, routes, shapes, stops, trips):
+def get_nearby_stops(geo_stops, linestring, side, buffer=BUFFER):
+    """
+    Given a GeoDataFrame of stops in a meters-based coordinate system,
+    a Shapely LineString in a meters-based coordinate system,
+    a side of the LineString (string; 'left' = left hand side of
+    LineString, 'right' = right hand side of LineString, or
+    'both' = both sides), do the following.
+    Return a GeoDataFrame of all the stops that lie within
+    ``buffer`` meters to the ``side`` of the LineString.
+    """
+    # Buffer linestring
+    b = linestring.buffer(buffer, cap_style=2)
+    if side != 'both':
+        # Make a tiny buffer to split the normal-size buffer
+        # in half across the linestring
+        b0 = linestring.buffer(0.5, cap_style=3)
+        diff = b.difference(b0)
+        polys = so.polygonize(diff)
+        if side == 'left':
+            b = list(polys)[0]
+        else:
+            b = list(polys)[1]
+
+    # Collect stops
+    return geo_stops.loc[geo_stops.intersects(b)].copy()
+
+def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
     """
     Given a ProtoFeed and its corresponding routes (DataFrame),
     shapes (DataFrame), stops (DataFrame), trips (DataFrame),
@@ -397,40 +393,112 @@ def build_stop_times(pfeed, routes, shapes, stops, trips):
     trips['service_window_id'] = trips['trip_id'].map(
       lambda x: x.split(SEP)[2])
     trips = pd.merge(routes, trips)
+    geometry_by_shape = build_geometry_by_shape(pfeed, use_utm=True)
 
-    linestring_by_shape = build_linestring_by_shape(pfeed, use_utm=True)
+    # Save on distance computations by memoizing
+    dist_by_stop_by_shape = {shape: {} for shape in geometry_by_shape}
+
+    def compute_stops_dists_times(geo_stops, linestring, shape,
+      start_time, end_time):
+        """
+        Given a GeoDataFrame of stops on one side of a given Shapely
+        LineString with given shape ID, compute distances and departure
+        times of a trip traversing the LineString from start to end
+        at the given start and end times (in seconds past midnight)
+        and stoping at the stops encountered along the way.
+        Do not assume that the stops are ordered by trip encounter.
+        Return three lists of the same length: the stop IDs in order
+        that the trip encounters them, the shape distances traveled
+        along distances at the stops, and the times the stops are
+        encountered, respectively.
+        """
+        g = geo_stops.copy()
+        dists_and_stops = []
+        for i, stop in enumerate(g['stop_id'].values):
+            if stop in dist_by_stop_by_shape[shape]:
+                d = dist_by_stop_by_shape[shape][stop]
+            else:
+                d = gt.get_segment_length(linestring,
+                  g.geometry.iat[i])/1000  # km
+                dist_by_stop_by_shape[shape][stop] = d
+            dists_and_stops.append((d, stop))
+        dists, stops = zip(*sorted(dists_and_stops))
+        D = linestring.length/1000
+        dists_are_reasonable = all([d < D + 100 for d in dists])
+        if not dists_are_reasonable:
+            # Assume equal distances between stops :-(
+            n = len(stops)
+            delta = D/(n - 1)
+            dists = [i*delta for i in range(n)]
+
+        # Compute times using distances, start and end stop times,
+        # and linear interpolation
+        t0, t1 = start_time, end_time
+        d0, d1 = dists[0], dists[-1]
+        # Interpolate
+        times = np.interp(dists, [d0, d1], [t0, t1])
+        return stops, dists, times
 
     # Iterate through trips and set stop times based on stop ID
     # and service window frequency.
     # Remember that every trip has a valid shape ID.
-    F = []
-    for index, row in trips.iterrows():
-        shape = row['shape_id']
-        length = linestring_by_shape[shape].length/1000  # kilometers
-        speed = row['speed']  # kph
-        duration = int((length/speed)*3600)  # seconds
-        frequency = row['frequency']
-        if not frequency:
-            # No stop times for this trip/frequency combo
-            continue
-        headway = 3600/frequency  # seconds
-        trip = row['trip_id']
-        junk, route, window, base_timestr, direction, i =\
-          trip.split(SEP)
-        direction = int(direction)
-        stops = build_stop_ids(shape)
-        if direction == 1:
-            stops.reverse()
-        base_time = gt.timestr_to_seconds(base_timestr)
-        start_time = base_time + headway*int(i)
-        end_time = start_time + duration
-        # Get end time from route length
-        entry0 = [trip, stops[0], 0, start_time, start_time]
-        entry1 = [trip, stops[1], 1, end_time, end_time]
-        F.extend([entry0, entry1])
+    rows = []
+    if pfeed.stops is None:
+        # Trip has only two stops, one at each path endpoint
+        for index, row in trips.iterrows():
+            shape = row['shape_id']
+            length = geometry_by_shape[shape].length/1000  # km
+            speed = row['speed']  # km/h
+            duration = int((length/speed)*3600)  # seconds
+            frequency = row['frequency']
+            if not frequency:
+                # No stop times for this trip/frequency combo
+                continue
+            headway = 3600/frequency  # seconds
+            trip = row['trip_id']
+            __, route, window, base_timestr, direction, i =\
+              trip.split(SEP)
+            direction = int(direction)
+            stop_ids = build_stop_ids(shape)
+            if direction == 1:
+                stop_ids.reverse()
+            base_time = gt.timestr_to_seconds(base_timestr)
+            start_time = base_time + headway*int(i)
+            end_time = start_time + duration
+            entry0 = [trip, stop_ids[0], 0, start_time, start_time, 0]
+            entry1 = [trip, stop_ids[1], 1, end_time, end_time, length]
+            rows.extend([entry0, entry1])
+    else:
+        # Trip has multiple stops found in ``pfeed.stops``
+        geo_stops = gt.geometrize_stops(pfeed.stops, use_utm=True)
+        side = 'left'  # TODO: Set side based on country
+        for index, row in trips.iterrows():
+            shape = row['shape_id']
+            geom = geometry_by_shape[shape]
+            stops = get_nearby_stops(geo_stops, geom, side, buffer=buffer)
+            length = geom.length/1000  # km
+            speed = row['speed']  # km/h
+            duration = int((length/speed)*3600)  # seconds
+            frequency = row['frequency']
+            if not frequency:
+                # No stop times for this trip/frequency combo
+                continue
+            headway = 3600/frequency  # seconds
+            trip = row['trip_id']
+            __, route, window, base_timestr, direction, i =\
+              trip.split(SEP)
+            direction = int(direction)
+            base_time = gt.timestr_to_seconds(base_timestr)
+            start_time = base_time + headway*int(i)
+            end_time = start_time + duration
+            stops, dists, times = compute_stops_dists_times(stops, geom, shape,
+              start_time, end_time)
+            new_rows = [[trip, stop, j, time, time, dist]
+              for j, (stop, time, dist) in enumerate(zip(stops, times, dists))]
+            rows.extend(new_rows)
 
-    g = pd.DataFrame(F, columns=['trip_id', 'stop_id', 'stop_sequence',
-      'arrival_time', 'departure_time'])
+    g = pd.DataFrame(rows, columns=['trip_id', 'stop_id', 'stop_sequence',
+      'arrival_time', 'departure_time', 'shape_dist_traveled'])
 
     # Convert seconds back to time strings
     g[['arrival_time', 'departure_time']] =\
@@ -438,6 +506,21 @@ def build_stop_times(pfeed, routes, shapes, stops, trips):
       lambda x: gt.timestr_to_seconds(x, inverse=True))
 
     return g
+
+def build_feed_from_pfeed(pfeed):
+    # Create Feed tables
+    agency = build_agency(pfeed)
+    calendar, service_by_window = build_calendar_etc(pfeed)
+    routes = build_routes(pfeed)
+    shapes = build_shapes(pfeed)
+    stops = build_stops(pfeed)
+    trips = build_trips(pfeed, routes, service_by_window, shapes)
+    stop_times = build_stop_times(pfeed, routes, shapes, trips)
+
+    # Create Feed
+    return gt.Feed(agency=agency, calendar=calendar, routes=routes,
+      shapes=shapes, stops=stops, stop_times=stop_times, trips=trips,
+      dist_units='km')
 
 def build_feed(path):
     """
@@ -448,17 +531,5 @@ def build_feed(path):
     """
     # Create ProtoFeed
     pfeed = ProtoFeed(path)
+    return build_feed_from_pfeed(pfeed)
 
-    # Create Feed tables
-    agency = build_agency(pfeed)
-    calendar, service_by_window = build_calendar_etc(pfeed)
-    routes = build_routes(pfeed)
-    shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed)
-    trips = build_trips(pfeed, routes, service_by_window, shapes)
-    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips)
-
-    # Create Feed
-    return gt.Feed(agency=agency, calendar=calendar, routes=routes,
-      shapes=shapes, stops=stops, stop_times=stop_times, trips=trips,
-      dist_units='km')

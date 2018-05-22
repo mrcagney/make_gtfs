@@ -59,7 +59,7 @@ The source directory from which you create GTFS feeds, must contain the files
     ``shapes.geojson`` that corresponds to the linestring of the
     (route, direction, service window) tuple.
     In particular different directions and service windows for the
-    same route could have different shapes.
+    same route should have different shapes.
 
 - ``meta.csv``: A CSV file containing network metadata.
   The CSV file contains the columns
