@@ -24,8 +24,10 @@ class ProtoFeed(object):
     - ``frequencies``: DataFrame; has speeds filled in
     - ``meta``: DataFrame
     - ``shapes``: dictionary
+    - ``shapes_extra``: dictionary of the form <shape ID> ->
+      <trip directions using the shape (0, 1, or 2)>
 
-    These are built from the required source files located at the
+    The are built from the required source files located at the
     given directory path (string or Path object):
 
     - ``service_windows.csv``: A CSV file containing service window
@@ -108,15 +110,19 @@ class ProtoFeed(object):
         with (self.path/'shapes.geojson').open() as src:
             self.shapes = json.load(src)
         if use_stops_file and (self.path/'stops.csv').exists():
-            self.stops = pd.read_csv(self.path/'stops.csv', dtype={
-                'stop_id': str,
-                'stop_code': str,
-                'zone_id': str,
-                'location_type': int,
-                'parent_station': str,
-                'stop_timezone': str,
-                'wheelchair_boarding': int,
-            })
+            self.stops = (
+                pd.read_csv(self.path/'stops.csv', dtype={
+                    'stop_id': str,
+                    'stop_code': str,
+                    'zone_id': str,
+                    'location_type': int,
+                    'parent_station': str,
+                    'stop_timezone': str,
+                    'wheelchair_boarding': int,
+                })
+                .drop_duplicates(subset=['stop_lon', 'stop_lat'])
+                .dropna(subset=['stop_lon', 'stop_lat'], how='any')
+            )
         else:
             self.stops = None
 
@@ -139,6 +145,28 @@ class ProtoFeed(object):
           inplace=True)
         self.frequencies = frequencies
 
+        # Build shapes extra, keeping only shapes that appear
+        # in both ``self.frequencies`` and ``self.shapes``
+        shids = set(f['properties']['shape_id']
+          for f in self.shapes['features'])
+
+        def my_agg(group):
+            d = {}
+            dirs = group.direction.unique()
+            if len(dirs) > 1 or 2 in dirs:
+                d['direction'] = 2
+            else:
+                d['direction'] = dirs[0]
+            return pd.Series(d)
+
+        self.shapes_extra = dict(
+            self.frequencies
+            .groupby('shape_id')
+            .apply(my_agg)
+            .reset_index()
+            .loc[lambda x: x.shape_id.isin(shids)]
+            .values
+        )
 
 def get_duration(timestr1, timestr2, units='s'):
     """
@@ -230,6 +258,13 @@ def build_routes(pfeed):
 
     return f
 
+def reverse_linestring(s):
+    """
+    Given a Shapely LineString, return a new LineString whose
+    coordinates are those of the original but in reverse order.
+    """
+    return sg.LineString(t for t in reversed(s.coords))
+
 def build_geometry_by_shape(pfeed, *, use_utm=False):
     """
     Given a ProtoFeed, return a dictionary of the form
@@ -261,15 +296,30 @@ def build_shapes(pfeed):
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
     Only include shape IDs that occur in both ``pfeed.frequencies``
     and ``pfeed.shapes``.
+    Create reversed shapes where routes traverse shapes in both
+    directions.
     """
-    F = []
+    rows = []
     geometry_by_shape = build_geometry_by_shape(pfeed)
-    for shape, linestring in geometry_by_shape.items():
-        rows = [[shape, i, lon, lat]
-          for i, (lon, lat) in enumerate(linestring.coords)]
-        F.extend(rows)
+    for shape, geom in geometry_by_shape.items():
+        if pfeed.shapes_extra[shape] == 2:
+            # Add shape and its reverse
+            shid = shape + '-1'
+            new_rows = [[shid, i, lon, lat]
+              for i, (lon, lat) in enumerate(geom.coords)]
+            rows.extend(new_rows)
+            shid = shape + '-0'
+            new_rows = [[shid, i, lon, lat]
+              for i, (lon, lat) in enumerate(reversed(geom.coords))]
+            rows.extend(new_rows)
+        else:
+            # Add shape
+            shid = '{}-{}'.format(shape, pfeed.shapes_extra[shape])
+            new_rows = [[shid, i, lon, lat]
+              for i, (lon, lat) in enumerate(geom.coords)]
+            rows.extend(new_rows)
 
-    return pd.DataFrame(F, columns=['shape_id', 'shape_pt_sequence',
+    return pd.DataFrame(rows, columns=['shape_id', 'shape_pt_sequence',
       'shape_pt_lon', 'shape_pt_lat'])
 
 def build_stops(pfeed):
@@ -301,7 +351,7 @@ def build_stops(pfeed):
 
     return stops
 
-def build_trips(pfeed, routes, service_by_window, shapes):
+def build_trips(pfeed, routes, service_by_window):
     """
     Given a ProtoFeed and its corresponding routes (DataFrame),
     service-by-window (dictionary), and shapes (DataFrame),
@@ -318,11 +368,10 @@ def build_trips(pfeed, routes, service_by_window, shapes):
     # For each row in routes, add trips at the specified frequency in
     # the specified direction
     rows = []
-    shapes = set(shapes['shape_id'].unique())
     for index, row in routes.iterrows():
         shape = row['shape_id']
         # Don't create trips for shapes that don't exist
-        if shape not in shapes:
+        if shape not in pfeed.shapes_extra:
             continue
         route = row['route_id']
         window = row['service_window_id']
@@ -342,12 +391,13 @@ def build_trips(pfeed, routes, service_by_window, shapes):
         else:
             directions = [direction]
         for direction in directions:
+            shid = '{}-{}'.format(shape, direction)
             rows.extend([[
               route,
               SEP.join(['t', route, window, start,
               str(direction), str(i)]),
               direction,
-              shape,
+              shid,
               service
             ] for i in range(num_trips_per_direction)])
 
@@ -387,13 +437,26 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
     return DataFrame representing ``stop_times.txt``.
     """
     # Get the table of trips and add frequency and service window details
-    routes = pd.merge(routes[['route_id', 'route_short_name']],
-      pfeed.frequencies)
-    trips = trips.copy()
-    trips['service_window_id'] = trips['trip_id'].map(
-      lambda x: x.split(SEP)[2])
-    trips = pd.merge(routes, trips)
-    geometry_by_shape = build_geometry_by_shape(pfeed, use_utm=True)
+    routes = (
+        routes
+        .filter(['route_id', 'route_short_name'])
+        .merge(pfeed.frequencies.drop(['shape_id'], axis=1))
+    )
+    trips = (
+        trips
+        .assign(service_window_id=lambda x: x.trip_id.map(
+          lambda y: y.split(SEP)[2]))
+        .merge(routes)
+    )
+
+    print(trips.head())
+
+    # Get the geometries of ``shapes`` and not ``pfeed.shapes``
+    geometry_by_shape = dict(
+        gt.geometrize_shapes(shapes, use_utm=True)
+        .filter(['shape_id', 'geometry'])
+        .values
+    )
 
     # Save on distance computations by memoizing
     dist_by_stop_by_shape = {shape: {} for shape in geometry_by_shape}
@@ -460,14 +523,16 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
               trip.split(SEP)
             direction = int(direction)
             stop_ids = build_stop_ids(shape)
-            if direction == 1:
-                stop_ids.reverse()
+            # if direction == 1:
+            #     stop_ids.reverse()
             base_time = gt.timestr_to_seconds(base_timestr)
             start_time = base_time + headway*int(i)
             end_time = start_time + duration
-            entry0 = [trip, stop_ids[0], 0, start_time, start_time, 0]
-            entry1 = [trip, stop_ids[1], 1, end_time, end_time, length]
-            rows.extend([entry0, entry1])
+            new_rows = [
+                [trip, stop_ids[0], 0, start_time, start_time, 0],
+                [trip, stop_ids[1], 1, end_time, end_time, length],
+            ]
+            rows.extend(new_rows)
     else:
         # Trip has multiple stops found in ``pfeed.stops``
         geo_stops = gt.geometrize_stops(pfeed.stops, use_utm=True)
@@ -485,8 +550,8 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
                 continue
             headway = 3600/frequency  # seconds
             trip = row['trip_id']
-            __, route, window, base_timestr, direction, i =\
-              trip.split(SEP)
+            __, route, window, base_timestr, direction, i = (
+              trip.split(SEP))
             direction = int(direction)
             base_time = gt.timestr_to_seconds(base_timestr)
             start_time = base_time + headway*int(i)
@@ -507,15 +572,18 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
 
     return g
 
-def build_feed_from_pfeed(pfeed):
+def build_feed_from_pfeed(pfeed, buffer=BUFFER):
     # Create Feed tables
     agency = build_agency(pfeed)
     calendar, service_by_window = build_calendar_etc(pfeed)
     routes = build_routes(pfeed)
     shapes = build_shapes(pfeed)
     stops = build_stops(pfeed)
-    trips = build_trips(pfeed, routes, service_by_window, shapes)
-    stop_times = build_stop_times(pfeed, routes, shapes, trips)
+    trips = build_trips(pfeed, routes, service_by_window)
+    stop_times = build_stop_times(pfeed, routes, shapes, trips, buffer=buffer)
+
+    # Remove stops that are not in stop times
+    stops = stops[stops.stop_id.isin(stop_times.stop_id)].copy()
 
     # Create Feed
     return gt.Feed(agency=agency, calendar=calendar, routes=routes,
@@ -532,4 +600,3 @@ def build_feed(path):
     # Create ProtoFeed
     pfeed = ProtoFeed(path)
     return build_feed_from_pfeed(pfeed)
-
