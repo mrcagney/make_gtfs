@@ -9,7 +9,6 @@ verify_ssl = true
 jupyter = "*"
 shapely = "*"
 utm = "*"
-gtfstk = "*"
 pytest = "*"
 twine = "*"
 sphinx = "*"
@@ -19,6 +18,8 @@ descartes = "*"
 matplotlib = "*"
 geopandas = "*"
 folium = "*"
+gtfstk = "*"
+"json2html" = "*"
 
 [requires]
 python_version = "3.5"
