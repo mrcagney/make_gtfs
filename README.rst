@@ -23,7 +23,8 @@ Make GTFS uses the following files to build a GTFS feed.
 
   - ``route_short_name``: (required) String. A unique short name
     for the route, e.g. '51X'
-  - ``route_desc``: (optional) String. A description of the route
+  - ``route_long_name``: (required) String. Full name of the route
+    that is more descriptive than ``route_short_name``
   - ``route_type``: (required) Integer. The
     `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
   - ``service_window_id`` (required): String. A service window ID
@@ -87,6 +88,7 @@ Make GTFS uses the following files to build a GTFS feed.
 - ``stops.csv``: (optional) A CSV file containing all the required
   and optional fields of ``stops.txt`` in
   `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+
 
 
 Algorithm

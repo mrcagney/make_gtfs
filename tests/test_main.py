@@ -147,7 +147,7 @@ def test_build_stop_times():
     stops = build_stops(pfeed_stopless, shapes)
     __, service_by_window = build_calendar_etc(pfeed_stopless)
     trips = build_trips(pfeed_stopless, routes, service_by_window)
-    stop_times = build_stop_times(pfeed_stopless, routes, shapes, stops, trips)
+    stop_times = build_stop_times(pfeed_stopless, routes, shapes, trips)
 
     # Should be a data frame
     assert isinstance(stop_times, pd.DataFrame)
@@ -156,7 +156,7 @@ def test_build_stop_times():
     # Number of stop times is twice the number of trips,
     # because each trip has two stops
     expect_nrows = 2*trips.shape[0]
-    expect_ncols = 5
+    expect_ncols = 6
     assert stop_times.shape == (expect_nrows, expect_ncols)
 
     # Now test with stops...
@@ -172,3 +172,7 @@ def test_build_feed():
       'stop_times', 'trips']
     for name in names:
         assert hasattr(feed, name)
+
+    # Should be a valid feed
+    v = feed.validate()
+    assert 'error' not in v.type.values

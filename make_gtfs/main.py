@@ -39,8 +39,6 @@ class ProtoFeed(object):
         freq = self.frequencies
         if freq is not None:
             cols = freq.columns
-            if 'route_desc' not in cols:
-                freq['route_desc'] = np.nan
 
             # Fill missing route types with 3 (bus)
             freq['route_type'].fillna(3, inplace=True)
@@ -103,7 +101,8 @@ def read_protofeed(path):
 
       - ``route_short_name``: (required) String. A unique short name
         for the route, e.g. '51X'
-      - ``route_desc``: (optional) String. A description of the route
+      - ``route_long_name``: (required) String. Full name of the route
+        that is more descriptive than ``route_short_name``
       - ``route_type``: (required) Integer. The
         `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
       - ``service_window_id`` (required): String. A service window ID
@@ -293,7 +292,7 @@ def build_routes(pfeed):
     """
     Given a ProtoFeed, return a DataFrame representing ``routes.txt``.
     """
-    f = pfeed.frequencies[['route_short_name', 'route_desc',
+    f = pfeed.frequencies[['route_short_name', 'route_long_name',
       'route_type', 'shape_id']].drop_duplicates().copy()
 
     # Create route IDs
@@ -479,6 +478,7 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=cs.BUFFER):
     Given a ProtoFeed and its corresponding routes (DataFrame),
     shapes (DataFrame), stops (DataFrame), trips (DataFrame),
     return DataFrame representing ``stop_times.txt``.
+    Includes the optional ``shape_dist_traveled`` column.
     """
     # Get the table of trips and add frequency and service window details
     routes = (
