@@ -8,10 +8,8 @@ import shapely.geometry as sg
 import utm
 import gtfstk as gt
 
+from . import constants as cs
 
-# Character to separate different chunks within an ID
-SEP = '-'
-BUFFER = 10  # Meters to buffer trip paths to find stops
 
 class ProtoFeed(object):
     """
@@ -191,7 +189,7 @@ def get_duration(timestr1, timestr2, units='s'):
         return duration/3600
 
 def build_stop_ids(shape_id):
-    return [SEP.join(['stp', shape_id, str(i)]) for i in range(2)]
+    return [cs.SEP.join(['stp', shape_id, str(i)]) for i in range(2)]
 
 def build_stop_names(shape_id):
     return ['Stop {!s} on shape {!s} '.format(i, shape_id)
@@ -394,7 +392,7 @@ def build_trips(pfeed, routes, service_by_window):
             shid = '{}-{}'.format(shape, direction)
             rows.extend([[
               route,
-              SEP.join(['t', route, window, start,
+              cs.SEP.join(['t', route, window, start,
               str(direction), str(i)]),
               direction,
               shid,
@@ -404,7 +402,7 @@ def build_trips(pfeed, routes, service_by_window):
     return pd.DataFrame(rows, columns=['route_id', 'trip_id', 'direction_id',
       'shape_id', 'service_id'])
 
-def get_nearby_stops(geo_stops, linestring, side, buffer=BUFFER):
+def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
     """
     Given a GeoDataFrame of stops in a meters-based coordinate system,
     a Shapely LineString in a meters-based coordinate system,
@@ -430,7 +428,7 @@ def get_nearby_stops(geo_stops, linestring, side, buffer=BUFFER):
     # Collect stops
     return geo_stops.loc[geo_stops.intersects(b)].copy()
 
-def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
+def build_stop_times(pfeed, routes, shapes, trips, buffer=cs.BUFFER):
     """
     Given a ProtoFeed and its corresponding routes (DataFrame),
     shapes (DataFrame), stops (DataFrame), trips (DataFrame),
@@ -445,11 +443,9 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
     trips = (
         trips
         .assign(service_window_id=lambda x: x.trip_id.map(
-          lambda y: y.split(SEP)[2]))
+          lambda y: y.split(cs.SEP)[2]))
         .merge(routes)
     )
-
-    print(trips.head())
 
     # Get the geometries of ``shapes`` and not ``pfeed.shapes``
     geometry_by_shape = dict(
@@ -520,7 +516,7 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
             headway = 3600/frequency  # seconds
             trip = row['trip_id']
             __, route, window, base_timestr, direction, i =\
-              trip.split(SEP)
+              trip.split(cs.SEP)
             direction = int(direction)
             stop_ids = build_stop_ids(shape)
             # if direction == 1:
@@ -536,7 +532,8 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
     else:
         # Trip has multiple stops found in ``pfeed.stops``
         geo_stops = gt.geometrize_stops(pfeed.stops, use_utm=True)
-        side = 'left'  # TODO: Set side based on country
+        # Look on the side of the street that traffic moves for this timezone
+        side = cs.traffic_by_timezone[pfeed.meta.agency_timezone.iat[0]]
         for index, row in trips.iterrows():
             shape = row['shape_id']
             geom = geometry_by_shape[shape]
@@ -551,7 +548,7 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
             headway = 3600/frequency  # seconds
             trip = row['trip_id']
             __, route, window, base_timestr, direction, i = (
-              trip.split(SEP))
+              trip.split(cs.SEP))
             direction = int(direction)
             base_time = gt.timestr_to_seconds(base_timestr)
             start_time = base_time + headway*int(i)
@@ -572,7 +569,7 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=BUFFER):
 
     return g
 
-def build_feed_from_pfeed(pfeed, buffer=BUFFER):
+def build_feed_from_pfeed(pfeed, buffer=cs.BUFFER):
     # Create Feed tables
     agency = build_agency(pfeed)
     calendar, service_by_window = build_calendar_etc(pfeed)
