@@ -23,5 +23,6 @@ def make_gtfs(source_path, target_path, ndigits):
     Round all decimals to ndigits decimal places (defaults to 6).
     All distances will be in kilometers.
     """
-    feed = m.build_feed(source_path)
+    pfeed = m.read_protofeed(source_path)
+    feed = m.build_feed(pfeed)
     gt.write_gtfs(feed, target_path, ndigits=ndigits)

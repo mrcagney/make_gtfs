@@ -13,8 +13,8 @@ from . import constants as cs
 
 class ProtoFeed(object):
     """
-    An ProtoFeed instance simply holds the source data
-    from which to build a GTFS feed.
+    An ProtoFeed instance holds the source data
+    from which to build a GTFS feed, plus a little metadata.
 
     Attributes are
 
@@ -24,38 +24,91 @@ class ProtoFeed(object):
     - ``shapes``: dictionary
     - ``shapes_extra``: dictionary of the form <shape ID> ->
       <trip directions using the shape (0, 1, or 2)>
+    """
 
-    The are built from the required source files located at the
-    given directory path (string or Path object):
+    def __init__(self, frequencies=None, meta=None, service_windows=None,
+      shapes=None, stops=None):
 
-    - ``service_windows.csv``: A CSV file containing service window
-      information.
-      A *service window* is a time interval and a set of days of the
-      week during which all routes have constant service frequency,
-      e.g. Saturday and Sunday 07:00 to 09:00.
-      The CSV file contains the columns
+        self.frequencies = frequencies
+        self.meta = meta
+        self.service_windows = service_windows
+        self.shapes = shapes
+        self.stops = stops
 
-      - ``service_window_id`` (required): String. A unique identifier
-        for a service window
-      - ``start_time``, ``end_time`` (required): Strings. The start
-        and end times of the service window in HH:MM:SS format where
-        the hour is less than 24
-      - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
-        ``friday``, ``saturday``, ``sunday`` (required): Integer 0
-        or 1. Indicates whether the service is active on the given day
-        (1) or not (0)
+        # Clean frequencies
+        freq = self.frequencies
+        if freq is not None:
+            cols = freq.columns
+            if 'route_desc' not in cols:
+                freq['route_desc'] = np.nan
 
-    - ``frequencies.csv``: A CSV file containing route frequency
+            # Fill missing route types with 3 (bus)
+            freq['route_type'].fillna(3, inplace=True)
+            freq['route_type'] = freq['route_type'].astype(int)
+
+            # Create route speeds and fill in missing values with default speeds
+            if 'speed' not in cols:
+                freq['speed'] = np.nan
+            freq['speed'].fillna(self.meta['default_route_speed'].iat[0],
+              inplace=True)
+
+        self.frequencies = freq
+
+        # Build shapes extra from shape IDs in frequencies
+        if self.frequencies is not None:
+            def my_agg(group):
+                d = {}
+                dirs = group.direction.unique()
+                if len(dirs) > 1 or 2 in dirs:
+                    d['direction'] = 2
+                else:
+                    d['direction'] = dirs[0]
+                return pd.Series(d)
+
+            self.shapes_extra = dict(
+                self.frequencies
+                .groupby('shape_id')
+                .apply(my_agg)
+                .reset_index()
+                .values
+            )
+        else:
+            self.shapes_extra = None
+
+    def copy(self):
+        """
+        Return a copy of this ProtoFeed, that is, a feed with all the
+        same attributes.
+        """
+        other = ProtoFeed()
+        for key in cs.PROTOFEED_ATTRS:
+            value = getattr(self, key)
+            if isinstance(value, pd.DataFrame):
+                # Pandas copy DataFrame
+                value = value.copy()
+            setattr(other, key, value)
+
+        return other
+
+def read_protofeed(path):
+    """
+    Read the data files at the given directory path
+    (string or Path object) that specify a ProtoFeed.
+    Return the resulting ProtoFeed.
+
+    The data files are
+
+    - ``frequencies.csv``: (required) A CSV file containing route frequency
       information. The CSV file contains the columns
 
-      - ``route_short_name`` (required): String. A unique short name
+      - ``route_short_name``: (required) String. A unique short name
         for the route, e.g. '51X'
-      - ``route_desc`` (optional): String. A description of the route
-      - ``route_type`` (required): Integer. The
+      - ``route_desc``: (optional) String. A description of the route
+      - ``route_type``: (required) Integer. The
         `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
       - ``service_window_id`` (required): String. A service window ID
         for the route taken from the file ``service_windows.csv``
-      - ``direction`` (required): Integer 0, 1, or 2. Indicates
+      - ``direction``: (required) Integer 0, 1, or 2. Indicates
         whether the route travels in GTFS direction 0, GTFS direction
         1, or in both directions.
         In the latter case, trips will be created that travel in both
@@ -64,107 +117,95 @@ class ProtoFeed(object):
         travel in only the given direction.
       - ``frequency`` (required): Integer. The frequency of the route
         during the service window in vehicles per hour.
-      - ``speed`` (optional): Float. The speed of the route in
+      - ``speed``:  (optional) Float. The speed of the route in
         kilometers per hour
-      - ``shape_id`` (required): String. Shape ID in
-        ``shapes.geojson`` that corresponds to the linestring of the
+      - ``shape_id``: (required) String. A shape ID that is listed in
+        ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction, service window) tuple.
-        In particular different directions and service windows for the
-        same route should have different shapes.
 
-    - ``meta.csv``: A CSV file containing network metadata.
+    - ``meta.csv``: (required) A CSV file containing network metadata.
       The CSV file contains the columns
 
-      - ``agency_name`` (required): String. The name of the transport
+      - ``agency_name``: (required) String. The name of the transport
         agency
-      - ``agency_url`` (required): String. A fully qualified URL for
+      - ``agency_url``: (required) String. A fully qualified URL for
         the transport agency
-      - ``agency_timezone`` (required): String. Timezone where the
+      - ``agency_timezone``: (required) String. Timezone where the
         transit agency is located. Timezone names never contain the
         space character but may contain an underscore. Refer to
         `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
       - ``start_date``, ``end_date`` (required): Strings. The start
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
-      - ``default_route_speed`` (required): Float. Default speed in
+      - ``default_route_speed``: (required) Float. Default speed in
         kilometers per hour to assign to routes with no ``speed``
         entry in the file ``routes.csv``
 
-    - ``shapes.geojson``: A GeoJSON file containing route shapes.
+    - ``service_windows.csv``: (required) A CSV file containing service window
+      information.
+      A *service window* is a time interval and a set of days of the
+      week during which all routes have constant service frequency,
+      e.g. Saturday and Sunday 07:00 to 09:00.
+      The CSV file contains the columns
+
+      - ``service_window_id``: (required) String. A unique identifier
+        for a service window
+      - ``start_time``, ``end_time``: (required) Strings. The start
+        and end times of the service window in HH:MM:SS format where
+        the hour is less than 24
+      - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
+        ``friday``, ``saturday``, ``sunday`` (required): Integer 0
+        or 1. Indicates whether the service is active on the given day
+        (1) or not (0)
+
+    - ``shapes.geojson``: (required) A GeoJSON file containing route shapes.
       The file consists of one feature collection of LineString
       features, where each feature's properties contains at least the
       attribute ``shape_id``, which links the route's shape to the
       route's information in ``routes.csv``.
 
+    - ``stops.csv``: (optional) A CSV file containing all the required
+      and optional fields of ``stops.txt`` in
+      `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+
     """
+    path = Path(path)
 
-    def __init__(self, path, *, use_stops_file=True):
-        # Read source files
-        self.path = Path(path)
-        self.service_windows = pd.read_csv(
-          self.path/'service_windows.csv')
-        self.meta = pd.read_csv(self.path/'meta.csv',
-          dtype={'start_date': str, 'end_date': str})
-        with (self.path/'shapes.geojson').open() as src:
-            self.shapes = json.load(src)
-        if use_stops_file and (self.path/'stops.csv').exists():
-            self.stops = (
-                pd.read_csv(self.path/'stops.csv', dtype={
-                    'stop_id': str,
-                    'stop_code': str,
-                    'zone_id': str,
-                    'location_type': int,
-                    'parent_station': str,
-                    'stop_timezone': str,
-                    'wheelchair_boarding': int,
-                })
-                .drop_duplicates(subset=['stop_lon', 'stop_lat'])
-                .dropna(subset=['stop_lon', 'stop_lat'], how='any')
-            )
-        else:
-            self.stops = None
+    service_windows = pd.read_csv(
+      path/'service_windows.csv')
 
-        # Read and clean frequencies
-        frequencies = pd.read_csv(self.path/'frequencies.csv',
-          dtype={'route_short_name': str, 'service_window_id': str,
-          'shape_id': str, 'direction': int, 'frequency': int})
-        cols = frequencies.columns
-        if 'route_desc' not in cols:
-            frequencies['route_desc'] = np.nan
+    meta = pd.read_csv(path/'meta.csv',
+      dtype={'start_date': str, 'end_date': str})
 
-        # Fill missing route types with 3 (bus)
-        frequencies['route_type'].fillna(3, inplace=True)
-        frequencies['route_type'] = frequencies['route_type'].astype(int)
+    with (path/'shapes.geojson').open() as src:
+        shapes = json.load(src)
 
-        # Create route speeds and fill in missing values with default speeds
-        if 'speed' not in cols:
-            frequencies['speed'] = np.nan
-        frequencies['speed'].fillna(self.meta['default_route_speed'].iat[0],
-          inplace=True)
-        self.frequencies = frequencies
-
-        # Build shapes extra, keeping only shapes that appear
-        # in both ``self.frequencies`` and ``self.shapes``
-        shids = set(f['properties']['shape_id']
-          for f in self.shapes['features'])
-
-        def my_agg(group):
-            d = {}
-            dirs = group.direction.unique()
-            if len(dirs) > 1 or 2 in dirs:
-                d['direction'] = 2
-            else:
-                d['direction'] = dirs[0]
-            return pd.Series(d)
-
-        self.shapes_extra = dict(
-            self.frequencies
-            .groupby('shape_id')
-            .apply(my_agg)
-            .reset_index()
-            .loc[lambda x: x.shape_id.isin(shids)]
-            .values
+    if (path/'stops.csv').exists():
+        stops = (
+            pd.read_csv(path/'stops.csv', dtype={
+                'stop_id': str,
+                'stop_code': str,
+                'zone_id': str,
+                'location_type': int,
+                'parent_station': str,
+                'stop_timezone': str,
+                'wheelchair_boarding': int,
+            })
+            .drop_duplicates(subset=['stop_lon', 'stop_lat'])
+            .dropna(subset=['stop_lon', 'stop_lat'], how='any')
         )
+    else:
+        stops = None
+
+    frequencies = pd.read_csv(path/'frequencies.csv', dtype={
+        'route_short_name': str,
+        'service_window_id': str,
+        'shape_id': str,
+        'direction': int,
+        'frequency': int,
+    })
+
+    return ProtoFeed(frequencies, meta, service_windows, shapes, stops)
 
 def get_duration(timestr1, timestr2, units='s'):
     """
@@ -189,9 +230,15 @@ def get_duration(timestr1, timestr2, units='s'):
         return duration/3600
 
 def build_stop_ids(shape_id):
+    """
+    Create a pair of stop IDs based on the given shape ID.
+    """
     return [cs.SEP.join(['stp', shape_id, str(i)]) for i in range(2)]
 
 def build_stop_names(shape_id):
+    """
+    Create a pair of stop names based on the given shape ID.
+    """
     return ['Stop {!s} on shape {!s} '.format(i, shape_id)
       for i in range(2)]
 
@@ -256,19 +303,13 @@ def build_routes(pfeed):
 
     return f
 
-def reverse_linestring(s):
-    """
-    Given a Shapely LineString, return a new LineString whose
-    coordinates are those of the original but in reverse order.
-    """
-    return sg.LineString(t for t in reversed(s.coords))
-
 def build_geometry_by_shape(pfeed, *, use_utm=False):
     """
     Given a ProtoFeed, return a dictionary of the form
-    <shape ID> -> <Shapely linestring of shape>.
-    Only include shape IDs that occur in both ``pfeed.frequencies``
-    and ``pfeed.shapes``.
+    <shape ID> -> <Shapely linestring of shape>
+    build from ``pfeed.shapes``.
+    Warning: this could contain more shapes than are referenced
+    in ``pfeed.frequencies``.
 
     If ``use_utm``, then return each linestring in in UTM coordinates.
     Otherwise, return each linestring in WGS84 longitude-latitude
@@ -292,14 +333,16 @@ def build_geometry_by_shape(pfeed, *, use_utm=False):
 def build_shapes(pfeed):
     """
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
-    Only include shape IDs that occur in both ``pfeed.frequencies``
-    and ``pfeed.shapes``.
+    Only use shape IDs that occur in both ``pfeed.shapes`` and
+    ``pfeed.frequencies``.
     Create reversed shapes where routes traverse shapes in both
     directions.
     """
     rows = []
     geometry_by_shape = build_geometry_by_shape(pfeed)
     for shape, geom in geometry_by_shape.items():
+        if shape not in pfeed.shapes_extra:
+            continue
         if pfeed.shapes_extra[shape] == 2:
             # Add shape and its reverse
             shid = shape + '-1'
@@ -312,7 +355,7 @@ def build_shapes(pfeed):
             rows.extend(new_rows)
         else:
             # Add shape
-            shid = '{}-{}'.format(shape, pfeed.shapes_extra[shape])
+            shid = '{}{}{}'.format(shape, cs.SEP, pfeed.shapes_extra[shape])
             new_rows = [[shid, i, lon, lat]
               for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
@@ -320,11 +363,12 @@ def build_shapes(pfeed):
     return pd.DataFrame(rows, columns=['shape_id', 'shape_pt_sequence',
       'shape_pt_lon', 'shape_pt_lat'])
 
-def build_stops(pfeed):
+def build_stops(pfeed, shapes=None):
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
     If ``pfeed.stops`` is not ``None``, then return that.
-    Otherwise, create one stop at the beginning (the first point) of each shape
+    Otherwise, require built shapes output by :func:`build_shapes`,
+    create one stop at the beginning (the first point) of each shape
     and one at the end (the last point) of each shape, and
     only create stops for shape IDs that are listed in both
     ``frequencies.csv`` and ``shapes.geojson``.
@@ -332,9 +376,13 @@ def build_stops(pfeed):
     if pfeed.stops is not None:
         stops = pfeed.stops.copy()
     else:
-        geometry_by_shape = build_geometry_by_shape(pfeed)
-        F = []
-        for shape, linestring in geometry_by_shape.items():
+        if shapes is None:
+            raise ValueError('Must input shapes built by build_shapes()')
+
+        geo_shapes = gt.geometrize_shapes(shapes)
+        rows = []
+        for shape, linestring in geo_shapes[['shape_id',
+          'geometry']].itertuples(index=False):
             stop_ids = build_stop_ids(shape)
             stop_names = build_stop_names(shape)
             for i in range(2):
@@ -342,9 +390,9 @@ def build_stops(pfeed):
                 stop_name = stop_names[i]
                 stop_lon, stop_lat = linestring.interpolate(i,
                   normalized=True).coords[0]
-                F.append([stop_id, stop_name, stop_lon, stop_lat])
+                rows.append([stop_id, stop_name, stop_lon, stop_lat])
 
-        stops = pd.DataFrame(F, columns=['stop_id', 'stop_name',
+        stops = pd.DataFrame(rows, columns=['stop_id', 'stop_name',
           'stop_lon', 'stop_lat'])
 
     return stops
@@ -352,11 +400,10 @@ def build_stops(pfeed):
 def build_trips(pfeed, routes, service_by_window):
     """
     Given a ProtoFeed and its corresponding routes (DataFrame),
-    service-by-window (dictionary), and shapes (DataFrame),
-    return a DataFrame representing ``trips.txt``.
+    service-by-window (dictionary), return a DataFrame representing
+    ``trips.txt``.
     Trip IDs encode route, direction, and service window information
     to make it easy to compute stop times later.
-    Will not create trips for routes with null linestrings.
     """
     # Put together the route and service data
     routes = pd.merge(routes[['route_id', 'route_short_name']],
@@ -368,9 +415,6 @@ def build_trips(pfeed, routes, service_by_window):
     rows = []
     for index, row in routes.iterrows():
         shape = row['shape_id']
-        # Don't create trips for shapes that don't exist
-        if shape not in pfeed.shapes_extra:
-            continue
         route = row['route_id']
         window = row['service_window_id']
         start, end = row[['start_time', 'end_time']].values
@@ -389,7 +433,9 @@ def build_trips(pfeed, routes, service_by_window):
         else:
             directions = [direction]
         for direction in directions:
-            shid = '{}-{}'.format(shape, direction)
+            # Warning: this shape-ID-making logic needs to match that
+            # in ``build_shapes``
+            shid = '{}{}{}'.format(shape, cs.SEP, direction)
             rows.extend([[
               route,
               cs.SEP.join(['t', route, window, start,
@@ -569,13 +615,13 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=cs.BUFFER):
 
     return g
 
-def build_feed_from_pfeed(pfeed, buffer=cs.BUFFER):
+def build_feed(pfeed, buffer=cs.BUFFER):
     # Create Feed tables
     agency = build_agency(pfeed)
     calendar, service_by_window = build_calendar_etc(pfeed)
     routes = build_routes(pfeed)
     shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed)
+    stops = build_stops(pfeed, shapes)
     trips = build_trips(pfeed, routes, service_by_window)
     stop_times = build_stop_times(pfeed, routes, shapes, trips, buffer=buffer)
 
@@ -586,14 +632,3 @@ def build_feed_from_pfeed(pfeed, buffer=cs.BUFFER):
     return gt.Feed(agency=agency, calendar=calendar, routes=routes,
       shapes=shapes, stops=stops, stop_times=stop_times, trips=trips,
       dist_units='km')
-
-def build_feed(path):
-    """
-    Given a path (string or Path object) to a directory of source files
-    from which to build a ProtoFeed, build and return the corresponding
-    GTFSTK Feed.
-    Distance units are kilometers.
-    """
-    # Create ProtoFeed
-    pfeed = ProtoFeed(path)
-    return build_feed_from_pfeed(pfeed)

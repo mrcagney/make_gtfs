@@ -7,7 +7,29 @@ from make_gtfs import *
 
 
 # Load test ProtoFeed
-pfeed = ProtoFeed(DATA_DIR/'auckland')
+pfeed = read_protofeed(DATA_DIR/'auckland')
+
+def test_init():
+    pfeed = ProtoFeed()
+    for key in PROTOFEED_ATTRS:
+        assert hasattr(pfeed, key)
+
+def test_copy():
+    pfeed1 = pfeed
+    pfeed2 = pfeed1.copy()
+
+    # Check attributes
+    for key in cs.PROTOFEED_ATTRS:
+        val = getattr(pfeed2, key)
+        expect_val = getattr(pfeed1, key)
+        if isinstance(val, pd.DataFrame):
+            assert val.equals(expect_val)
+        else:
+            assert val == expect_val
+
+def test_read_protofeed():
+    pfeed = read_protofeed(DATA_DIR/'auckland')
+    assert isinstance(pfeed, ProtoFeed)
 
 def test_get_duration():
     ts1 = '01:01:01'
@@ -15,12 +37,6 @@ def test_get_duration():
     get = get_duration(ts1, ts2, units='min')
     expect = 4
     assert get == expect
-
-def test_init():
-    assert isinstance(pfeed.frequencies, pd.DataFrame)
-    assert isinstance(pfeed.service_windows, pd.DataFrame)
-    assert isinstance(pfeed.meta, pd.DataFrame)
-    assert isinstance(pfeed.shapes, dict)
 
 def test_build_routes():
     routes = build_routes(pfeed)
@@ -34,19 +50,19 @@ def test_build_routes():
     expect_ncols = 4
     assert routes.shape == (expect_nrows, expect_ncols)
 
-def test_build_linestring_by_shape():
-    linestring_by_shape = build_linestring_by_shape(pfeed)
+def test_build_geometry_by_shape():
+    geometry_by_shape = build_geometry_by_shape(pfeed)
 
     # Should be a dictionary
-    assert isinstance(linestring_by_shape, dict)
+    assert isinstance(geometry_by_shape, dict)
 
     # The elements should be Shapely linestrings
-    for x in linestring_by_shape.values():
+    for x in geometry_by_shape.values():
         assert isinstance(x, sg.LineString)
 
     # Should contain at most one shape for each route
     nshapes = pfeed.frequencies['shape_id'].unique().shape[0]
-    assert len(linestring_by_shape) <= nshapes
+    assert len(geometry_by_shape) <= nshapes
 
 def test_build_shapes():
     shapes = build_shapes(pfeed)
@@ -55,29 +71,46 @@ def test_build_shapes():
     assert isinstance(shapes, pd.DataFrame)
 
     # Should have correct shape
-    expect_nshapes = len(build_linestring_by_shape(pfeed))
+    count = 0
+    for direction in pfeed.shapes_extra.values():
+        if direction == 0:
+            count += 1
+        else:
+            count += direction
+    expect_nshapes = count
     expect_ncols = 4
     assert shapes.groupby('shape_id').ngroups == expect_nshapes
     assert shapes.shape[1] == expect_ncols
 
 def test_build_stops():
-    stops = build_stops(pfeed)
-    shapes = build_shapes(pfeed)
+    pfeed_stopless = pfeed.copy()
+    pfeed_stopless.stops = None
+    shapes = build_shapes(pfeed_stopless)
+    stops = build_stops(pfeed_stopless, shapes)
 
     # Should be a data frame
     assert isinstance(stops, pd.DataFrame)
 
     # Should have correct shape
-    nshapes = shapes['shape_id'].unique().shape[0]
+    nshapes = shapes.shape_id.nunique()
     expect_nrows = 2*nshapes
     expect_ncols = 4
     assert stops.shape == (expect_nrows, expect_ncols)
+
+    # Test with stops
+    stops = build_stops(pfeed)
+
+    # Should be a data frame
+    assert isinstance(stops, pd.DataFrame)
+
+    # Should have correct shape
+    assert stops.shape == pfeed.stops.shape
 
 def test_build_trips():
     routes = build_routes(pfeed)
     __, service_by_window = build_calendar_etc(pfeed)
     shapes = build_shapes(pfeed)
-    trips = build_trips(pfeed, routes, service_by_window, shapes)
+    trips = build_trips(pfeed, routes, service_by_window)
 
     # Should be a data frame
     assert isinstance(trips, pd.DataFrame)
@@ -91,9 +124,6 @@ def test_build_trips():
     for index, row in f.iterrows():
         # Get number of trips corresponding to this row
         # and add it to the total
-        shape = row['shape_id']
-        if shape not in shapes:
-            continue
         frequency = row['frequency']
         if not frequency:
             continue
@@ -109,12 +139,15 @@ def test_build_trips():
     assert trips.shape == (expect_ntrips, expect_ncols)
 
 def test_build_stop_times():
-    routes = build_routes(pfeed)
-    shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed)
-    __, service_by_window = build_calendar_etc(pfeed)
-    trips = build_trips(pfeed, routes, service_by_window, shapes)
-    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips)
+    # Test stopless version first
+    pfeed_stopless = pfeed.copy()
+    pfeed_stopless.stops = None
+    routes = build_routes(pfeed_stopless)
+    shapes = build_shapes(pfeed_stopless)
+    stops = build_stops(pfeed_stopless, shapes)
+    __, service_by_window = build_calendar_etc(pfeed_stopless)
+    trips = build_trips(pfeed_stopless, routes, service_by_window)
+    stop_times = build_stop_times(pfeed_stopless, routes, shapes, stops, trips)
 
     # Should be a data frame
     assert isinstance(stop_times, pd.DataFrame)
@@ -126,8 +159,10 @@ def test_build_stop_times():
     expect_ncols = 5
     assert stop_times.shape == (expect_nrows, expect_ncols)
 
+    # Now test with stops...
+
 def test_build_feed():
-    feed = build_feed(DATA_DIR/'auckland')
+    feed = build_feed(pfeed)
 
     # Should be a GTFSTK Feed
     assert isinstance(feed, gt.Feed)

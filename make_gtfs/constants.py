@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 import pytz
 import pycountry
 
@@ -7,6 +9,59 @@ SEP = '-'
 
 #: Meters to buffer trip paths to find stops
 BUFFER = 10
+
+# ProtoFeed table and field reference
+columns = ['table', 'table_required', 'column', 'column_required', 'dtype']
+rows = [
+    ['frequencies', True, 'route_short_anme', True, 'str'],
+    ['frequencies', True, 'route_desc', False, 'str'],
+    ['frequencies', True, 'route_type', True, 'int'],
+    ['frequencies', True, 'service_window_id', True, 'str'],
+    ['frequencies', True, 'direction', True, 'int'],
+    ['frequencies', True, 'frequency', True, 'int'],
+    ['frequencies', True, 'speed', True, 'float'],
+    ['frequencies', True, 'shape_id', True, 'str'],
+    ['meta', True, 'agency_name', True, 'str'],
+    ['meta', True, 'agency_url', True, 'str'],
+    ['meta', True, 'agency_timezone', True, 'str'],
+    ['meta', True, 'start_date', True, 'str'],
+    ['meta', True, 'end_date', True, 'str'],
+    ['meta', True, 'default_route_speed', True, 'float'],
+    ['service_windows', True, 'service_window_id', True, 'str'],
+    ['service_windows', True, 'start_time', True, 'str'],
+    ['service_windows', True, 'end_time', True, 'str'],
+    ['service_windows', True, 'monday', True, 'int'],
+    ['service_windows', True, 'tuesday', True, 'int'],
+    ['service_windows', True, 'wednesday', True, 'int'],
+    ['service_windows', True, 'thursday', True, 'int'],
+    ['service_windows', True, 'friday', True, 'int'],
+    ['service_windows', True, 'saturday', True, 'int'],
+    ['service_windows', True, 'sunday', True, 'int'],
+    ['shapes', True, np.nan, np.nan],
+    ['stops', False, 'stop_id', True, 'str'],
+    ['stops', False, 'stop_code', False, 'str'],
+    ['stops', False, 'stop_name', True, 'str'],
+    ['stops', False, 'stop_desc', False, 'str'],
+    ['stops', False, 'stop_lat', True, 'float'],
+    ['stops', False, 'stop_lon', True, 'float'],
+    ['stops', False, 'zone_id', False, 'str'],
+    ['stops', False, 'stop_url', False, 'str'],
+    ['stops', False, 'location_type', False, 'int'],
+    ['stops', False, 'parent_station', False, 'str'],
+    ['stops', False, 'stop_timezone', False, 'str'],
+    ['stops', True, 'wheelchair_boarding', False, 'int'],
+]
+PROTOFEED_REF = pd.DataFrame(rows, columns=columns)
+
+#:
+PROTOFEED_ATTRS = [
+    'frequencies',
+    'meta',
+    'service_windows',
+    'shapes',
+    'shapes_extra',
+    'stops',
+]
 
 #: Country name by country alpha-2 code
 country_by_alpha2 = {
