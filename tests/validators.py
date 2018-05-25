@@ -141,6 +141,9 @@ def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
     # Check service window ID
     problems = gt.check_column_id(problems, table, f, 'service_window_id')
 
+    problems = check_column_linked_id(problems, table, f, 'service_window_id',
+      pfeed.service_windows)
+
     # Check direction
     v = lambda x: x in range(2)
     problems = gt.check_column(problems, table, f, 'direction', v)
@@ -158,7 +161,6 @@ def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
 
     problems = check_column_linked_id(problems, table, f, 'shape_id',
       pfeed.shapes)
-
 
     return gt.format_problems(problems, as_df=as_df)
 
