@@ -50,20 +50,6 @@ def test_build_routes():
     expect_ncols = 4
     assert routes.shape == (expect_nrows, expect_ncols)
 
-def test_build_geometry_by_shape():
-    geometry_by_shape = build_geometry_by_shape(pfeed)
-
-    # Should be a dictionary
-    assert isinstance(geometry_by_shape, dict)
-
-    # The elements should be Shapely linestrings
-    for x in geometry_by_shape.values():
-        assert isinstance(x, sg.LineString)
-
-    # Should contain at most one shape for each route
-    nshapes = pfeed.frequencies['shape_id'].unique().shape[0]
-    assert len(geometry_by_shape) <= nshapes
-
 def test_build_shapes():
     shapes = build_shapes(pfeed)
 
