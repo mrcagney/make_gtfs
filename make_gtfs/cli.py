@@ -1,8 +1,9 @@
 import click
 import gtfstk as gt
 
-from . import main as m
+from . import protofeed as pf
 from . import constants as cs
+from . import main as m
 
 @click.command(short_help="Create a GTFS feed from simpler files")
 @click.argument('source_path', type=click.Path())
@@ -31,6 +32,6 @@ def make_gtfs(source_path, target_path, buffer, ndigits):
     Round all decimals to ndigits decimal places.
     All distances in the resulting GTFS feed will be in kilometers.
     """
-    pfeed = m.read_protofeed(source_path)
+    pfeed = pf.read_protofeed(source_path)
     feed = m.build_feed(pfeed, buffer=buffer)
     gt.write_gtfs(feed, target_path, ndigits=ndigits)

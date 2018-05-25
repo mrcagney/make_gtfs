@@ -133,6 +133,13 @@ Notes
 Changes
 ========
 
+2.0.0,
+------------------
+- Extended to handle optional input file ``stops.csv``
+- Wrote ProtoFeed validation
+- Modularized code more
+
+
 1.0.0, 2018-05-22
 ------------------
 - Restructured code and used GTFSTK, Click, Pytest, Pipenv
