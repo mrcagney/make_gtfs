@@ -13,7 +13,7 @@ BUFFER = 10
 # ProtoFeed table and field reference
 columns = ['table', 'table_required', 'column', 'column_required', 'dtype']
 rows = [
-    ['frequencies', True, 'route_short_anme', True, 'str'],
+    ['frequencies', True, 'route_short_name', True, 'str'],
     ['frequencies', True, 'route_long_name', True, 'str'],
     ['frequencies', True, 'route_type', True, 'int'],
     ['frequencies', True, 'service_window_id', True, 'str'],
@@ -37,7 +37,8 @@ rows = [
     ['service_windows', True, 'friday', True, 'int'],
     ['service_windows', True, 'saturday', True, 'int'],
     ['service_windows', True, 'sunday', True, 'int'],
-    ['shapes', True, np.nan, np.nan],
+    ['shapes', True, 'shape_id', True, 'str'],
+    ['shapes', True, 'geometry', True, 'LineString'],
     ['stops', False, 'stop_id', True, 'str'],
     ['stops', False, 'stop_code', False, 'str'],
     ['stops', False, 'stop_name', True, 'str'],

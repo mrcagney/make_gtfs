@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 import pandas as pd
@@ -6,10 +5,11 @@ import numpy as np
 import shapely.ops as so
 import shapely.geometry as sg
 import utm
+import geopandas as gpd
 import gtfstk as gt
 
 from . import constants as cs
-
+from . import validators as vd
 
 class ProtoFeed(object):
     """
@@ -21,7 +21,7 @@ class ProtoFeed(object):
     - ``service_windows``: DataFrame
     - ``frequencies``: DataFrame; has speeds filled in
     - ``meta``: DataFrame
-    - ``shapes``: dictionary
+    - ``shapes``: GeoDataFrame
     - ``shapes_extra``: dictionary of the form <shape ID> ->
       <trip directions using the shape (0, 1, or 2)>
     """
@@ -91,10 +91,12 @@ class ProtoFeed(object):
 def read_protofeed(path):
     """
     Read the data files at the given directory path
-    (string or Path object) that specify a ProtoFeed.
-    Return the resulting ProtoFeed.
+    (string or Path object) and build a ProtoFeed from them.
+    Validate the resulting ProtoFeed.
+    If invalid, raise a ``ValueError`` specifying the errors.
+    Otherwise, return the resulting ProtoFeed.
 
-    The data files are
+    The data files needed to build a ProtoFeed are
 
     - ``frequencies.csv``: (required) A CSV file containing route frequency
       information. The CSV file contains the columns
@@ -176,8 +178,7 @@ def read_protofeed(path):
     meta = pd.read_csv(path/'meta.csv',
       dtype={'start_date': str, 'end_date': str})
 
-    with (path/'shapes.geojson').open() as src:
-        shapes = json.load(src)
+    shapes = gpd.read_file(str(path/'shapes.geojson'), driver='GeoJSON')
 
     if (path/'stops.csv').exists():
         stops = (
@@ -204,7 +205,15 @@ def read_protofeed(path):
         'frequency': int,
     })
 
-    return ProtoFeed(frequencies, meta, service_windows, shapes, stops)
+    pfeed = ProtoFeed(frequencies, meta, service_windows, shapes, stops)
+
+    # Validate
+    v = vd.validate(pfeed)
+    if 'error' in v.type.values:
+        raise ValueError(
+          "Invalid ProtoFeed files:\n\n" + v.to_string(justify='left'))
+
+    return pfeed
 
 def get_duration(timestr1, timestr2, units='s'):
     """
@@ -302,33 +311,6 @@ def build_routes(pfeed):
 
     return f
 
-def build_geometry_by_shape(pfeed, *, use_utm=False):
-    """
-    Given a ProtoFeed, return a dictionary of the form
-    <shape ID> -> <Shapely linestring of shape>
-    build from ``pfeed.shapes``.
-    Warning: this could contain more shapes than are referenced
-    in ``pfeed.frequencies``.
-
-    If ``use_utm``, then return each linestring in in UTM coordinates.
-    Otherwise, return each linestring in WGS84 longitude-latitude
-    coordinates.
-    """
-    # Note the output for conversion to UTM with the utm package:
-    # >>> u = utm.from_latlon(47.9941214, 7.8509671)
-    # >>> print u
-    # (414278, 5316285, 32, 'T')
-    if use_utm:
-        def proj(lon, lat):
-            return utm.from_latlon(lat, lon)[:2]
-    else:
-        def proj(lon, lat):
-            return lon, lat
-
-    return {f['properties']['shape_id']:
-      so.transform(proj, sg.shape(f['geometry']))
-      for f in pfeed.shapes['features']}
-
 def build_shapes(pfeed):
     """
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
@@ -338,8 +320,8 @@ def build_shapes(pfeed):
     directions.
     """
     rows = []
-    geometry_by_shape = build_geometry_by_shape(pfeed)
-    for shape, geom in geometry_by_shape.items():
+    for shape, geom in pfeed.shapes[['shape_id',
+      'geometry']].itertuples(index=False):
         if shape not in pfeed.shapes_extra:
             continue
         if pfeed.shapes_extra[shape] == 2:
@@ -380,14 +362,14 @@ def build_stops(pfeed, shapes=None):
 
         geo_shapes = gt.geometrize_shapes(shapes)
         rows = []
-        for shape, linestring in geo_shapes[['shape_id',
+        for shape, geom in geo_shapes[['shape_id',
           'geometry']].itertuples(index=False):
             stop_ids = build_stop_ids(shape)
             stop_names = build_stop_names(shape)
             for i in range(2):
                 stop_id = stop_ids[i]
                 stop_name = stop_names[i]
-                stop_lon, stop_lat = linestring.interpolate(i,
+                stop_lon, stop_lat = geom.interpolate(i,
                   normalized=True).coords[0]
                 rows.append([stop_id, stop_name, stop_lon, stop_lat])
 
