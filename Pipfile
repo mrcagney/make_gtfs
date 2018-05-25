@@ -9,12 +9,17 @@ verify_ssl = true
 jupyter = "*"
 shapely = "*"
 utm = "*"
-gtfstk = "*"
 pytest = "*"
 twine = "*"
 sphinx = "*"
-pandas = "==0.23.0"
+pandas = "*"
 "e1839a8" = {path = ".", editable = true}
+descartes = "*"
+matplotlib = "*"
+geopandas = "*"
+folium = "*"
+"json2html" = "*"
+gtfstk = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.5"
