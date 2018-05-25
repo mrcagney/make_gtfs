@@ -83,6 +83,7 @@ def test_build_shapes():
     assert shapes.shape[1] == expect_ncols
 
 def test_build_stops():
+    # Test with null ``pfeed.stops``
     pfeed_stopless = pfeed.copy()
     pfeed_stopless.stops = None
     shapes = build_shapes(pfeed_stopless)
@@ -93,11 +94,10 @@ def test_build_stops():
 
     # Should have correct shape
     nshapes = shapes.shape_id.nunique()
-    expect_nrows = 2*nshapes
-    expect_ncols = 4
-    assert stops.shape == (expect_nrows, expect_ncols)
+    assert stops.shape[0] <= 2*nshapes
+    assert stops.shape[1] == 4
 
-    # Test with stops
+    # Test with non-null ``pfeed.stops``
     stops = build_stops(pfeed)
 
     # Should be a data frame
@@ -144,22 +144,46 @@ def test_build_stop_times():
     pfeed_stopless.stops = None
     routes = build_routes(pfeed_stopless)
     shapes = build_shapes(pfeed_stopless)
-    stops = build_stops(pfeed_stopless, shapes)
     __, service_by_window = build_calendar_etc(pfeed_stopless)
+    stops = build_stops(pfeed_stopless, shapes)
     trips = build_trips(pfeed_stopless, routes, service_by_window)
-    stop_times = build_stop_times(pfeed_stopless, routes, shapes, trips)
+    stop_times = build_stop_times(pfeed_stopless, routes, shapes, stops, trips)
 
     # Should be a data frame
     assert isinstance(stop_times, pd.DataFrame)
 
-    # Should have correct shape
-    # Number of stop times is twice the number of trips,
-    # because each trip has two stops
-    expect_nrows = 2*trips.shape[0]
-    expect_ncols = 6
-    assert stop_times.shape == (expect_nrows, expect_ncols)
+    # Should have correct shape.
+    # Number of stop times is at most twice the number of trips,
+    # because each trip has at most two stops
+    assert stop_times.shape[0] <= 2*trips.shape[0]
+    assert stop_times.shape[1] == 6
 
-    # Now test with stops...
+    # Test with stops
+    routes = build_routes(pfeed)
+    shapes = build_shapes(pfeed)
+    stops = build_stops(pfeed)
+    __, service_by_window = build_calendar_etc(pfeed)
+    trips = build_trips(pfeed, routes, service_by_window)
+    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips)
+
+    # Should be a data frame
+    assert isinstance(stop_times, pd.DataFrame)
+
+    # Should have correct shape.
+    # Number of stop times is at least twice the number of trips,
+    # because each trip has two stops
+    assert stop_times.shape[0] >= 2*trips.shape[0]
+    assert stop_times.shape[1] == 6
+
+    # Test with stops and tiny buffer so that no stop times are built
+    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips,
+      buffer=0)
+
+    # Should be a data frame
+    assert isinstance(stop_times, pd.DataFrame)
+
+    # Should be empty
+    assert stop_times.empty
 
 def test_build_feed():
     feed = build_feed(pfeed)

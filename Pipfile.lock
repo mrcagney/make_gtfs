@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "79891ebe849e112507b6a8672d344ffef806e93ec8bc8c983f1c56b104b4d9c7"
+            "sha256": "c3ec3c74667ba2735dde2b1f03d90fe8994fc1d4774ce9b79126dfd595a4f59f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -351,11 +351,11 @@
         },
         "more-itertools": {
             "hashes": [
-                "sha256:0dd8f72eeab0d2c3bd489025bb2f6a1b8342f9b198f6fc37b52d15cfa4531fea",
-                "sha256:11a625025954c20145b37ff6309cd54e39ca94f72f6bb9576d1195db6fa2442e",
-                "sha256:c9ce7eccdcb901a2c75d326ea134e0886abfbea5f93e91cc95de9507c0816c44"
+                "sha256:2b6b9893337bfd9166bee6a62c2b0c9fe7735dcf85948b387ec8cba30e85d8e8",
+                "sha256:6703844a52d3588f951883005efcf555e49566a48afd4db4e965d69b883980d3",
+                "sha256:a18d870ef2ffca2b8463c0070ad17b5978056f403fb64e3f15fe62a52db21cc0"
             ],
-            "version": "==4.1.0"
+            "version": "==4.2.0"
         },
         "munch": {
             "hashes": [
@@ -496,7 +496,6 @@
                 "sha256:e64193f0047ad603b71f202332ab5527c5e52aa7c8b609704fc28c0dc20c4365",
                 "sha256:e8c43b5eee76b2083a9badde89fd1bbce6c8942d1045146e100b7b5e014f4f1a"
             ],
-            "markers": "os_name != 'nt'",
             "version": "==0.5.2"
         },
         "py": {

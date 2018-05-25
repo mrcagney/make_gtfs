@@ -14,7 +14,7 @@ BUFFER = 10
 columns = ['table', 'table_required', 'column', 'column_required', 'dtype']
 rows = [
     ['frequencies', True, 'route_short_anme', True, 'str'],
-    ['frequencies', True, 'route_desc', False, 'str'],
+    ['frequencies', True, 'route_long_name', True, 'str'],
     ['frequencies', True, 'route_type', True, 'int'],
     ['frequencies', True, 'service_window_id', True, 'str'],
     ['frequencies', True, 'direction', True, 'int'],

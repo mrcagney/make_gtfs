@@ -368,9 +368,9 @@ def build_stops(pfeed, shapes=None):
     If ``pfeed.stops`` is not ``None``, then return that.
     Otherwise, require built shapes output by :func:`build_shapes`,
     create one stop at the beginning (the first point) of each shape
-    and one at the end (the last point) of each shape, and
-    only create stops for shape IDs that are listed in both
-    ``frequencies.csv`` and ``shapes.geojson``.
+    and one at the end (the last point) of each shape,
+    and drop stops with duplicate coordinates.
+    Note that this will yield one stop for shapes that are loops.
     """
     if pfeed.stops is not None:
         stops = pfeed.stops.copy()
@@ -391,8 +391,11 @@ def build_stops(pfeed, shapes=None):
                   normalized=True).coords[0]
                 rows.append([stop_id, stop_name, stop_lon, stop_lat])
 
-        stops = pd.DataFrame(rows, columns=['stop_id', 'stop_name',
-          'stop_lon', 'stop_lat'])
+        stops = (
+            pd.DataFrame(rows, columns=['stop_id', 'stop_name',
+              'stop_lon', 'stop_lat'])
+            .drop_duplicates(subset=['stop_lon', 'stop_lat'])
+        )
 
     return stops
 
@@ -459,26 +462,30 @@ def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
     """
     # Buffer linestring
     b = linestring.buffer(buffer, cap_style=2)
-    if side != 'both':
+    if side in ['left', 'right'] and buffer != 0:
         # Make a tiny buffer to split the normal-size buffer
         # in half across the linestring
-        b0 = linestring.buffer(0.5, cap_style=3)
+        eps = min(buffer/2, 0.001)
+        b0 = linestring.buffer(eps, cap_style=3)
         diff = b.difference(b0)
         polys = so.polygonize(diff)
+        # Buffer sides slightly to include original linestring
+        b = sg.Polygon
         if side == 'left':
-            b = list(polys)[0]
+            b = list(polys)[0].buffer(1.1*eps)
         else:
-            b = list(polys)[1]
+            b = list(polys)[1].buffer(1.1*eps)
 
     # Collect stops
     return geo_stops.loc[geo_stops.intersects(b)].copy()
 
-def build_stop_times(pfeed, routes, shapes, trips, buffer=cs.BUFFER):
+def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
     """
     Given a ProtoFeed and its corresponding routes (DataFrame),
     shapes (DataFrame), stops (DataFrame), trips (DataFrame),
     return DataFrame representing ``stop_times.txt``.
     Includes the optional ``shape_dist_traveled`` column.
+    Don't make stop times for trips with no nearby stops.
     """
     # Get the table of trips and add frequency and service window details
     routes = (
@@ -510,7 +517,7 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=cs.BUFFER):
         LineString with given shape ID, compute distances and departure
         times of a trip traversing the LineString from start to end
         at the given start and end times (in seconds past midnight)
-        and stoping at the stops encountered along the way.
+        and stopping at the stops encountered along the way.
         Do not assume that the stops are ordered by trip encounter.
         Return three lists of the same length: the stop IDs in order
         that the trip encounters them, the shape distances traveled
@@ -547,63 +554,38 @@ def build_stop_times(pfeed, routes, shapes, trips, buffer=cs.BUFFER):
     # Iterate through trips and set stop times based on stop ID
     # and service window frequency.
     # Remember that every trip has a valid shape ID.
+    # Gather stops geographically from ``stops``.
     rows = []
-    if pfeed.stops is None:
-        # Trip has only two stops, one at each path endpoint
-        for index, row in trips.iterrows():
-            shape = row['shape_id']
-            length = geometry_by_shape[shape].length/1000  # km
-            speed = row['speed']  # km/h
-            duration = int((length/speed)*3600)  # seconds
-            frequency = row['frequency']
-            if not frequency:
-                # No stop times for this trip/frequency combo
-                continue
-            headway = 3600/frequency  # seconds
-            trip = row['trip_id']
-            __, route, window, base_timestr, direction, i =\
-              trip.split(cs.SEP)
-            direction = int(direction)
-            stop_ids = build_stop_ids(shape)
-            # if direction == 1:
-            #     stop_ids.reverse()
-            base_time = gt.timestr_to_seconds(base_timestr)
-            start_time = base_time + headway*int(i)
-            end_time = start_time + duration
-            new_rows = [
-                [trip, stop_ids[0], 0, start_time, start_time, 0],
-                [trip, stop_ids[1], 1, end_time, end_time, length],
-            ]
-            rows.extend(new_rows)
-    else:
-        # Trip has multiple stops found in ``pfeed.stops``
-        geo_stops = gt.geometrize_stops(pfeed.stops, use_utm=True)
-        # Look on the side of the street that traffic moves for this timezone
-        side = cs.traffic_by_timezone[pfeed.meta.agency_timezone.iat[0]]
-        for index, row in trips.iterrows():
-            shape = row['shape_id']
-            geom = geometry_by_shape[shape]
-            stops = get_nearby_stops(geo_stops, geom, side, buffer=buffer)
-            length = geom.length/1000  # km
-            speed = row['speed']  # km/h
-            duration = int((length/speed)*3600)  # seconds
-            frequency = row['frequency']
-            if not frequency:
-                # No stop times for this trip/frequency combo
-                continue
-            headway = 3600/frequency  # seconds
-            trip = row['trip_id']
-            __, route, window, base_timestr, direction, i = (
-              trip.split(cs.SEP))
-            direction = int(direction)
-            base_time = gt.timestr_to_seconds(base_timestr)
-            start_time = base_time + headway*int(i)
-            end_time = start_time + duration
-            stops, dists, times = compute_stops_dists_times(stops, geom, shape,
-              start_time, end_time)
-            new_rows = [[trip, stop, j, time, time, dist]
-              for j, (stop, time, dist) in enumerate(zip(stops, times, dists))]
-            rows.extend(new_rows)
+    geo_stops = gt.geometrize_stops(stops, use_utm=True)
+    # Look on the side of the traffic side of street for this timezone
+    side = cs.traffic_by_timezone[pfeed.meta.agency_timezone.iat[0]]
+    for index, row in trips.iterrows():
+        shape = row['shape_id']
+        geom = geometry_by_shape[shape]
+        stops = get_nearby_stops(geo_stops, geom, side, buffer=buffer)
+        # Don't make stop times for trips without nearby stops
+        if stops.empty:
+            continue
+        length = geom.length/1000  # km
+        speed = row['speed']  # km/h
+        duration = int((length/speed)*3600)  # seconds
+        frequency = row['frequency']
+        if not frequency:
+            # No stop times for this trip/frequency combo
+            continue
+        headway = 3600/frequency  # seconds
+        trip = row['trip_id']
+        __, route, window, base_timestr, direction, i = (
+          trip.split(cs.SEP))
+        direction = int(direction)
+        base_time = gt.timestr_to_seconds(base_timestr)
+        start_time = base_time + headway*int(i)
+        end_time = start_time + duration
+        stops, dists, times = compute_stops_dists_times(stops, geom, shape,
+          start_time, end_time)
+        new_rows = [[trip, stop, j, time, time, dist]
+          for j, (stop, time, dist) in enumerate(zip(stops, times, dists))]
+        rows.extend(new_rows)
 
     g = pd.DataFrame(rows, columns=['trip_id', 'stop_id', 'stop_sequence',
       'arrival_time', 'departure_time', 'shape_dist_traveled'])
@@ -623,9 +605,10 @@ def build_feed(pfeed, buffer=cs.BUFFER):
     shapes = build_shapes(pfeed)
     stops = build_stops(pfeed, shapes)
     trips = build_trips(pfeed, routes, service_by_window)
-    stop_times = build_stop_times(pfeed, routes, shapes, trips, buffer=buffer)
+    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips,
+      buffer=buffer)
 
-    # Remove stops that are not in stop times
+    # Be tidy and remove unused stops
     stops = stops[stops.stop_id.isin(stop_times.stop_id)].copy()
 
     # Create Feed

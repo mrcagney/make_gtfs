@@ -19,7 +19,7 @@ matplotlib = "*"
 geopandas = "*"
 folium = "*"
 "json2html" = "*"
-gtfstk = {editable = true, git = "https://github.com/araichev/gtfstk"}
+gtfstk = "*"
 
 [requires]
 python_version = "3.5"
