@@ -9,7 +9,7 @@ import geopandas as gpd
 import gtfstk as gt
 
 from . import constants as cs
-
+from . import validators as vd
 
 class ProtoFeed(object):
     """
@@ -91,10 +91,12 @@ class ProtoFeed(object):
 def read_protofeed(path):
     """
     Read the data files at the given directory path
-    (string or Path object) that specify a ProtoFeed.
-    Return the resulting ProtoFeed.
+    (string or Path object) and build a ProtoFeed from them.
+    Validate the resulting ProtoFeed.
+    If invalid, raise a ``ValueError`` specifying the errors.
+    Otherwise, return the resulting ProtoFeed.
 
-    The data files are
+    The data files needed to build a ProtoFeed are
 
     - ``frequencies.csv``: (required) A CSV file containing route frequency
       information. The CSV file contains the columns
@@ -203,7 +205,15 @@ def read_protofeed(path):
         'frequency': int,
     })
 
-    return ProtoFeed(frequencies, meta, service_windows, shapes, stops)
+    pfeed = ProtoFeed(frequencies, meta, service_windows, shapes, stops)
+
+    # Validate
+    v = vd.validate(pfeed)
+    if 'error' in v.type.values:
+        raise ValueError(
+          "Invalid ProtoFeed files:\n\n" + v.to_string(justify='left'))
+
+    return pfeed
 
 def get_duration(timestr1, timestr2, units='s'):
     """

@@ -13,7 +13,7 @@ BUFFER = 10
 # ProtoFeed table and field reference
 columns = ['table', 'table_required', 'column', 'column_required', 'dtype']
 rows = [
-    ['frequencies', True, 'route_short_anme', True, 'str'],
+    ['frequencies', True, 'route_short_name', True, 'str'],
     ['frequencies', True, 'route_long_name', True, 'str'],
     ['frequencies', True, 'route_type', True, 'int'],
     ['frequencies', True, 'service_window_id', True, 'str'],
