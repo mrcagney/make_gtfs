@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import pytz
 import pycountry
 
@@ -64,26 +63,26 @@ PROTOFEED_ATTRS = [
     'stops',
 ]
 
-#: Country name by country alpha-2 code
+# Country name by country alpha-2 code
 country_by_alpha2 = {
     country.alpha_2: country.name
     for country in pycountry.countries
 }
 
-#: Country alpha-2 code by timezone
+# Country alpha-2 code by timezone
 alpha2_by_timezone = {
     timezone: alpha2
     for alpha2, timezones in pytz.country_timezones.items()
     for timezone in timezones
 }
 
-#: Country name by timezone
+# Country name by timezone
 country_by_timezone = {
     timezone: country_by_alpha2[alpha2]
     for timezone, alpha2 in alpha2_by_timezone.items()
 }
 
-#: Country names with left hand traffic
+# Country names with left hand traffic
 lht_countries = set([
     'Antigua and Barbuda',
     'Australia',
@@ -145,7 +144,7 @@ lht_countries = set([
     'Zimbabwe',
 ])
 
-#: Traffic side by timezone
+# Traffic side by timezone
 traffic_by_timezone = {}
 for timezone, country in country_by_timezone.items():
     if country in lht_countries:

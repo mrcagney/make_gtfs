@@ -6,8 +6,6 @@
 Make GTFS |version| documentation
 =====================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 

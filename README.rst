@@ -5,6 +5,7 @@ Make GTFS
 
 A Python 3.5+ library to build GTFS feeds from basic route information.
 Inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
+Makes naive timetables, but they are often good enough for preliminary work.
 
 
 Installation
@@ -133,9 +134,9 @@ Notes
 Changes
 ========
 
-2.0.0,
+2.0.0, 2018-05-28
 ------------------
-- Extended to handle optional input file ``stops.csv``
+- Extended to handle optional input stops
 - Wrote ProtoFeed validation
 - Modularized code more
 

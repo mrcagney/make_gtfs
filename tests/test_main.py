@@ -1,5 +1,7 @@
 import pandas as pd
 import gtfstk as gt
+import shapely.geometry as sg
+import geopandas as gpd
 
 from .context import make_gtfs, DATA_DIR
 from make_gtfs import *
@@ -100,6 +102,41 @@ def test_build_trips():
         expect_ntrips += int(duration*frequency)*trip_mult
     expect_ncols = 5
     assert trips.shape == (expect_ntrips, expect_ncols)
+
+def test_buffer_side():
+    s = sg.LineString([[0, 0], [1, 0]])
+    buff = 5
+    # Buffers should have correct area and orientation
+    for side in ['left', 'right', 'both']:
+        b = buffer_side(s, side, buff)
+        p = b.representative_point()
+        if side == 'left':
+            assert b.area >= buff
+            assert p.coords[0][1] > 0
+        elif side == 'right':
+            assert b.area >= buff
+            assert p.coords[0][1] < 0
+        else:
+            assert b.area >= 2*buff
+
+def test_get_nearby_stops():
+    geom = sg.LineString([[0, 0], [2, 0]])
+    stops = gpd.GeoDataFrame([
+        ['a', sg.Point([1, 1])],
+        ['b', sg.Point([1, -1])],
+    ], columns=['stop_code', 'geometry'])
+    for side in ['left', 'right', 'both']:
+        n = get_nearby_stops(stops, geom, side, 1)
+        if side == 'left':
+            assert n.shape[0] == 1
+            assert n.stop_code.iat[0] == 'a'
+        elif side == 'right':
+            assert n.shape[0] == 1
+            assert n.stop_code.iat[0] == 'b'
+        else:
+            assert n.shape[0] == 2
+            assert set(n.stop_code.values) == {'a', 'b'}
+
 
 def test_build_stop_times():
     # Test stopless version first

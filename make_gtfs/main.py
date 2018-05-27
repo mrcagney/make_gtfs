@@ -224,17 +224,15 @@ def build_trips(pfeed, routes, service_by_window):
     return pd.DataFrame(rows, columns=['route_id', 'trip_id', 'direction_id',
       'shape_id', 'service_id'])
 
-def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
+def buffer_side(linestring, side, buffer):
     """
-    Given a GeoDataFrame of stops in a meters-based coordinate system,
-    a Shapely LineString in a meters-based coordinate system,
-    a side of the LineString (string; 'left' = left hand side of
-    LineString, 'right' = right hand side of LineString, or
-    'both' = both sides), do the following.
-    Return a GeoDataFrame of all the stops that lie within
-    ``buffer`` meters to the ``side`` of the LineString.
+    Given a Shapely LineString, a side of the LineString
+    (string; 'left' = left hand side of LineString,
+    'right' = right hand side of LineString, or
+    'both' = both sides), and a buffer size in the distance units of
+    the LineString, buffer the LineString on the given side by
+    the buffer size and return the resulting Shapely polygon.
     """
-    # Buffer linestring
     b = linestring.buffer(buffer, cap_style=2)
     if side in ['left', 'right'] and buffer > 0:
         # Make a tiny buffer to split the normal-size buffer
@@ -244,11 +242,25 @@ def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
         diff = b.difference(b0)
         polys = so.polygonize(diff)
         # Buffer sides slightly to include original linestring
-        b = sg.Polygon
         if side == 'left':
             b = list(polys)[0].buffer(1.1*eps)
         else:
-            b = list(polys)[1].buffer(1.1*eps)
+            b = list(polys)[-1].buffer(1.1*eps)
+
+    return b
+
+def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
+    """
+    Given a GeoDataFrame of stops, a Shapely LineString in the
+    same coordinate system, a side of the LineString
+    (string; 'left' = left hand side of LineString,
+    'right' = right hand side of LineString, or
+    'both' = both sides), and a buffer in the distance units of that
+    coordinate system, do the following.
+    Return a GeoDataFrame of all the stops that lie within
+    ``buffer`` distance units to the ``side`` of the LineString.
+    """
+    b = buffer_side(linestring, side, buffer)
 
     # Collect stops
     return geo_stops.loc[geo_stops.intersects(b)].copy()
