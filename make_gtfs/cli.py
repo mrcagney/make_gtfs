@@ -1,15 +1,21 @@
 import click
 import gtfstk as gt
 
-import make_gtfs.main as m
-
+from . import protofeed as pf
+from . import constants as cs
+from . import main as m
 
 @click.command(short_help="Create a GTFS feed from simpler files")
 @click.argument('source_path', type=click.Path())
 @click.argument('target_path', type=click.Path())
-@click.option('-d', '--ndigits', default=6, type=int,
-  help="Number of decimal places to round to in output")
-def make_gtfs(source_path, target_path, ndigits):
+@click.option('-b', '--buffer', default=cs.BUFFER, type=float,
+  show_default=True,
+  help="Meters to buffer trip paths to find stops")
+@click.option('-n', '--ndigits', default=6, type=int,
+  show_default=True,
+  help="Number of decimal places to round float values in the output "
+  "GTFS feed")
+def make_gtfs(source_path, target_path, buffer, ndigits):
     """
     Create a GTFS feed from the files in the directory SOURCE_PATH.
     See the project README for a description of the required source
@@ -20,8 +26,12 @@ def make_gtfs(source_path, target_path, ndigits):
     Otherwise assume the path is a directory, and write the feed as a
     collection of CSV files to that directory, creating the directory
     if it does not exist.
-    Round all decimals to ndigits decimal places (defaults to 6).
-    All distances will be in kilometers.
+
+    If a stops file is present, then search within ``buffer`` meters
+    on the traffic side of trip paths for stops.
+    Round all decimals to ndigits decimal places.
+    All distances in the resulting GTFS feed will be in kilometers.
     """
-    feed = m.build_feed(source_path)
+    pfeed = pf.read_protofeed(source_path)
+    feed = m.build_feed(pfeed, buffer=buffer)
     gt.write_gtfs(feed, target_path, ndigits=ndigits)

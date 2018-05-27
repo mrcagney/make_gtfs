@@ -1,3 +1,19 @@
+Module constants
+===========================
+
+.. automodule:: make_gtfs.constants
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Module protofeed
+===========================
+
+.. automodule:: make_gtfs.protofeed
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Module main
 ===========================
 

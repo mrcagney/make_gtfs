@@ -5,6 +5,7 @@ Make GTFS
 
 A Python 3.5+ library to build GTFS feeds from basic route information.
 Inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
+Makes naive timetables, but they are often good enough for preliminary work.
 
 
 Installation
@@ -16,35 +17,20 @@ Usage
 =====
 Use as a library, or use from the command line by typing ``make_gtfs --help`` and following the instructions.
 
-The source directory from which you create GTFS feeds, must contain the files
+Make GTFS uses the following files to build a GTFS feed.
 
-- ``service_windows.csv``: A CSV file containing service window information.
-  A *service window* is a time interval and a set of days of the
-  week during which all routes have constant service frequency,
-  e.g. Saturday and Sunday 07:00 to 09:00.
-  The CSV file contains the columns
+- ``frequencies.csv``: (required) A CSV file containing route frequency
+  information. The CSV file contains the columns
 
-  - ``service_window_id`` (required): String. A unique identifier
-    for a service window
-  - ``start_time``, ``end_time`` (required): Strings. The start
-    and end times of the service window in HH:MM:SS format where
-    the hour is less than 24
-  - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
-    ``friday``, ``saturday``, ``sunday`` (required): Integer 0
-    or 1. Indicates whether the service is active on the given day
-    (1) or not (0)
-
-- ``frequencies.csv``: A CSV file containing route frequency information.
-  The CSV file contains the columns
-
-  - ``route_short_name`` (required): String. A unique short name
+  - ``route_short_name``: (required) String. A unique short name
     for the route, e.g. '51X'
-  - ``route_desc`` (optional): String. A description of the route
-  - ``route_type`` (required): Integer. The
+  - ``route_long_name``: (required) String. Full name of the route
+    that is more descriptive than ``route_short_name``
+  - ``route_type``: (required) Integer. The
     `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
   - ``service_window_id`` (required): String. A service window ID
     for the route taken from the file ``service_windows.csv``
-  - ``direction`` (required): Integer 0, 1, or 2. Indicates
+  - ``direction``: (required) Integer 0, 1, or 2. Indicates
     whether the route travels in GTFS direction 0, GTFS direction
     1, or in both directions.
     In the latter case, trips will be created that travel in both
@@ -53,51 +39,74 @@ The source directory from which you create GTFS feeds, must contain the files
     travel in only the given direction.
   - ``frequency`` (required): Integer. The frequency of the route
     during the service window in vehicles per hour.
-  - ``speed`` (optional): Float. The speed of the route in
+  - ``speed``:  (optional) Float. The speed of the route in
     kilometers per hour
-  - ``shape_id`` (required): String. Shape ID in
-    ``shapes.geojson`` that corresponds to the linestring of the
+  - ``shape_id``: (required) String. A shape ID that is listed in
+    ``shapes.geojson`` and corresponds to the linestring of the
     (route, direction, service window) tuple.
-    In particular different directions and service windows for the
-    same route could have different shapes.
 
-- ``meta.csv``: A CSV file containing network metadata.
+- ``meta.csv``: (required) A CSV file containing network metadata.
   The CSV file contains the columns
 
-  - ``agency_name`` (required): String. The name of the transport
+  - ``agency_name``: (required) String. The name of the transport
     agency
-  - ``agency_url`` (required): String. A fully qualified URL for
+  - ``agency_url``: (required) String. A fully qualified URL for
     the transport agency
-  - ``agency_timezone`` (required): String. Timezone where the
+  - ``agency_timezone``: (required) String. Timezone where the
     transit agency is located. Timezone names never contain the
     space character but may contain an underscore. Refer to
     `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
   - ``start_date``, ``end_date`` (required): Strings. The start
     and end dates for which all this network information is valid
     formated as YYYYMMDD strings
-  - ``default_route_speed`` (required): Float. Default speed in
+  - ``default_route_speed``: (required) Float. Default speed in
     kilometers per hour to assign to routes with no ``speed``
     entry in the file ``routes.csv``
 
-- ``shapes.geojson``: A GeoJSON file containing route shapes.
+- ``service_windows.csv``: (required) A CSV file containing service window
+  information.
+  A *service window* is a time interval and a set of days of the
+  week during which all routes have constant service frequency,
+  e.g. Saturday and Sunday 07:00 to 09:00.
+  The CSV file contains the columns
+
+  - ``service_window_id``: (required) String. A unique identifier
+    for a service window
+  - ``start_time``, ``end_time``: (required) Strings. The start
+    and end times of the service window in HH:MM:SS format where
+    the hour is less than 24
+  - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
+    ``friday``, ``saturday``, ``sunday`` (required): Integer 0
+    or 1. Indicates whether the service is active on the given day
+    (1) or not (0)
+
+- ``shapes.geojson``: (required) A GeoJSON file containing route shapes.
   The file consists of one feature collection of LineString
   features, where each feature's properties contains at least the
   attribute ``shape_id``, which links the route's shape to the
   route's information in ``routes.csv``.
+
+- ``stops.csv``: (optional) A CSV file containing all the required
+  and optional fields of ``stops.txt`` in
+  `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+
 
 
 Algorithm
 =========
 Basically,
 
-- ``routes.txt`` is created from ``routes.csv``
-- ``shapes.txt`` is created from ``shapes.geojson``
+- ``routes.txt`` is created from ``frequencies.csv``
 - ``agency.txt`` is created from ``meta.csv``
 - ``calendar.txt`` is created in a dumb way with exactly one all-week service that applies to all trips
-- ``stops.txt`` is created by making a pair of stops for each shape which lie on the shape's endpoints.
-  This will lead to duplicate stops in case shapes share endpoints.
+- ``shapes.txt`` is created from ``shapes.geojson``
+- ``stops.txt`` is created from ``stops.csv`` if given.
+  Otherwise it is created by making a pair of stops for each shape, one stop at each endpoint of the shape and then deleting stops with duplicate coordinates. Note that this yields one stop for shapes that are loops.
 - ``trips.txt`` and ``stop_times.txt`` are created by taking each route, service window, and direction, and running a set of trips starting on the hour and operating at the route's speed and frequency specified for that service window.
   If the route direction is 2, then two sets of trips in opposing directions will be created, each operating at the route's frequency.
+  Assign stops to each trip as follows.
+  Collect all stops in the built file ``stops.txt`` that are within a fixed distance of the traffic side (e.g. the right hand side for USA agency timezones and the left hand side for New Zealand agency timezones) of the trip shape.
+  If the trip has no nearby stops, then do not make stop times for that trip.
 
 
 Examples
@@ -124,6 +133,13 @@ Notes
 
 Changes
 ========
+
+2.0.0, 2018-05-28
+------------------
+- Extended to handle optional input stops
+- Wrote ProtoFeed validation
+- Modularized code more
+
 
 1.0.0, 2018-05-22
 ------------------

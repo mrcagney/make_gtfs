@@ -7,9 +7,6 @@ exec(open('make_gtfs/_version.py').read())
 with open('README.rst') as f:
     readme = f.read()
 
-with open('LICENSE.txt') as f:
-    license = f.read()
-
 setup(
     name='make_gtfs',
     version=__version__,
@@ -17,10 +14,12 @@ setup(
     url='https://github.com/mrcagney/make_gtfs',
     description='A Python 3.5+ library to make GTFS feeds from simpler files',
     long_description=readme,
-    license=license,
+    license='MIT',
     install_requires=[
         'gtfstk >= 9.1.0',
-        'pandas >= 0.22.0',
+        # Avoid isinstance bug in Pandas 0.23.0 with Python 3.5.2
+        'pandas < 0.23.0',
+        'geopandas >= 0.3.0',
         'Shapely >= 1.6.4',
         'utm >= 0.4.2',
         'click >= 6.7',
