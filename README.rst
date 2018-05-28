@@ -101,7 +101,7 @@ Basically,
 - ``calendar.txt`` is created in a dumb way with exactly one all-week service that applies to all trips
 - ``shapes.txt`` is created from ``shapes.geojson``
 - ``stops.txt`` is created from ``stops.csv`` if given.
-  Otherwise it is created by making a pair of stops for each shape, one stop at each endpoint of the shape and then deleting stops with duplicate coordinates. Note that this yields one stop for shapes that are loops.
+  Otherwise it is created by making a pair of stops for each shape, one stop at each endpoint of the shape and then deleting stops with duplicate coordinates. Note that this yields only one stop for each shape that is a loop.
 - ``trips.txt`` and ``stop_times.txt`` are created by taking each route, service window, and direction, and running a set of trips starting on the hour and operating at the route's speed and frequency specified for that service window.
   If the route direction is 2, then two sets of trips in opposing directions will be created, each operating at the route's frequency.
   Assign stops to each trip as follows.
