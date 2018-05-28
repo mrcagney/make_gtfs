@@ -14,6 +14,14 @@ Module protofeed
     :undoc-members:
     :show-inheritance:
 
+Module validators
+===========================
+
+.. automodule:: make_gtfs.validators
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Module main
 ===========================
 
