@@ -1,7 +1,9 @@
+"""
+This module contains the main logic.
+"""
 import pandas as pd
 import numpy as np
 import shapely.ops as so
-import shapely.geometry as sg
 import gtfstk as gt
 
 from . import constants as cs
@@ -23,11 +25,13 @@ def get_duration(timestr1, timestr2, units='s'):
     )
 
     if units == 's':
-        return duration
+        result = duration
     elif units == 'min':
-        return duration/60
+        result = duration/60
     else:
-        return duration/3600
+        result = duration/3600
+
+    return result
 
 def build_stop_ids(shape_id):
     """
@@ -39,18 +43,18 @@ def build_stop_names(shape_id):
     """
     Create a pair of stop names based on the given shape ID.
     """
-    return ['Stop {!s} on shape {!s} '.format(i, shape_id)
-      for i in range(2)]
+    return [
+        'Stop {!s} on shape {!s} '.format(i, shape_id) for i in range(2)]
 
 def build_agency(pfeed):
     """
     Given a ProtoFeed, return a DataFrame representing ``agency.txt``
     """
     return pd.DataFrame({
-      'agency_name': pfeed.meta['agency_name'].iat[0],
-      'agency_url': pfeed.meta['agency_url'].iat[0],
-      'agency_timezone': pfeed.meta['agency_timezone'].iat[0],
-    }, index=[0])
+        'agency_name': pfeed.meta['agency_name'].iat[0],
+        'agency_url': pfeed.meta['agency_url'].iat[0],
+        'agency_timezone': pfeed.meta['agency_timezone'].iat[0],
+        }, index=[0])
 
 def build_calendar_etc(pfeed):
     """
@@ -65,8 +69,9 @@ def build_calendar_etc(pfeed):
     def get_sid(bitlist):
         return 'srv' + ''.join([str(b) for b in bitlist])
 
-    weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
-      'saturday', 'sunday']
+    weekdays = [
+        'monday', 'tuesday', 'wednesday', 'thursday',
+        'friday', 'saturday', 'sunday']
     bitlists = set()
 
     # Create a dictionary <service window ID> -> <service ID>
@@ -82,10 +87,10 @@ def build_calendar_etc(pfeed):
     end_date = pfeed.meta['end_date'].iat[0]
     F = []
     for bitlist in bitlists:
-        F.append([get_sid(bitlist)] + list(bitlist) +
-          [start_date, end_date])
+        F.append(
+            [get_sid(bitlist)] + list(bitlist) + [start_date, end_date])
     calendar = pd.DataFrame(F, columns=(
-      ['service_id'] + weekdays + ['start_date', 'end_date']))
+        ['service_id'] + weekdays + ['start_date', 'end_date']))
 
     return calendar, service_by_window
 
@@ -93,8 +98,13 @@ def build_routes(pfeed):
     """
     Given a ProtoFeed, return a DataFrame representing ``routes.txt``.
     """
-    f = pfeed.frequencies[['route_short_name', 'route_long_name',
-      'route_type', 'shape_id']].drop_duplicates().copy()
+    f = (
+        pfeed.frequencies
+        .filter([
+            'route_short_name', 'route_long_name', 'route_type', 'shape_id'])
+        .drop_duplicates()
+        .copy()
+        )
 
     # Create route IDs
     f['route_id'] = 'r' + f['route_short_name'].map(str)
@@ -112,29 +122,33 @@ def build_shapes(pfeed):
     directions.
     """
     rows = []
-    for shape, geom in pfeed.shapes[['shape_id',
-      'geometry']].itertuples(index=False):
+    for shape, geom in pfeed.shapes[
+        ['shape_id', 'geometry']].itertuples(index=False):
+        #
         if shape not in pfeed.shapes_extra:
             continue
         if pfeed.shapes_extra[shape] == 2:
             # Add shape and its reverse
             shid = shape + '-1'
-            new_rows = [[shid, i, lon, lat]
-              for i, (lon, lat) in enumerate(geom.coords)]
+            new_rows = [
+                [shid, i, lon, lat]
+                for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
             shid = shape + '-0'
-            new_rows = [[shid, i, lon, lat]
-              for i, (lon, lat) in enumerate(reversed(geom.coords))]
+            new_rows = [
+                [shid, i, lon, lat]
+                for i, (lon, lat) in enumerate(reversed(geom.coords))]
             rows.extend(new_rows)
         else:
             # Add shape
             shid = '{}{}{}'.format(shape, cs.SEP, pfeed.shapes_extra[shape])
-            new_rows = [[shid, i, lon, lat]
-              for i, (lon, lat) in enumerate(geom.coords)]
+            new_rows = [
+                [shid, i, lon, lat]
+                for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
 
-    return pd.DataFrame(rows, columns=['shape_id', 'shape_pt_sequence',
-      'shape_pt_lon', 'shape_pt_lat'])
+    return pd.DataFrame(rows, columns=[
+        'shape_id', 'shape_pt_sequence', 'shape_pt_lon', 'shape_pt_lat'])
 
 def build_stops(pfeed, shapes=None):
     """
@@ -154,22 +168,23 @@ def build_stops(pfeed, shapes=None):
 
         geo_shapes = gt.geometrize_shapes(shapes)
         rows = []
-        for shape, geom in geo_shapes[['shape_id',
-          'geometry']].itertuples(index=False):
+        for shape, geom in geo_shapes[
+            ['shape_id', 'geometry']].itertuples(index=False):
+            #
             stop_ids = build_stop_ids(shape)
             stop_names = build_stop_names(shape)
             for i in range(2):
                 stop_id = stop_ids[i]
                 stop_name = stop_names[i]
-                stop_lon, stop_lat = geom.interpolate(i,
-                  normalized=True).coords[0]
+                stop_lon, stop_lat = geom.interpolate(
+                    i, normalized=True).coords[0]
                 rows.append([stop_id, stop_name, stop_lon, stop_lat])
 
         stops = (
-            pd.DataFrame(rows, columns=['stop_id', 'stop_name',
-              'stop_lon', 'stop_lat'])
+            pd.DataFrame(rows, columns=[
+                'stop_id', 'stop_name', 'stop_lon', 'stop_lat'])
             .drop_duplicates(subset=['stop_lon', 'stop_lat'])
-        )
+            )
 
     return stops
 
@@ -182,10 +197,11 @@ def build_trips(pfeed, routes, service_by_window):
     to make it easy to compute stop times later.
     """
     # Put together the route and service data
-    routes = pd.merge(routes[['route_id', 'route_short_name']],
-      pfeed.frequencies)
-    routes = pd.merge(routes, pfeed.service_windows)
-
+    routes = (
+        routes[['route_id', 'route_short_name']]
+        .merge(pfeed.frequencies)
+        .merge(pfeed.service_windows)
+        )
     # For each row in routes, add trips at the specified frequency in
     # the specified direction
     rows = []
@@ -212,17 +228,18 @@ def build_trips(pfeed, routes, service_by_window):
             # Warning: this shape-ID-making logic needs to match that
             # in ``build_shapes``
             shid = '{}{}{}'.format(shape, cs.SEP, direction)
-            rows.extend([[
-              route,
-              cs.SEP.join(['t', route, window, start,
-              str(direction), str(i)]),
-              direction,
-              shid,
-              service
-            ] for i in range(num_trips_per_direction)])
+            rows.extend([
+                [
+                    route,
+                    cs.SEP.join(
+                        ['t', route, window, start, str(direction), str(i)]),
+                    direction,
+                    shid,
+                    service,
+                ] for i in range(num_trips_per_direction)])
 
-    return pd.DataFrame(rows, columns=['route_id', 'trip_id', 'direction_id',
-      'shape_id', 'service_id'])
+    return pd.DataFrame(rows, columns=[
+        'route_id', 'trip_id', 'direction_id', 'shape_id', 'service_id'])
 
 def buffer_side(linestring, side, buffer):
     """
@@ -282,22 +299,22 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
     trips = (
         trips
         .assign(service_window_id=lambda x: x.trip_id.map(
-          lambda y: y.split(cs.SEP)[2]))
+            lambda y: y.split(cs.SEP)[2]))
         .merge(routes)
-    )
+        )
 
     # Get the geometries of ``shapes`` and not ``pfeed.shapes``
     geometry_by_shape = dict(
         gt.geometrize_shapes(shapes, use_utm=True)
         .filter(['shape_id', 'geometry'])
         .values
-    )
+        )
 
     # Save on distance computations by memoizing
     dist_by_stop_by_shape = {shape: {} for shape in geometry_by_shape}
 
-    def compute_stops_dists_times(geo_stops, linestring, shape,
-      start_time, end_time):
+    def compute_stops_dists_times(
+        geo_stops, linestring, shape, start_time, end_time):
         """
         Given a GeoDataFrame of stops on one side of a given Shapely
         LineString with given shape ID, compute distances and departure
@@ -316,13 +333,13 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
             if stop in dist_by_stop_by_shape[shape]:
                 d = dist_by_stop_by_shape[shape][stop]
             else:
-                d = gt.get_segment_length(linestring,
-                  g.geometry.iat[i])/1000  # km
+                d = gt.get_segment_length(
+                    linestring, g.geometry.iat[i])/1000  # km
                 dist_by_stop_by_shape[shape][stop] = d
             dists_and_stops.append((d, stop))
         dists, stops = zip(*sorted(dists_and_stops))
         D = linestring.length/1000
-        dists_are_reasonable = all([d < D + 100 for d in dists])
+        dists_are_reasonable = all([dist < D + 100 for dist in dists])
         if not dists_are_reasonable:
             # Assume equal distances between stops :-(
             n = len(stops)
@@ -344,7 +361,7 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
     rows = []
     geo_stops = gt.geometrize_stops(stops, use_utm=True)
     # Look on the side of the traffic side of street for this timezone
-    side = cs.traffic_by_timezone[pfeed.meta.agency_timezone.iat[0]]
+    side = cs.TRAFFIC_BY_TIMEZONE[pfeed.meta.agency_timezone.iat[0]]
     for index, row in trips.iterrows():
         shape = row['shape_id']
         geom = geometry_by_shape[shape]
@@ -362,25 +379,27 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
         headway = 3600/frequency  # seconds
         trip = row['trip_id']
         __, route, window, base_timestr, direction, i = (
-          trip.split(cs.SEP))
+            trip.split(cs.SEP))
         direction = int(direction)
         base_time = gt.timestr_to_seconds(base_timestr)
         start_time = base_time + headway*int(i)
         end_time = start_time + duration
-        stops, dists, times = compute_stops_dists_times(stops, geom, shape,
-          start_time, end_time)
-        new_rows = [[trip, stop, j, time, time, dist]
-          for j, (stop, time, dist) in enumerate(zip(stops, times, dists))]
+        stops, dists, times = compute_stops_dists_times(
+            stops, geom, shape, start_time, end_time)
+        new_rows = [
+            [trip, stop, j, time, time, dist]
+            for j, (stop, time, dist) in enumerate(zip(stops, times, dists))]
         rows.extend(new_rows)
 
-    g = pd.DataFrame(rows, columns=['trip_id', 'stop_id', 'stop_sequence',
-      'arrival_time', 'departure_time', 'shape_dist_traveled'])
+    g = pd.DataFrame(rows, columns=[
+        'trip_id', 'stop_id', 'stop_sequence', 'arrival_time',
+        'departure_time', 'shape_dist_traveled'])
 
     # Convert seconds back to time strings
-    g[['arrival_time', 'departure_time']] =\
-      g[['arrival_time', 'departure_time']].applymap(
-      lambda x: gt.timestr_to_seconds(x, inverse=True))
-
+    g[['arrival_time', 'departure_time']] = (
+        g[['arrival_time', 'departure_time']]
+        .applymap(lambda x: gt.timestr_to_seconds(x, inverse=True))
+        )
     return g
 
 def build_feed(pfeed, buffer=cs.BUFFER):
@@ -391,13 +410,14 @@ def build_feed(pfeed, buffer=cs.BUFFER):
     shapes = build_shapes(pfeed)
     stops = build_stops(pfeed, shapes)
     trips = build_trips(pfeed, routes, service_by_window)
-    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips,
-      buffer=buffer)
+    stop_times = build_stop_times(
+        pfeed, routes, shapes, stops, trips, buffer=buffer)
 
     # Be tidy and remove unused stops
     stops = stops[stops.stop_id.isin(stop_times.stop_id)].copy()
 
     # Create Feed
-    return gt.Feed(agency=agency, calendar=calendar, routes=routes,
-      shapes=shapes, stops=stops, stop_times=stop_times, trips=trips,
-      dist_units='km')
+    return gt.Feed(
+        agency=agency, calendar=calendar, routes=routes,
+        shapes=shapes, stops=stops, stop_times=stop_times, trips=trips,
+        dist_units='km')

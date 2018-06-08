@@ -20,6 +20,7 @@ geopandas = "*"
 folium = "*"
 "json2html" = "*"
 gtfstk = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.5"

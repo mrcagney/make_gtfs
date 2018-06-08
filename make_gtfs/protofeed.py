@@ -23,9 +23,11 @@ class ProtoFeed(object):
       <trip directions using the shape (0, 1, or 2)>
     """
 
-    def __init__(self, frequencies=None, meta=None, service_windows=None,
-      shapes=None, stops=None):
-
+    def __init__(
+        self, frequencies=None, meta=None, service_windows=None,
+        shapes=None, stops=None):
+        """
+        """
         self.frequencies = frequencies
         self.meta = meta
         self.service_windows = service_windows
@@ -41,11 +43,13 @@ class ProtoFeed(object):
             freq['route_type'].fillna(3, inplace=True)
             freq['route_type'] = freq['route_type'].astype(int)
 
-            # Create route speeds and fill in missing values with default speeds
+            # Create route speeds and fill in missing values
+            # with default speeds
             if 'speed' not in cols:
                 freq['speed'] = np.nan
-            freq['speed'].fillna(self.meta['default_route_speed'].iat[0],
-              inplace=True)
+            freq['speed'].fillna(
+                self.meta['default_route_speed'].iat[0],
+                inplace=True)
 
         self.frequencies = freq
 
@@ -169,11 +173,10 @@ def read_protofeed(path):
     """
     path = Path(path)
 
-    service_windows = pd.read_csv(
-      path/'service_windows.csv')
+    service_windows = pd.read_csv(path/'service_windows.csv')
 
-    meta = pd.read_csv(path/'meta.csv',
-      dtype={'start_date': str, 'end_date': str})
+    meta = pd.read_csv(path/'meta.csv', dtype={
+        'start_date': str, 'end_date': str})
 
     shapes = gpd.read_file(str(path/'shapes.geojson'), driver='GeoJSON')
 
@@ -200,7 +203,7 @@ def read_protofeed(path):
         'shape_id': str,
         'direction': int,
         'frequency': int,
-    })
+        })
 
     pfeed = ProtoFeed(frequencies, meta, service_windows, shapes, stops)
 
@@ -208,6 +211,6 @@ def read_protofeed(path):
     v = vd.validate(pfeed)
     if 'error' in v.type.values:
         raise ValueError(
-          "Invalid ProtoFeed files:\n\n" + v.to_string(justify='left'))
+            "Invalid ProtoFeed files:\n\n" + v.to_string(justify='left'))
 
     return pfeed
