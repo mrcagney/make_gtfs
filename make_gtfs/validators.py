@@ -6,7 +6,7 @@ import numbers
 
 import pandas as pd
 import shapely.geometry as sg
-import gtfstk as gt
+import gtfs_kit as gk
 
 from . import constants as cs
 
@@ -20,6 +20,7 @@ def valid_speed(x):
         return True
     else:
         return False
+
 
 def check_for_required_columns(problems, table, df):
     """
@@ -56,14 +57,13 @@ def check_for_required_columns(problems, table, df):
 
     """
     r = cs.PROTOFEED_REF
-    req_columns = r.loc[(r['table'] == table) & r['column_required'],
-      'column'].values
+    req_columns = r.loc[(r["table"] == table) & r["column_required"], "column"].values
     for col in req_columns:
         if col not in df.columns:
-            problems.append(['error', 'Missing column {!s}'.format(col),
-              table, []])
+            problems.append(["error", "Missing column {!s}".format(col), table, []])
 
     return problems
+
 
 def check_for_invalid_columns(problems, table, df):
     """
@@ -100,155 +100,168 @@ def check_for_invalid_columns(problems, table, df):
 
     """
     r = cs.PROTOFEED_REF
-    valid_columns = r.loc[r['table'] == table, 'column'].values
+    valid_columns = r.loc[r["table"] == table, "column"].values
     for col in df.columns:
         if col not in valid_columns:
-            problems.append(['warning',
-              'Unrecognized column {!s}'.format(col),
-              table, []])
+            problems.append(
+                ["warning", "Unrecognized column {!s}".format(col), table, []]
+            )
 
     return problems
+
 
 def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
     """
     Check that ``pfeed.frequency`` follows the ProtoFeed spec.
     Return a list of problems of the form described in
-    :func:`gt.check_table`;
+    :func:`gk.check_table`;
     the list will be empty if no problems are found.
     """
-    table = 'frequencies'
+    table = "frequencies"
     problems = []
 
     # Preliminary checks
     if pfeed.frequencies is None:
-        problems.append(['error', 'Missing table', table, []])
+        problems.append(["error", "Missing table", table, []])
     else:
         f = pfeed.frequencies.copy()
         problems = check_for_required_columns(problems, table, f)
     if problems:
-        return gt.format_problems(problems, as_df=as_df)
+        return gk.format_problems(problems, as_df=as_df)
 
     if include_warnings:
         problems = check_for_invalid_columns(problems, table, f)
 
     # Check route_short_name and route_long_name
-    for column in ['route_short_name', 'route_long_name']:
-        problems = gt.check_column(problems, table, f, column, gt.valid_str,
-          column_required=False)
+    for column in ["route_short_name", "route_long_name"]:
+        problems = gk.check_column(
+            problems, table, f, column, gk.valid_str, column_required=False
+        )
 
-    cond = ~(f['route_short_name'].notnull() | f['route_long_name'].notnull())
-    problems = gt.check_table(problems, table, f, cond,
-      'route_short_name and route_long_name both empty')
+    cond = ~(f["route_short_name"].notnull() | f["route_long_name"].notnull())
+    problems = gk.check_table(
+        problems, table, f, cond, "route_short_name and route_long_name both empty"
+    )
 
     # Check route_type
     v = lambda x: x in range(8)
-    problems = gt.check_column(problems, table, f, 'route_type', v)
+    problems = gk.check_column(problems, table, f, "route_type", v)
 
     # Check service window ID
-    problems = gt.check_column_linked_id(problems, table, f,
-      'service_window_id', pfeed.service_windows)
+    problems = gk.check_column_linked_id(
+        problems, table, f, "service_window_id", pfeed.service_windows
+    )
 
     # Check direction
     v = lambda x: x in range(3)
-    problems = gt.check_column(problems, table, f, 'direction', v)
+    problems = gk.check_column(problems, table, f, "direction", v)
 
     # Check frequency
     v = lambda x: isinstance(x, int)
-    problems = gt.check_column(problems, table, f, 'frequency', v)
+    problems = gk.check_column(problems, table, f, "frequency", v)
 
     # Check speed
-    problems = gt.check_column(problems, table, f, 'speed', valid_speed,
-      column_required=False)
+    problems = gk.check_column(
+        problems, table, f, "speed", valid_speed, column_required=False
+    )
 
     # Check shape ID
-    problems = gt.check_column_linked_id(problems, table, f, 'shape_id',
-      pfeed.shapes)
+    problems = gk.check_column_linked_id(problems, table, f, "shape_id", pfeed.shapes)
 
-    return gt.format_problems(problems, as_df=as_df)
+    return gk.format_problems(problems, as_df=as_df)
+
 
 def check_meta(pfeed, *, as_df=False, include_warnings=False):
     """
     Analog of :func:`check_frequencies` for ``pfeed.meta``
     """
-    table = 'meta'
+    table = "meta"
     problems = []
 
     # Preliminary checks
     if pfeed.meta is None:
-        problems.append(['error', 'Missing table', table, []])
+        problems.append(["error", "Missing table", table, []])
     else:
         f = pfeed.meta.copy()
         problems = check_for_required_columns(problems, table, f)
     if problems:
-        return gt.format_problems(problems, as_df=as_df)
+        return gk.format_problems(problems, as_df=as_df)
 
     if include_warnings:
         problems = check_for_invalid_columns(problems, table, f)
 
     if f.shape[0] > 1:
-        problems.append(['error', 'Meta must have only one row',
-          table, list(range(1, f.shape[0]))])
+        problems.append(
+            ["error", "Meta must have only one row", table, list(range(1, f.shape[0]))]
+        )
 
     # Check agency_name
-    problems = gt.check_column(problems, table, f, 'agency_name', gt.valid_str)
+    problems = gk.check_column(problems, table, f, "agency_name", gk.valid_str)
 
     # Check agency_url
-    problems = gt.check_column(problems, table, f, 'agency_url', gt.valid_url)
+    problems = gk.check_column(problems, table, f, "agency_url", gk.valid_url)
 
     # Check agency_timezone
-    problems = gt.check_column(problems, table, f, 'agency_timezone',
-      gt.valid_timezone)
+    problems = gk.check_column(problems, table, f, "agency_timezone", gk.valid_timezone)
 
     # Check start_date and end_date
-    for col in ['start_date', 'end_date']:
-        problems = gt.check_column(problems, table, f, col, gt.valid_date)
+    for col in ["start_date", "end_date"]:
+        problems = gk.check_column(problems, table, f, col, gk.valid_date)
 
     # Check default_route_speed
-    problems = gt.check_column(problems, table, f, 'default_route_speed',
-      valid_speed)
+    problems = gk.check_column(problems, table, f, "default_route_speed", valid_speed)
 
-    return gt.format_problems(problems, as_df=as_df)
+    return gk.format_problems(problems, as_df=as_df)
+
 
 def check_service_windows(pfeed, *, as_df=False, include_warnings=False):
     """
     Analog of :func:`check_frequencies` for ``pfeed.service_windows``
     """
-    table = 'service_windows'
+    table = "service_windows"
     problems = []
 
     # Preliminary checks
     if pfeed.service_windows is None:
-        problems.append(['error', 'Missing table', table, []])
+        problems.append(["error", "Missing table", table, []])
     else:
         f = pfeed.service_windows.copy()
         problems = check_for_required_columns(problems, table, f)
     if problems:
-        return gt.format_problems(problems, as_df=as_df)
+        return gk.format_problems(problems, as_df=as_df)
 
     if include_warnings:
         problems = check_for_invalid_columns(problems, table, f)
 
     # Check service window ID
-    problems = gt.check_column_id(problems, table, f,
-      'service_window_id')
+    problems = gk.check_column_id(problems, table, f, "service_window_id")
 
     # Check start_time and end_time
-    for column in ['start_time', 'end_time']:
-        problems = gt.check_column(problems, table, f, column, gt.valid_time)
+    for column in ["start_time", "end_time"]:
+        problems = gk.check_column(problems, table, f, column, gk.valid_time)
 
     # Check weekday columns
     v = lambda x: x in range(2)
-    for col in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
-      'saturday', 'sunday']:
-        problems = gt.check_column(problems, table, f, col, v)
+    for col in [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]:
+        #
+        problems = gk.check_column(problems, table, f, col, v)
 
-    return gt.format_problems(problems, as_df=as_df)
+    return gk.format_problems(problems, as_df=as_df)
+
 
 def check_shapes(pfeed, *, as_df=False, include_warnings=False):
     """
     Analog of :func:`check_frequencies` for ``pfeed.shapes``
     """
-    table = 'shapes'
+    table = "shapes"
     problems = []
 
     # Preliminary checks
@@ -258,30 +271,31 @@ def check_shapes(pfeed, *, as_df=False, include_warnings=False):
     f = pfeed.shapes.copy()
     problems = check_for_required_columns(problems, table, f)
     if problems:
-        return gt.format_problems(problems, as_df=as_df)
+        return gk.format_problems(problems, as_df=as_df)
 
     if include_warnings:
         problems = check_for_invalid_columns(problems, table, f)
 
     # Check shape_id
-    problems = gt.check_column(problems, table, f, 'shape_id', gt.valid_str)
+    problems = gk.check_column(problems, table, f, "shape_id", gk.valid_str)
 
     # Check geometry
     v = lambda x: isinstance(x, sg.LineString) and not x.is_empty
-    problems = gt.check_column(problems, table, f, 'geometry', v)
+    problems = gk.check_column(problems, table, f, "geometry", v)
 
-    return gt.format_problems(problems, as_df=as_df)
+    return gk.format_problems(problems, as_df=as_df)
+
 
 def check_stops(pfeed, *, as_df=False, include_warnings=False):
     """
     Analog of :func:`check_frequencies` for ``pfeed.stops``
     """
-    # Use gtfstk's stop validator
+    # Use GTFS Kit's stop validator
     if pfeed.stops is not None:
-        stop_times = pd.DataFrame(columns=['stop_id'])
-        feed = gt.Feed(stops=pfeed.stops, stop_times=stop_times,
-          dist_units='km')
-        return gt.check_stops(feed, as_df=as_df, include_warnings=False)
+        stop_times = pd.DataFrame(columns=["stop_id"])
+        feed = gk.Feed(stops=pfeed.stops, stop_times=stop_times, dist_units="km")
+        return gk.check_stops(feed, as_df=as_df, include_warnings=False)
+
 
 def validate(pfeed, *, as_df=True, include_warnings=True):
     """
@@ -323,14 +337,13 @@ def validate(pfeed, *, as_df=True, include_warnings=True):
 
     # Check for invalid columns and check the required tables
     checkers = [
-      'check_frequencies',
-      'check_meta',
-      'check_service_windows',
-      'check_shapes',
-      'check_stops',
+        "check_frequencies",
+        "check_meta",
+        "check_service_windows",
+        "check_shapes",
+        "check_stops",
     ]
     for checker in checkers:
-        problems.extend(globals()[checker](pfeed,
-          include_warnings=include_warnings))
+        problems.extend(globals()[checker](pfeed, include_warnings=include_warnings))
 
-    return gt.format_problems(problems, as_df=as_df)
+    return gk.format_problems(problems, as_df=as_df)

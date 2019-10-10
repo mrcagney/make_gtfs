@@ -23,9 +23,11 @@ class ProtoFeed(object):
       <trip directions using the shape (0, 1, or 2)>
     """
 
-    def __init__(self, frequencies=None, meta=None, service_windows=None,
-      shapes=None, stops=None):
-
+    def __init__(
+        self, frequencies=None, meta=None, service_windows=None, shapes=None, stops=None
+    ):
+        """
+        """
         self.frequencies = frequencies
         self.meta = meta
         self.service_windows = service_windows
@@ -38,34 +40,31 @@ class ProtoFeed(object):
             cols = freq.columns
 
             # Fill missing route types with 3 (bus)
-            freq['route_type'].fillna(3, inplace=True)
-            freq['route_type'] = freq['route_type'].astype(int)
+            freq["route_type"].fillna(3, inplace=True)
+            freq["route_type"] = freq["route_type"].astype(int)
 
-            # Create route speeds and fill in missing values with default speeds
-            if 'speed' not in cols:
-                freq['speed'] = np.nan
-            freq['speed'].fillna(self.meta['default_route_speed'].iat[0],
-              inplace=True)
+            # Create route speeds and fill in missing values
+            # with default speeds
+            if "speed" not in cols:
+                freq["speed"] = np.nan
+            freq["speed"].fillna(self.meta["default_route_speed"].iat[0], inplace=True)
 
         self.frequencies = freq
 
         # Build shapes extra from shape IDs in frequencies
         if self.frequencies is not None:
+
             def my_agg(group):
                 d = {}
                 dirs = group.direction.unique()
                 if len(dirs) > 1 or 2 in dirs:
-                    d['direction'] = 2
+                    d["direction"] = 2
                 else:
-                    d['direction'] = dirs[0]
+                    d["direction"] = dirs[0]
                 return pd.Series(d)
 
             self.shapes_extra = dict(
-                self.frequencies
-                .groupby('shape_id')
-                .apply(my_agg)
-                .reset_index()
-                .values
+                self.frequencies.groupby("shape_id").apply(my_agg).reset_index().values
             )
         else:
             self.shapes_extra = None
@@ -84,6 +83,7 @@ class ProtoFeed(object):
             setattr(other, key, value)
 
         return other
+
 
 def read_protofeed(path):
     """
@@ -169,45 +169,44 @@ def read_protofeed(path):
     """
     path = Path(path)
 
-    service_windows = pd.read_csv(
-      path/'service_windows.csv')
+    service_windows = pd.read_csv(path / "service_windows.csv")
 
-    meta = pd.read_csv(path/'meta.csv',
-      dtype={'start_date': str, 'end_date': str})
+    meta = pd.read_csv(path / "meta.csv", dtype={"start_date": str, "end_date": str})
 
-    shapes = gpd.read_file(str(path/'shapes.geojson'), driver='GeoJSON')
+    shapes = gpd.read_file(str(path / "shapes.geojson"), driver="GeoJSON")
 
-    if (path/'stops.csv').exists():
-        stops = (
-            pd.read_csv(path/'stops.csv', dtype={
-                'stop_id': str,
-                'stop_code': str,
-                'zone_id': str,
-                'location_type': int,
-                'parent_station': str,
-                'stop_timezone': str,
-                'wheelchair_boarding': int,
-            })
-            .drop_duplicates(subset=['stop_lon', 'stop_lat'])
-            .dropna(subset=['stop_lon', 'stop_lat'], how='any')
+    if (path / "stops.csv").exists():
+        stops = pd.read_csv(
+            path / "stops.csv",
+            dtype={
+                "stop_id": str,
+                "stop_code": str,
+                "zone_id": str,
+                "location_type": int,
+                "parent_station": str,
+                "stop_timezone": str,
+                "wheelchair_boarding": int,
+            },
         )
     else:
         stops = None
 
-    frequencies = pd.read_csv(path/'frequencies.csv', dtype={
-        'route_short_name': str,
-        'service_window_id': str,
-        'shape_id': str,
-        'direction': int,
-        'frequency': int,
-    })
+    frequencies = pd.read_csv(
+        path / "frequencies.csv",
+        dtype={
+            "route_short_name": str,
+            "service_window_id": str,
+            "shape_id": str,
+            "direction": int,
+            "frequency": int,
+        },
+    )
 
     pfeed = ProtoFeed(frequencies, meta, service_windows, shapes, stops)
 
     # Validate
     v = vd.validate(pfeed)
-    if 'error' in v.type.values:
-        raise ValueError(
-          "Invalid ProtoFeed files:\n\n" + v.to_string(justify='left'))
+    if "error" in v.type.values:
+        raise ValueError("Invalid ProtoFeed files:\n\n" + v.to_string(justify="left"))
 
     return pfeed
