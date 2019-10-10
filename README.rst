@@ -134,6 +134,12 @@ Notes
 Changes
 ========
 
+2.1.0, 2019-10-10
+-----------------
+- Switched to Python 3.6+ and Poetry.
+- Bugfix: Change ``build_feed()`` to use GTFS Kit's ``drop_zombies()`` method to delete unnecessary stops etc.
+
+
 2.0.0, 2018-05-28
 ------------------
 - Extended to handle optional input stops
