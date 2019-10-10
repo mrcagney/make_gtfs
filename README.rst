@@ -3,14 +3,14 @@ Make GTFS
 .. image:: https://travis-ci.org/mrcagney/make_gtfs.svg?branch=master
     :target: https://travis-ci.org/mrcagney/make_gtfs
 
-A Python 3.5+ library to build GTFS feeds from basic route information.
+A Python 3.6+ library to build GTFS feeds from basic route information.
 Inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
 Makes naive timetables, but they are often good enough for preliminary work.
 
 
 Installation
 =============
-``pipenv install make_gtfs``
+``pip install make_gtfs``
 
 
 Usage
