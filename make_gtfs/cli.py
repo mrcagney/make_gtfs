@@ -47,4 +47,4 @@ def make_gtfs(source_path, target_path, buffer, ndigits):
     """
     pfeed = pf.read_protofeed(source_path)
     feed = m.build_feed(pfeed, buffer=buffer)
-    gk.write_gtfs(feed, target_path, ndigits=ndigits)
+    feed.write(target_path, ndigits=ndigits)

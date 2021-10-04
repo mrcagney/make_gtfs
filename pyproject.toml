@@ -1,20 +1,19 @@
 [tool.poetry]
 name = "make_gtfs"
-version = "2.1.0"
-description = "A Python 3.6+ library to build GTFS feeds from basic route information."
-authors = ["Alex Raichev <araichev@mrcagney.com>"]
-license = "MIT"
+version = "0.1.0"
+description = ""
+authors = ["Danielle <dgatland@mrcagney.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.6|^3.7"
-gtfs_kit = "^2.0"
+python = "^3.9"
+gtfs-kit = "^5.1.4"
 
 [tool.poetry.dev-dependencies]
-jupyter = "^1.0"
-pytest = "^5.2"
-pre-commit = "^1.18"
-black = "=19.3b0"
+pytest = "^6.2.5"
+jupyter = "^1.0.0"
+pre-commit = "^2.15.0"
+black = "^21.9b0"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
