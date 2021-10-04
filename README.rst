@@ -134,6 +134,11 @@ Notes
 Changes
 ========
 
+2.2.0, 2021-10-04
+-----------------
+- Switched to Python 3.9+
+- Updated dependencies, including gtfs-kit to v5.1.4
+
 2.1.0, 2019-10-10
 -----------------
 - Switched to Python 3.6+ and Poetry.
