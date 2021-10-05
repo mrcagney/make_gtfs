@@ -1,4 +1,3 @@
-ipynb/prototyping.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -71,7 +70,8 @@ instance/
 target/
 
 # Jupyter Notebook
-ipynb/.ipynb_checkpoints
+notebooks/.ipynb_checkpoints
+notebooks/prototyping.ipynb
 
 # pyenv
 .python-version
