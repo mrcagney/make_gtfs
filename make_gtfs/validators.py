@@ -1,6 +1,6 @@
 """
 Validators for ProtoFeeds.
-Designed along the lines of gtfstk.validators.py.
+Designed along the lines of gtfs_kit.validators.py.
 """
 import numbers
 
