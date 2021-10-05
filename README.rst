@@ -10,7 +10,7 @@ Makes naive timetables, but they are often good enough for preliminary work.
 
 Installation
 =============
-``pip install make_gtfs``
+Create a Python 3.9 virtual environment and run ``poetry install make_gtfs``.
 
 
 Usage
