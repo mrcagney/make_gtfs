@@ -6,14 +6,15 @@ authors = ["Alex Raichev <araichev@mrcagney.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-gtfs-kit = "^5.1.4"
+python = ">=3.8, <4"
+gtfs-kit = ">=5"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-jupyter = "^1.0.0"
-pre-commit = "^2.15.0"
-black = "^21.9b0"
+pytest = ">=6.2.5"
+jupyter = ">=1.0.0"
+pre-commit = ">=2.15.0"
+black = ">=21.9b0"
+nbstripout = "^0.5.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

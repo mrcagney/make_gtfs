@@ -122,14 +122,14 @@ Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/
 Contributors
 ============
 - Alex Raichev (2014-09), maintainer
-- Danielle Gatland (2021-10)
+- Danielle Gatland (2021-10), reviewer
 
 
 Notes
 ======
 - Development status is Alpha.
 - Uses semantic versioning.
-- Thanks to `MRCagney <https://mrcagney.com>`_ for funding this project.
+- Thanks to `MRCagney <https://mrcagney.com>`_ for periodically funding this project.
 
 
 Changes

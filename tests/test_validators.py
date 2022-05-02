@@ -51,7 +51,7 @@ def test_check_meta():
     assert check_meta(pfeed, include_warnings=True)
 
     pfeed = sample.copy()
-    pfeed.meta = pfeed.meta.append(pfeed.meta.iloc[0])
+    pfeed.meta = pd.concat([pfeed.meta, pfeed.meta.iloc[:1]])
     assert check_meta(pfeed)
 
     pfeed = sample.copy()
@@ -80,8 +80,9 @@ def test_check_service_windows():
     assert check_service_windows(pfeed, include_warnings=True)
 
     pfeed = sample.copy()
-    pfeed.service_windows = pfeed.service_windows.append(
-      pfeed.service_windows.iloc[0])
+    pfeed.service_windows = pd.concat(
+        [pfeed.service_windows, pfeed.service_windows.iloc[:1]]
+    )
     assert check_service_windows(pfeed)
 
     for col in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
