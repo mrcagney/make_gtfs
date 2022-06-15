@@ -52,7 +52,7 @@ class ProtoFeed:
             self.frequencies.groupby("shape_id").apply(my_agg).reset_index().values
         )
 
-    def copy(self):
+    def copy(self) -> ProtoFeed:
         """
         Return a copy of this ProtoFeed, that is, a feed with all the
         same attributes.
@@ -115,8 +115,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       The file consists of one feature collection of LineString
       features (in WGS84 coordinates), where each feature has the property
 
-      - ``shape_id`` (required): a unique identifier of the shape, which appears in
-        ``routes.csv``.
+      - ``shape_id`` (required): a unique identifier of the shape
 
     - ``frequencies.csv``: (required) A CSV file containing route frequency
       information. The CSV file contains the columns

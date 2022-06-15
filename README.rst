@@ -18,31 +18,6 @@ Use as a library, or use from the command line by typing ``make_gtfs --help`` an
 
 Make GTFS uses the following files to build a GTFS feed.
 
-- ``frequencies.csv``(required). A CSV file containing route frequency
-  information. The CSV file contains the following columns.
-
-  - ``route_short_name`` (required): string; a unique short name
-    for the route, e.g. '51X'
-  - ``route_long_name`` (required): string; full name of the route
-    that is more descriptive than ``route_short_name``
-  - ``route_type`` (required): integer; the
-    `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
-  - ``service_window_id`` (required): string; a service window ID
-    for the route taken from the file ``service_windows.csv``
-  - ``direction`` (required): 0, 1, or 2; indicates
-    whether the route travels in GTFS direction 0, GTFS direction
-    1, or in both directions;
-    in the latter case, trips will be created that travel in both
-    directions along the route's path, each direction operating at
-    the given frequency;  otherwise, trips will be created that
-    travel in only the given direction
-  - ``frequency`` (required): integer; the frequency of the route
-    during the service window in vehicles per hour.
-  - ``speed`` (optional): float; the speed of the route in
-    kilometers per hour
-  - ``shape_id`` (required): string; a shape ID that is listed in
-    ``shapes.geojson`` and corresponds to the linestring of the
-    (route, direction, service window) tuple
 
 - ``meta.csv`` (required). A CSV file containing network metadata.
   The CSV file contains the following columns.
@@ -62,6 +37,9 @@ Make GTFS uses the following files to build a GTFS feed.
     kilometers per hour to assign to routes with no ``speed``
     entry in the file ``routes.csv``
 
+- ``shapes.geojson`` (required). A GeoJSON file containing route shapes.
+  The file consists of one feature collection of LineString features, where each feature's properties contains at least the attribute ``shape_id``.
+
 - ``service_windows.csv``(required). A CSV file containing service window
   information.
   A *service window* is a time interval and a set of days of the
@@ -79,11 +57,31 @@ Make GTFS uses the following files to build a GTFS feed.
     or 1; indicates whether the service is active on the given day
     (1) or not (0)
 
-- ``shapes.geojson`` (required). A GeoJSON file containing route shapes.
-  The file consists of one feature collection of LineString
-  features, where each feature's properties contains at least the
-  attribute ``shape_id``, which links the route's shape to the
-  route's information in ``routes.csv``.
+- ``frequencies.csv``(required). A CSV file containing route frequency information.
+  The CSV file contains the following columns.
+
+  - ``route_short_name`` (required): string; a unique short name
+    for the route, e.g. '51X'
+  - ``route_long_name`` (required): string; full name of the route
+    that is more descriptive than ``route_short_name``
+  - ``route_type`` (required): integer; the
+    `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
+  - ``service_window_id`` (required): string; a service window ID
+    for the route taken from the file ``service_windows.csv``
+  - ``direction`` (required): 0, 1, or 2; indicates
+    whether the route travels in GTFS direction 0, GTFS direction
+    1, or in both directions;
+    in the latter case, trips will be created that travel in both
+    directions along the route's path, each direction operating at
+    the given frequency;  otherwise, trips will be created that
+    travel in only the given direction
+  - ``frequency`` (required): integer; the frequency of the route
+    during the service window in vehicles per hour.
+  - ``shape_id`` (required): string; a shape ID that is listed in
+    ``shapes.geojson`` and corresponds to the linestring of the
+    (route, direction, service window) tuple
+  - ``speed`` (optional): float; the speed of the route in
+    kilometers per hour
 
 - ``stops.csv`` (optional). A CSV file containing all the required
   and optional fields of ``stops.txt`` in
