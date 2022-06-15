@@ -1,4 +1,5 @@
-from pathlib import Path
+import pathlib as pl
+from dataclasses import dataclass
 
 import geopandas as gpd
 import pandas as pd
@@ -85,7 +86,7 @@ class ProtoFeed(object):
         return other
 
 
-def read_protofeed(path):
+def read_protofeed(path: pl.Path):
     """
     Read the data files at the given directory path
     (string or Path object) and build a ProtoFeed from them.
@@ -167,7 +168,7 @@ def read_protofeed(path):
       `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
 
     """
-    path = Path(path)
+    path = pl.Path(path)
 
     service_windows = pd.read_csv(path / "service_windows.csv")
 
