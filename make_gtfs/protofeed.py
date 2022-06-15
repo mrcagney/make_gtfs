@@ -5,9 +5,8 @@ from dataclasses import dataclass
 
 import geopandas as gpd
 import pandas as pd
-import shapely.geometry as sg
+import numpy as np
 
-from . import constants as cs
 from . import validators as vd
 
 
@@ -17,6 +16,7 @@ class ProtoFeed:
     A ProtoFeed instance holds the source data from which to build a GTFS feed.
     The most common way to build is from files via the function :func:`read_protofeed`.
     """
+
     meta: pd.DataFrame
     service_windows: pd.DataFrame
     shapes: gpd.GeoDataFrame
@@ -25,9 +25,16 @@ class ProtoFeed:
 
     def __post_init__(self):
         # Fill missing routes types with 3 (bus)
-        self.frequencies = (
-            self.frequencies
-            .assign(route_type=lambda x: x.route_type.fillna(3).astype(int))
+        self.frequencies = self.frequencies.assign(
+            route_type=lambda x: x.route_type.fillna(3).astype(int)
+        )
+
+        # Fill missing route speeds with default speeds
+        if "speed" not in self.frequencies.columns:
+            self.frequencies["speed"] = np.nan
+
+        self.frequencies["speed"] = self.frequencies.speed.fillna(
+            self.meta["default_route_speed"].iat[0]
         )
 
         # Build ``shapes_extra``, a dictionary of the form
@@ -42,11 +49,7 @@ class ProtoFeed:
             return pd.Series(d)
 
         self.shapes_extra = dict(
-            self.frequencies
-            .groupby("shape_id")
-            .apply(my_agg)
-            .reset_index()
-            .values
+            self.frequencies.groupby("shape_id").apply(my_agg).reset_index().values
         )
 
     def copy(self):
@@ -139,7 +142,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction, service window) tuple.
       - ``speed`` (optional): float; the speed of the route in kilometers per hour
-      
+
     - ``stops.csv``: (optional) A CSV file containing all the required
       and optional fields of ``stops.txt`` in
       `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
@@ -147,7 +150,9 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
     """
     path = pl.Path(path)
     d = {}
-    d["meta"] = pd.read_csv(path / "meta.csv", dtype={"start_date": str, "end_date": str})
+    d["meta"] = pd.read_csv(
+        path / "meta.csv", dtype={"start_date": str, "end_date": str}
+    )
     d["service_windows"] = pd.read_csv(path / "service_windows.csv")
     d["shapes"] = gpd.read_file(path / "shapes.geojson")
     d["frequencies"] = pd.read_csv(
