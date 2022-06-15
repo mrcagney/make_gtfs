@@ -89,7 +89,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
       - ``default_route_speed``: (required) Float. Default average speed of routes
-        in kilometers per hour; used to fill missing speeds in ``speed_zones``.
+        in kilometers per hour; used to fill missing speeds in ``frequencies``.
 
     - ``service_windows.csv``: (required) A CSV file containing service window
       information.
@@ -138,7 +138,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``shape_id``: (required) String. A shape ID that is listed in
         ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction, service window) tuple.
-
+      - ``speed`` (optional): float; the speed of the route in kilometers per hour
+      
     - ``stops.csv``: (optional) A CSV file containing all the required
       and optional fields of ``stops.txt`` in
       `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
