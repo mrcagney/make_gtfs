@@ -1,10 +1,10 @@
 import os
 import sys
-from pathlib import Path
+import pathlib as pl
 
 sys.path.insert(0, os.path.abspath('..'))
 
 import make_gtfs
 import pytest
 
-DATA_DIR = Path('data')
+DATA_DIR = pl.Path('data')

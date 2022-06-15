@@ -2,7 +2,6 @@
 The command-line-interface module.
 """
 import click
-import gtfs_kit as gk
 
 from . import protofeed as pf
 from . import constants as cs
@@ -43,7 +42,7 @@ def make_gtfs(source_path, target_path, buffer, ndigits):
     If a stops file is present, then search within ``buffer`` meters
     on the traffic side of trip paths for stops.
     Round all decimals to ndigits decimal places.
-    All distances in the resulting GTFS feed will be in kilometers.
+    All distances in the resulting GTFS feed will be in meters.
     """
     pfeed = pf.read_protofeed(source_path)
     feed = m.build_feed(pfeed, buffer=buffer)
