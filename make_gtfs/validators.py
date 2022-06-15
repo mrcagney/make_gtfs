@@ -11,13 +11,23 @@ import gtfs_kit as gk
 
 # ProtoFeed table and field reference
 PROTOFEED_REF = pd.DataFrame(
-    [
+    columns=["table", "table_required", "column", "column_required", "dtype"],
+    data=[
         ["meta", True, "agency_name", True, "str"],
         ["meta", True, "agency_url", True, "str"],
         ["meta", True, "agency_timezone", True, "str"],
         ["meta", True, "start_date", True, "str"],
         ["meta", True, "end_date", True, "str"],
-        ["meta", True, "default_route_speed", True, "float"],
+        ["meta", True, "speed_route_type_0", False, "float"],
+        ["meta", True, "speed_route_type_1", False, "float"],
+        ["meta", True, "speed_route_type_2", False, "float"],
+        ["meta", True, "speed_route_type_3", False, "float"],
+        ["meta", True, "speed_route_type_4", False, "float"],
+        ["meta", True, "speed_route_type_5", False, "float"],
+        ["meta", True, "speed_route_type_6", False, "float"],
+        ["meta", True, "speed_route_type_7", False, "float"],
+        ["meta", True, "speed_route_type_11", False, "float"],
+        ["meta", True, "speed_route_type_12", False, "float"],
         ["service_windows", True, "service_window_id", True, "str"],
         ["service_windows", True, "start_time", True, "str"],
         ["service_windows", True, "end_time", True, "str"],
@@ -53,8 +63,7 @@ PROTOFEED_REF = pd.DataFrame(
         ["speed_zones", True, "speed", True, "float"],
         ["speed_zones", True, "geometry", True, "Polygon"],
     ],
-    columns=["table", "table_required", "column", "column_required", "dtype"],
-    )
+)
 
 
 def valid_speed(x):
@@ -155,6 +164,7 @@ def check_for_invalid_columns(problems, table, df):
 
     return problems
 
+
 def check_meta(pfeed, *, as_df=False, include_warnings=False):
     """
     Analog of :func:`check_frequencies` for ``pfeed.meta``
@@ -193,7 +203,15 @@ def check_meta(pfeed, *, as_df=False, include_warnings=False):
         problems = gk.check_column(problems, table, f, col, gk.valid_date)
 
     # Check default_route_speed
-    problems = gk.check_column(problems, table, f, "default_route_speed", valid_speed)
+    for i in list(range(8)) + [11, 12]:
+        problems = gk.check_column(
+            problems,
+            table,
+            f,
+            f"speed_route_type_{i}",
+            valid_speed,
+            column_required=False,
+        )
 
     return gk.format_problems(problems, as_df=as_df)
 

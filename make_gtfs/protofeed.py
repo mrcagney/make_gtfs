@@ -10,6 +10,21 @@ import numpy as np
 from . import validators as vd
 
 
+#: Default average speeds by route type in kilometers per hour
+SPEED_BY_RTYPE = {
+    0: 11,
+    1: 30,
+    2: 45,
+    3: 22,
+    4: 22,
+    5: 13,
+    6: 20,
+    7: 18,
+    11: 22,
+    12: 65,
+}
+
+
 @dataclass
 class ProtoFeed:
     """
@@ -30,12 +45,13 @@ class ProtoFeed:
         )
 
         # Fill missing route speeds with default speeds
-        if "speed" not in self.frequencies.columns:
-            self.frequencies["speed"] = np.nan
+        f = self.frequencies.copy()
+        if "speed" not in f.columns:
+            f["speed"] = np.nan
 
-        self.frequencies["speed"] = self.frequencies.speed.fillna(
-            self.meta["default_route_speed"].iat[0]
-        )
+        d = self.speed_by_rtype()
+        f["speed"] = f.speed.fillna(f.route_type.map(d))
+        self.frequencies = f
 
         # Build ``shapes_extra``, a dictionary of the form
         # <shape ID> -> <trip directions using the shape (0, 1, or 2)>
@@ -66,6 +82,14 @@ class ProtoFeed:
 
         return ProtoFeed(**d)
 
+    def speed_by_rtype(self) -> dict[int, float]:
+        """
+        Return  the dictionary :const:`SPEED_BY_RTYPE` updated with the speeds listed
+        in ``self.meta``.
+        """
+        m = self.meta.to_dict("records")[0]
+        return {k: m.get(f"speed_route_type_{k}", v) for k, v in SPEED_BY_RTYPE.items()}
+
 
 def read_protofeed(path: str | pl.Path) -> ProtoFeed:
     """
@@ -91,8 +115,10 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``start_date``, ``end_date`` (required): Strings. The start
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
-      - ``default_route_speed``: (required) Float. Default average speed of routes
-        in kilometers per hour; used to fill missing speeds in ``frequencies``.
+      - ``speed_route_type_0``: (optional) Float. Default average speed in kilometers
+        per hour for routes of route type 0; used to fill missing speeds in
+        ``frequencies``
+      - ... other speeds by route type for the remaining route types: 1--7, 11--12.
 
     - ``service_windows.csv``: (required) A CSV file containing service window
       information.

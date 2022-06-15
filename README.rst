@@ -133,6 +133,11 @@ Notes
 Changes
 ========
 
+2.3.0, 2022-??-??
+-----------------
+- Refactored to use a dataclass and updated the docstrings, adding some type hints.
+ 
+
 2.2.1, 2022-05-03
 -----------------
 - Updated dependencies and removed version caps.
