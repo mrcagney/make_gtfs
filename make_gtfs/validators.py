@@ -8,7 +8,62 @@ import pandas as pd
 import shapely.geometry as sg
 import gtfs_kit as gk
 
-from . import constants as cs
+
+# ProtoFeed table and field reference
+PROTOFEED_REF = pd.DataFrame(
+    columns=["table", "table_required", "column", "column_required", "dtype"],
+    data=[
+        ["meta", True, "agency_name", True, "str"],
+        ["meta", True, "agency_url", True, "str"],
+        ["meta", True, "agency_timezone", True, "str"],
+        ["meta", True, "start_date", True, "str"],
+        ["meta", True, "end_date", True, "str"],
+        ["meta", True, "speed_route_type_0", False, "float"],
+        ["meta", True, "speed_route_type_1", False, "float"],
+        ["meta", True, "speed_route_type_2", False, "float"],
+        ["meta", True, "speed_route_type_3", False, "float"],
+        ["meta", True, "speed_route_type_4", False, "float"],
+        ["meta", True, "speed_route_type_5", False, "float"],
+        ["meta", True, "speed_route_type_6", False, "float"],
+        ["meta", True, "speed_route_type_7", False, "float"],
+        ["meta", True, "speed_route_type_11", False, "float"],
+        ["meta", True, "speed_route_type_12", False, "float"],
+        ["service_windows", True, "service_window_id", True, "str"],
+        ["service_windows", True, "start_time", True, "str"],
+        ["service_windows", True, "end_time", True, "str"],
+        ["service_windows", True, "monday", True, "int"],
+        ["service_windows", True, "tuesday", True, "int"],
+        ["service_windows", True, "wednesday", True, "int"],
+        ["service_windows", True, "thursday", True, "int"],
+        ["service_windows", True, "friday", True, "int"],
+        ["service_windows", True, "saturday", True, "int"],
+        ["service_windows", True, "sunday", True, "int"],
+        ["shapes", True, "shape_id", True, "str"],
+        ["shapes", True, "geometry", True, "LineString"],
+        ["frequencies", True, "route_short_name", True, "str"],
+        ["frequencies", True, "route_long_name", True, "str"],
+        ["frequencies", True, "route_type", True, "int"],
+        ["frequencies", True, "service_window_id", True, "str"],
+        ["frequencies", True, "direction", True, "int"],
+        ["frequencies", True, "frequency", True, "int"],
+        ["frequencies", True, "shape_id", True, "str"],
+        ["stops", False, "stop_id", True, "str"],
+        ["stops", False, "stop_code", False, "str"],
+        ["stops", False, "stop_name", True, "str"],
+        ["stops", False, "stop_desc", False, "str"],
+        ["stops", False, "stop_lat", True, "float"],
+        ["stops", False, "stop_lon", True, "float"],
+        ["stops", False, "zone_id", False, "str"],
+        ["stops", False, "stop_url", False, "str"],
+        ["stops", False, "location_type", False, "int"],
+        ["stops", False, "parent_station", False, "str"],
+        ["stops", False, "stop_timezone", False, "str"],
+        ["stops", True, "wheelchair_boarding", False, "int"],
+        ["speed_zones", True, "zone_id", True, "str"],
+        ["speed_zones", True, "speed", True, "float"],
+        ["speed_zones", True, "geometry", True, "Polygon"],
+    ],
+)
 
 
 def valid_speed(x):
@@ -56,7 +111,7 @@ def check_for_required_columns(problems, table, df):
         missing.
 
     """
-    r = cs.PROTOFEED_REF
+    r = PROTOFEED_REF
     req_columns = r.loc[(r["table"] == table) & r["column_required"], "column"].values
     for col in req_columns:
         if col not in df.columns:
@@ -99,7 +154,7 @@ def check_for_invalid_columns(problems, table, df):
         column.
 
     """
-    r = cs.PROTOFEED_REF
+    r = PROTOFEED_REF
     valid_columns = r.loc[r["table"] == table, "column"].values
     for col in df.columns:
         if col not in valid_columns:
@@ -108,67 +163,6 @@ def check_for_invalid_columns(problems, table, df):
             )
 
     return problems
-
-
-def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
-    """
-    Check that ``pfeed.frequency`` follows the ProtoFeed spec.
-    Return a list of problems of the form described in
-    :func:`gk.check_table`;
-    the list will be empty if no problems are found.
-    """
-    table = "frequencies"
-    problems = []
-
-    # Preliminary checks
-    if pfeed.frequencies is None:
-        problems.append(["error", "Missing table", table, []])
-    else:
-        f = pfeed.frequencies.copy()
-        problems = check_for_required_columns(problems, table, f)
-    if problems:
-        return gk.format_problems(problems, as_df=as_df)
-
-    if include_warnings:
-        problems = check_for_invalid_columns(problems, table, f)
-
-    # Check route_short_name and route_long_name
-    for column in ["route_short_name", "route_long_name"]:
-        problems = gk.check_column(
-            problems, table, f, column, gk.valid_str, column_required=False
-        )
-
-    cond = ~(f["route_short_name"].notnull() | f["route_long_name"].notnull())
-    problems = gk.check_table(
-        problems, table, f, cond, "route_short_name and route_long_name both empty"
-    )
-
-    # Check route_type
-    v = lambda x: x in range(8)
-    problems = gk.check_column(problems, table, f, "route_type", v)
-
-    # Check service window ID
-    problems = gk.check_column_linked_id(
-        problems, table, f, "service_window_id", pfeed.service_windows
-    )
-
-    # Check direction
-    v = lambda x: x in range(3)
-    problems = gk.check_column(problems, table, f, "direction", v)
-
-    # Check frequency
-    v = lambda x: isinstance(x, int)
-    problems = gk.check_column(problems, table, f, "frequency", v)
-
-    # Check speed
-    problems = gk.check_column(
-        problems, table, f, "speed", valid_speed, column_required=False
-    )
-
-    # Check shape ID
-    problems = gk.check_column_linked_id(problems, table, f, "shape_id", pfeed.shapes)
-
-    return gk.format_problems(problems, as_df=as_df)
 
 
 def check_meta(pfeed, *, as_df=False, include_warnings=False):
@@ -209,7 +203,15 @@ def check_meta(pfeed, *, as_df=False, include_warnings=False):
         problems = gk.check_column(problems, table, f, col, gk.valid_date)
 
     # Check default_route_speed
-    problems = gk.check_column(problems, table, f, "default_route_speed", valid_speed)
+    for i in list(range(8)) + [11, 12]:
+        problems = gk.check_column(
+            problems,
+            table,
+            f,
+            f"speed_route_type_{i}",
+            valid_speed,
+            column_required=False,
+        )
 
     return gk.format_problems(problems, as_df=as_df)
 
@@ -286,6 +288,67 @@ def check_shapes(pfeed, *, as_df=False, include_warnings=False):
     return gk.format_problems(problems, as_df=as_df)
 
 
+def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
+    """
+    Check that ``pfeed.frequency`` follows the ProtoFeed spec.
+    Return a list of problems of the form described in
+    :func:`gk.check_table`;
+    the list will be empty if no problems are found.
+    """
+    table = "frequencies"
+    problems = []
+
+    # Preliminary checks
+    if pfeed.frequencies is None:
+        problems.append(["error", "Missing table", table, []])
+    else:
+        f = pfeed.frequencies.copy()
+        problems = check_for_required_columns(problems, table, f)
+    if problems:
+        return gk.format_problems(problems, as_df=as_df)
+
+    if include_warnings:
+        problems = check_for_invalid_columns(problems, table, f)
+
+    # Check route_short_name and route_long_name
+    for column in ["route_short_name", "route_long_name"]:
+        problems = gk.check_column(
+            problems, table, f, column, gk.valid_str, column_required=False
+        )
+
+    cond = ~(f["route_short_name"].notnull() | f["route_long_name"].notnull())
+    problems = gk.check_table(
+        problems, table, f, cond, "route_short_name and route_long_name both empty"
+    )
+
+    # Check route_type
+    v = lambda x: x in range(8)
+    problems = gk.check_column(problems, table, f, "route_type", v)
+
+    # Check service window ID
+    problems = gk.check_column_linked_id(
+        problems, table, f, "service_window_id", pfeed.service_windows
+    )
+
+    # Check direction
+    v = lambda x: x in range(3)
+    problems = gk.check_column(problems, table, f, "direction", v)
+
+    # Check frequency
+    v = lambda x: isinstance(x, int)
+    problems = gk.check_column(problems, table, f, "frequency", v)
+
+    # Check speed
+    problems = gk.check_column(
+        problems, table, f, "speed", valid_speed, column_required=False
+    )
+
+    # Check shape ID
+    problems = gk.check_column_linked_id(problems, table, f, "shape_id", pfeed.shapes)
+
+    return gk.format_problems(problems, as_df=as_df)
+
+
 def check_stops(pfeed, *, as_df=False, include_warnings=False):
     """
     Analog of :func:`check_frequencies` for ``pfeed.stops``
@@ -337,10 +400,10 @@ def validate(pfeed, *, as_df=True, include_warnings=True):
 
     # Check for invalid columns and check the required tables
     checkers = [
-        "check_frequencies",
         "check_meta",
         "check_service_windows",
         "check_shapes",
+        "check_frequencies",
         "check_stops",
     ]
     for checker in checkers:

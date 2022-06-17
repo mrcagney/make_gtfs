@@ -59,7 +59,7 @@ def test_check_meta():
     assert check_meta(pfeed)
 
     for col in ['agency_timezone', 'agency_url', 'start_date', 'end_date',
-      'default_route_speed']:
+      'speed_route_type_0']:
         pfeed = sample.copy()
         pfeed.meta[col] = 'bingo'
         assert check_meta(pfeed)

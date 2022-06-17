@@ -1,11 +1,16 @@
 """
 This module contains the main logic.
 """
+from typing import Optional
+
+import geopandas as gpd
 import pandas as pd
 import numpy as np
 import shapely.ops as so
+import shapely.geometry as sg
 import gtfs_kit as gk
 
+from . import protofeed as pf
 from . import constants as cs
 
 
@@ -45,7 +50,7 @@ def build_stop_names(shape_id):
     return ["Stop {!s} on shape {!s} ".format(i, shape_id) for i in range(2)]
 
 
-def build_agency(pfeed):
+def build_agency(pfeed: pf.ProtoFeed):
     """
     Given a ProtoFeed, return a DataFrame representing ``agency.txt``
     """
@@ -59,7 +64,7 @@ def build_agency(pfeed):
     )
 
 
-def build_calendar_etc(pfeed):
+def build_calendar_etc(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``calendar.txt``
     and a dictionary of the form <service window ID> -> <service ID>,
@@ -104,7 +109,7 @@ def build_calendar_etc(pfeed):
     return calendar, service_by_window
 
 
-def build_routes(pfeed):
+def build_routes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``routes.txt``.
     """
@@ -124,7 +129,7 @@ def build_routes(pfeed):
     return f
 
 
-def build_shapes(pfeed):
+def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Given a ProtoFeed, return DataFrame representing ``shapes.txt``.
     Only use shape IDs that occur in both ``pfeed.shapes`` and
@@ -159,7 +164,7 @@ def build_shapes(pfeed):
     )
 
 
-def build_stops(pfeed, shapes=None):
+def build_stops(pfeed: pf.ProtoFeed, shapes: Optional[pd.DataFrame]=None) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
     If ``pfeed.stops`` is not ``None``, then return that.
@@ -194,11 +199,14 @@ def build_stops(pfeed, shapes=None):
     return stops
 
 
-def build_trips(pfeed, routes, service_by_window):
+def build_trips(
+    pfeed: pf.ProtoFeed, 
+    routes: pd.DataFrame, 
+    service_by_window: dict,
+) -> pd.DataFrame:
     """
-    Given a ProtoFeed and its corresponding routes (DataFrame),
-    service-by-window (dictionary), return a DataFrame representing
-    ``trips.txt``.
+    Given a ProtoFeed and its corresponding routes and service-by-window, 
+    return a DataFrame representing ``trips.txt``.
     Trip IDs encode route, direction, and service window information
     to make it easy to compute stop times later.
     """
@@ -254,7 +262,7 @@ def build_trips(pfeed, routes, service_by_window):
     )
 
 
-def buffer_side(linestring, side, buffer):
+def buffer_side(linestring: sg.LineString, side: str, buffer: float) -> sg.Polygon:
     """
     Given a Shapely LineString, a side of the LineString
     (string; 'left' = left hand side of LineString,
@@ -280,7 +288,12 @@ def buffer_side(linestring, side, buffer):
     return b
 
 
-def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
+def get_nearby_stops(
+    geo_stops: gpd.GeoDataFrame, 
+    linestring: sg.LineString, 
+    side: str, 
+    buffer: float=cs.BUFFER,
+) -> gpd.GeoDataFrame:
     """
     Given a GeoDataFrame of stops, a Shapely LineString in the
     same coordinate system, a side of the LineString
@@ -297,13 +310,20 @@ def get_nearby_stops(geo_stops, linestring, side, buffer=cs.BUFFER):
     return geo_stops.loc[geo_stops.intersects(b)].copy()
 
 
-def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
+def build_stop_times(
+    pfeed: pf.ProtoFeed, 
+    routes: pd.DataFrame, 
+    shapes: pd.DataFrame, 
+    stops: pd.DataFrame, 
+    trips: pd.DataFrame, 
+    buffer: float=cs.BUFFER,
+) -> pd.DataFrame:
     """
-    Given a ProtoFeed and its corresponding routes (DataFrame),
-    shapes (DataFrame), stops (DataFrame), trips (DataFrame),
-    return DataFrame representing ``stop_times.txt``.
-    Includes the optional ``shape_dist_traveled`` column.
-    Don't make stop times for trips with no nearby stops.
+    Given a ProtoFeed and its corresponding routes,
+    shapes, stops, and trips DataFrames,
+    return a DataFrame representing ``stop_times.txt``.
+    Includes the optional ``shape_dist_traveled`` column in meters.
+    Do not make stop times for trips with no nearby stops.
     """
     # Get the table of trips and add frequency and service window details
     routes = routes.filter(["route_id", "route_short_name"]).merge(
@@ -342,11 +362,11 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
             if stop in dist_by_stop_by_shape[shape]:
                 d = dist_by_stop_by_shape[shape][stop]
             else:
-                d = gk.get_segment_length(linestring, g.geometry.iat[i]) / 1000  # km
+                d = gk.get_segment_length(linestring, g.geometry.iat[i])  # meters
                 dist_by_stop_by_shape[shape][stop] = d
             dists_and_stops.append((d, stop))
         dists, stops = zip(*sorted(dists_and_stops))
-        D = linestring.length / 1000
+        D = linestring.length  # meters
         dists_are_reasonable = all([dist < D + 100 for dist in dists])
         if not dists_are_reasonable:
             # Assume equal distances between stops :-(
@@ -377,9 +397,9 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
         # Don't make stop times for trips without nearby stops
         if stops.empty:
             continue
-        length = geom.length / 1000  # km
-        speed = row["speed"]  # km/h
-        duration = int((length / speed) * 3600)  # seconds
+        length = geom.length # meters
+        speed = row["speed"] * 1000 / 3600  # meters per second
+        duration = int(length / speed)  # seconds
         frequency = row["frequency"]
         if not frequency:
             # No stop times for this trip/frequency combo
@@ -419,7 +439,11 @@ def build_stop_times(pfeed, routes, shapes, stops, trips, buffer=cs.BUFFER):
     return g
 
 
-def build_feed(pfeed, buffer=cs.BUFFER):
+def build_feed(pfeed: pf.ProtoFeed, buffer: float=cs.BUFFER) -> gk.Feed:
+    """
+    Convert the given ProtoFeed to a GTFS Feed with meter distance units.
+    Look at a distance of ``buffer`` meters from route shapes to find stops.
+    """
     # Create Feed tables
     agency = build_agency(pfeed)
     calendar, service_by_window = build_calendar_etc(pfeed)
@@ -438,5 +462,5 @@ def build_feed(pfeed, buffer=cs.BUFFER):
         stops=stops,
         stop_times=stop_times,
         trips=trips,
-        dist_units="km",
+        dist_units="m",
     ).drop_zombies()
