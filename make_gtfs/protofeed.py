@@ -44,7 +44,8 @@ class ProtoFeed:
             route_type=lambda x: x.route_type.fillna(3).astype(int)
         )
 
-        # Fill missing route speeds with default speeds
+        # Fill missing route speeds with default speeds specified in ``meta`` and
+        # SPEED_BY_RTYPE
         f = self.frequencies.copy()
         if "speed" not in f.columns:
             f["speed"] = np.nan
@@ -115,10 +116,13 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``start_date``, ``end_date`` (required): Strings. The start
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
-      - ``speed_route_type_0``: (optional) Float. Default average speed in kilometers
-        per hour for routes of route type 0; used to fill missing speeds in
-        ``frequencies``
-      - ... other speeds by route type for the remaining route types: 1--7, 11--12.
+      - ``speed_route_type_0`` (optional): float; default average speed in kilometers
+        per hour for routes of route type 0; used to fill missing route speeds in
+        ``frequencies.csv``
+      - ``speed_route_type_<i>`` for the remaining route types 1--7, 11--12 (optional)
+
+      Missing speed columns will be created with values set to the speeds in the
+      dictionary :const:`SPEED_BY_RTYPE`.
 
     - ``service_windows.csv``: (required) A CSV file containing service window
       information.
@@ -166,7 +170,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``shape_id``: (required) String. A shape ID that is listed in
         ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction, service window) tuple.
-      - ``speed`` (optional): float; the speed of the route in kilometers per hour
+      - ``speed`` (optional): float; the average speed of the route in kilometers
+        per hour
 
     - ``stops.csv``: (optional) A CSV file containing all the required
       and optional fields of ``stops.txt`` in

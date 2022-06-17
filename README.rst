@@ -33,9 +33,13 @@ Make GTFS uses the following files to build a GTFS feed.
   - ``start_date``, ``end_date`` (required): strings; the start
     and end dates for which all this network information is valid
     formated as YYYYMMDD strings
-  - ``default_route_speed`` (required): float; default speed in
-    kilometers per hour to assign to routes with no ``speed``
-    entry in the file ``routes.csv``
+  - ``speed_route_type_0`` (optional): float; default average speed in kilometers
+    per hour for routes of route type 0; used to fill missing route speeds in
+    ``frequencies.csv``
+  - ``speed_route_type_<i>`` for the remaining route types 1--7, 11--12 (optional)
+
+  Missing speed columns will be created with values set to the speeds in the
+  dictionary ``SPEED_BY_RTYPE`` in ``protofeed.py``.
 
 - ``shapes.geojson`` (required). A GeoJSON file containing route shapes.
   The file consists of one feature collection of LineString features, where each feature's properties contains at least the attribute ``shape_id``.
@@ -80,7 +84,7 @@ Make GTFS uses the following files to build a GTFS feed.
   - ``shape_id`` (required): string; a shape ID that is listed in
     ``shapes.geojson`` and corresponds to the linestring of the
     (route, direction, service window) tuple
-  - ``speed`` (optional): float; the speed of the route in
+  - ``speed`` (optional): float; the average speed of the route in
     kilometers per hour
 
 - ``stops.csv`` (optional). A CSV file containing all the required
@@ -136,7 +140,8 @@ Changes
 2.3.0, 2022-??-??
 -----------------
 - Refactored to use a dataclass and updated the docstrings, adding some type hints.
- 
+- Added the ability to specify default speeds by route type in ``meta.csv``.
+
 
 2.2.1, 2022-05-03
 -----------------
