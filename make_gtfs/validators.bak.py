@@ -2,93 +2,11 @@
 Validators for ProtoFeeds.
 Designed along the lines of gtfs_kit.validators.py.
 """
-import re
-import pytz
 import numbers
 
 import pandas as pd
-import pandera as pa
 import shapely.geometry as sg
-import geopandas as gpd
 import gtfs_kit as gk
-
-
-URL_PATTERN = re.compile(
-    r'^(?:http)s?://(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?(?:/?|[/?]\S+)$',
-    re.IGNORECASE|re.UNICODE
-)
-DATE_PATTERN = r"\d\d\d\d\d\d\d\d"
-TIMEZONES = set(pytz.all_timezones)
-
-# ProtoFeed schemas
-SCHEMA_META = pa.DataFrameSchema(
-    {
-        "agency_name": pa.Column(
-            str,
-            checks=pa.Check(lambda x: x.str.strip().str.len() > 0),
-        ),
-        "agency_url": pa.Column(
-            str,
-            checks=pa.Check(lambda x: x.str.fullmatch(URL_PATTERN)),
-        ),
-        "agency_timezone": pa.Column(
-            str,
-            checks=pa.Check(lambda x: x.isin(TIMEZONES))
-        ),
-        "start_date": pa.Column(
-            str,
-            checks=[
-                pa.Check(lambda x: x.str.fullmatch(DATE_PATTERN)),
-                pa.Check(lambda x:
-                    pd.to_datetime(x) > pd.to_datetime("1900-01-01", yearfirst=True)
-                ),
-            ]
-        ),
-        "end_date": pa.Column(
-            str,
-            checks=[
-                pa.Check(lambda x: x.str.fullmatch(DATE_PATTERN)),
-                pa.Check(lambda x:
-                    pd.to_datetime(x) > pd.to_datetime("1900-01-01", yearfirst=True)
-                ),
-            ]
-        ),
-        "speed_route_type_0": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_1": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_2": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_3": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_4": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_5": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_6": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_7": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_11": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_12": pa.Column(float, pa.Check.gt(0), required=False),
-    },
-    checks=pa.Check(lambda x: x.shape[0] == 1),  # Should only have 1 row
-    index=pa.Index(int),
-    strict="filter",  # Drop columns not specified above
-    coerce=True,
-)
-
-SCHEMA_SHAPES = pa.DataFrameSchema(
-    {
-        "shape_id": pa.Column(
-            str,
-            checks=pa.Check(lambda x: x.str.strip().str.len() > 0),
-        ),
-        "geometry": pa.Column(
-            checks=[
-                pa.Check(lambda x: x.geom_type == "LineString"),
-                pa.Check(lambda x: x.is_valid),
-                pa.Check(lambda x: x.length > 0),
-            ]
-        ),
-    },
-    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should at least 1 row
-    index=pa.Index(int),
-    strict="filter",  # Drop columns not specified above
-    coerce=True,
-)
 
 
 # ProtoFeed table and field reference
@@ -147,6 +65,7 @@ PROTOFEED_REF = pd.DataFrame(
     ],
 )
 
+
 def valid_speed(x):
     """
     Return ``True`` if ``x`` is a positive number;
@@ -156,6 +75,7 @@ def valid_speed(x):
         return True
     else:
         return False
+
 
 def check_for_required_columns(problems, table, df):
     """
@@ -245,18 +165,56 @@ def check_for_invalid_columns(problems, table, df):
     return problems
 
 
-def check_meta(pfeed):
+def check_meta(pfeed, *, as_df=False, include_warnings=False):
     """
+    Analog of :func:`check_frequencies` for ``pfeed.meta``
     """
-    return SCHEMA_META.validate(pfeed.meta)
+    table = "meta"
+    problems = []
 
-def check_shapes(pfeed):
-    """
-    """
-    if not isinstance(pfeed.shapes, gpd.GeoDataFrame):
-        raise ValueError("Shapes must be a GeoDataFrame")
+    # Preliminary checks
+    if pfeed.meta is None:
+        problems.append(["error", "Missing table", table, []])
+    else:
+        f = pfeed.meta.copy()
+        problems = check_for_required_columns(problems, table, f)
+    if problems:
+        return gk.format_problems(problems, as_df=as_df)
 
-    return SCHEMA_SHAPES.validate(pfeed.shapes)
+    if include_warnings:
+        problems = check_for_invalid_columns(problems, table, f)
+
+    if f.shape[0] > 1:
+        problems.append(
+            ["error", "Meta must have only one row", table, list(range(1, f.shape[0]))]
+        )
+
+    # Check agency_name
+    problems = gk.check_column(problems, table, f, "agency_name", gk.valid_str)
+
+    # Check agency_url
+    problems = gk.check_column(problems, table, f, "agency_url", gk.valid_url)
+
+    # Check agency_timezone
+    problems = gk.check_column(problems, table, f, "agency_timezone", gk.valid_timezone)
+
+    # Check start_date and end_date
+    for col in ["start_date", "end_date"]:
+        problems = gk.check_column(problems, table, f, col, gk.valid_date)
+
+    # Check default_route_speed
+    for i in list(range(8)) + [11, 12]:
+        problems = gk.check_column(
+            problems,
+            table,
+            f,
+            f"speed_route_type_{i}",
+            valid_speed,
+            column_required=False,
+        )
+
+    return gk.format_problems(problems, as_df=as_df)
+
 
 def check_service_windows(pfeed, *, as_df=False, include_warnings=False):
     """
@@ -301,6 +259,33 @@ def check_service_windows(pfeed, *, as_df=False, include_warnings=False):
     return gk.format_problems(problems, as_df=as_df)
 
 
+def check_shapes(pfeed, *, as_df=False, include_warnings=False):
+    """
+    Analog of :func:`check_frequencies` for ``pfeed.shapes``
+    """
+    table = "shapes"
+    problems = []
+
+    # Preliminary checks
+    if pfeed.shapes is None:
+        return problems
+
+    f = pfeed.shapes.copy()
+    problems = check_for_required_columns(problems, table, f)
+    if problems:
+        return gk.format_problems(problems, as_df=as_df)
+
+    if include_warnings:
+        problems = check_for_invalid_columns(problems, table, f)
+
+    # Check shape_id
+    problems = gk.check_column(problems, table, f, "shape_id", gk.valid_str)
+
+    # Check geometry
+    v = lambda x: isinstance(x, sg.LineString) and not x.is_empty
+    problems = gk.check_column(problems, table, f, "geometry", v)
+
+    return gk.format_problems(problems, as_df=as_df)
 
 
 def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
@@ -411,6 +396,8 @@ def validate(pfeed, *, as_df=True, include_warnings=True):
         columns.
 
     """
+    problems = []
+
     # Check for invalid columns and check the required tables
     checkers = [
         "check_meta",
@@ -420,6 +407,6 @@ def validate(pfeed, *, as_df=True, include_warnings=True):
         "check_stops",
     ]
     for checker in checkers:
-        globals()[checker](pfeed)
+        problems.extend(globals()[checker](pfeed, include_warnings=include_warnings))
 
-    #return gk.format_problems(problems, as_df=as_df)
+    return gk.format_problems(problems, as_df=as_df)

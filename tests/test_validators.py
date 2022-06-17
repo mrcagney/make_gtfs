@@ -1,11 +1,56 @@
 import geopandas as gpd
+import pandera as pa
 
-from .context import make_gtfs, DATA_DIR
+from .context import make_gtfs, DATA_DIR, pytest
 from make_gtfs import *
 
 
 # Load test ProtoFeed
 sample = read_protofeed(DATA_DIR/'auckland')
+
+
+def test_check_meta():
+    assert check_meta(sample).shape[0]
+
+    pfeed = sample.copy()
+    pfeed.meta = None
+    with pytest.raises(TypeError):
+        check_meta(pfeed)
+
+    pfeed = sample.copy()
+    del pfeed.meta['agency_name']
+    with pytest.raises(pa.errors.SchemaError):
+        check_meta(pfeed)
+
+    pfeed = sample.copy()
+    pfeed.meta = pd.concat([pfeed.meta, pfeed.meta.iloc[:1]])
+    with pytest.raises(pa.errors.SchemaError):
+        check_meta(pfeed)
+
+    for col in ['agency_timezone', 'agency_url', 'start_date', 'end_date',
+      'speed_route_type_0']:
+        pfeed = sample.copy()
+        pfeed.meta[col] = 'bingo'
+        print(col)
+        with pytest.raises(pa.errors.SchemaError):
+            check_meta(pfeed)
+
+def test_check_shapes():
+    assert check_shapes(sample).shape[0]
+
+    pfeed = sample.copy()
+    del pfeed.shapes['shape_id']
+    with pytest.raises(pa.errors.SchemaError):
+        check_shapes(pfeed)
+
+    pfeed = sample.copy()
+    pfeed.shapes['yo'] = 3
+    assert check_shapes(pfeed).shape[0]
+
+    pfeed = sample.copy()
+    pfeed.shapes.geometry.iat[0] = None
+    with pytest.raises(pa.errors.SchemaError):
+        check_shapes(pfeed)
 
 def test_check_frequencies():
     assert not check_frequencies(sample)
@@ -35,34 +80,6 @@ def test_check_frequencies():
         pfeed.frequencies[col] = 'bingo'
         assert check_frequencies(pfeed)
 
-def test_check_meta():
-    assert not check_meta(sample)
-
-    pfeed = sample.copy()
-    pfeed.meta = None
-    assert check_meta(pfeed)
-
-    pfeed = sample.copy()
-    del pfeed.meta['agency_name']
-    assert check_meta(pfeed)
-
-    pfeed = sample.copy()
-    pfeed.meta['b'] = 3
-    assert check_meta(pfeed, include_warnings=True)
-
-    pfeed = sample.copy()
-    pfeed.meta = pd.concat([pfeed.meta, pfeed.meta.iloc[:1]])
-    assert check_meta(pfeed)
-
-    pfeed = sample.copy()
-    pfeed.meta['agency_name'] = ''
-    assert check_meta(pfeed)
-
-    for col in ['agency_timezone', 'agency_url', 'start_date', 'end_date',
-      'speed_route_type_0']:
-        pfeed = sample.copy()
-        pfeed.meta[col] = 'bingo'
-        assert check_meta(pfeed)
 
 def test_check_service_windows():
     assert not check_service_windows(sample)
@@ -91,31 +108,6 @@ def test_check_service_windows():
         pfeed.service_windows[col].iat[0] = '5'
         assert check_service_windows(pfeed)
 
-def test_check_shapes():
-    assert not check_shapes(sample)
-
-    # Make a nonempty shapes table to check
-    pfeed = sample.copy()
-    rows = [
-        ['1100015', sg.LineString([[0, 0], [1, 1]])],
-        ['1100015', sg.LineString([[0, 0], [1, 1]])],
-    ]
-    columns = ['shape_id', 'geometry']
-    pfeed.shapes = gpd.GeoDataFrame(rows, columns=columns)
-    assert not check_shapes(pfeed)
-
-    pfeed = sample.copy()
-    del pfeed.shapes['shape_id']
-    assert check_shapes(pfeed)
-
-    pfeed = sample.copy()
-    pfeed.shapes['yo'] = 3
-    assert not check_shapes(pfeed)
-    assert check_shapes(pfeed, include_warnings=True)
-
-    pfeed = sample.copy()
-    pfeed.shapes['shape_id'].iat[0] = ''
-    assert check_shapes(pfeed)
 
 def test_check_stops():
     assert not check_stops(sample)

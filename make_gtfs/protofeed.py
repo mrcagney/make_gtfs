@@ -213,8 +213,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
     pfeed = ProtoFeed(**d)
 
     # Validate
-    v = vd.validate(pfeed)
-    if "error" in v.type.values:
-        raise ValueError("Invalid ProtoFeed files:\n\n" + v.to_string(justify="left"))
+    vd.validate(pfeed)
+    # if "error" in v.type.values:
+    #     raise ValueError("Invalid ProtoFeed files:\n\n" + v.to_string(justify="left"))
 
     return pfeed
