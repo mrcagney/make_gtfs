@@ -117,7 +117,7 @@ See ``data/auckland`` for example files and play with the Jupyter notebook at ``
 
 Documentation
 ===============
-Under ``docs/`` or view it as HTML `here <https://rawgit.com/araichev/make_gtfs/master/docs/_build/singlehtml/index.html>`_.
+On Github pages `here <https://mrcagney.github.io/make_gtfs_docs>`_.
 
 
 Contributors
@@ -137,11 +137,12 @@ Notes
 Changes
 ========
 
-2.3.0, 2022-??-??
+2.3.0, 2022-06-21
 -----------------
 - Refactored to use a dataclass and updated the docstrings, adding some type hints.
 - Added the ability to specify default speeds by route type in ``meta.csv``.
 - Simplified validation with Pandera schemas.
+- Updated dependencies.
 
 
 2.2.1, 2022-05-03
