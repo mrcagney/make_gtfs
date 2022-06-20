@@ -1,6 +1,5 @@
 """
-ProtoFeed validation.
-TODO: checked some linked ID columns
+ProtoFeed validators.
 """
 import re
 import pytz
@@ -9,17 +8,19 @@ import pandas as pd
 import pandera as pa
 import geopandas as gpd
 
+from . import protofeed as pf
+
 
 URL_PATTERN = re.compile(
-    r'^(?:http)s?://(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?(?:/?|[/?]\S+)$',
-    re.IGNORECASE|re.UNICODE
+    r"^(?:http)s?://(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?(?:/?|[/?]\S+)$",
+    re.IGNORECASE | re.UNICODE,
 )
 DATE_PATTERN = r"\d\d\d\d\d\d\d\d"
 TIME_PATTERN = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])"
 TIMEZONES = set(pytz.all_timezones)
 NONBLANK_PATTERN = r"(?!\s*$).+"
 
-# ProtoFeed schemas
+# ProtoFeed table schemas
 SCHEMA_META = pa.DataFrameSchema(
     {
         "agency_name": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
@@ -29,19 +30,21 @@ SCHEMA_META = pa.DataFrameSchema(
             str,
             checks=[
                 pa.Check.str_matches(DATE_PATTERN),
-                pa.Check(lambda x:
-                    pd.to_datetime(x) > pd.to_datetime("1900-01-01", yearfirst=True)
+                pa.Check(
+                    lambda x: pd.to_datetime(x)
+                    > pd.to_datetime("1900-01-01", yearfirst=True)
                 ),
-            ]
+            ],
         ),
         "end_date": pa.Column(
             str,
             checks=[
                 pa.Check.str_matches(DATE_PATTERN),
-                pa.Check(lambda x:
-                    pd.to_datetime(x) > pd.to_datetime("1900-01-01", yearfirst=True)
+                pa.Check(
+                    lambda x: pd.to_datetime(x)
+                    > pd.to_datetime("1900-01-01", yearfirst=True)
                 ),
-            ]
+            ],
         ),
         "speed_route_type_0": pa.Column(float, pa.Check.gt(0), required=False),
         "speed_route_type_1": pa.Column(float, pa.Check.gt(0), required=False),
@@ -70,7 +73,7 @@ SCHEMA_SHAPES = pa.DataFrameSchema(
             checks=[
                 pa.Check(lambda x: x.geom_type == "LineString"),
                 pa.Check(lambda x: x.is_valid),
-                pa.Check(lambda x: x.length > 0),
+                pa.Check(lambda x: ~x.is_empty),
             ]
         ),
     },
@@ -126,11 +129,19 @@ SCHEMA_STOPS = pa.DataFrameSchema(
         "stop_lat": pa.Column(float),
         "stop_lon": pa.Column(float),
         "zone_id": pa.Column(str, nullable=True, required=False),
-        "stop_url": pa.Column(str, pa.Check.str_matches(URL_PATTERN), nullable=True, required=False),
-        "location_type": pa.Column(int, pa.Check.isin(range(5)), nullable=True, required=False),
+        "stop_url": pa.Column(
+            str, pa.Check.str_matches(URL_PATTERN), nullable=True, required=False
+        ),
+        "location_type": pa.Column(
+            int, pa.Check.isin(range(5)), nullable=True, required=False
+        ),
         "parent_station": pa.Column(str, nullable=True, required=False),
-        "stop_timezone": pa.Column(str, pa.Check.isin(TIMEZONES), nullable=True, required=False),
-        "wheelchair_boarding": pa.Column(int, pa.Check.isin(range(3)), nullable=True, required=False),
+        "stop_timezone": pa.Column(
+            str, pa.Check.isin(TIMEZONES), nullable=True, required=False
+        ),
+        "wheelchair_boarding": pa.Column(
+            int, pa.Check.isin(range(3)), nullable=True, required=False
+        ),
     },
     checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
     index=pa.Index(int),
@@ -138,57 +149,99 @@ SCHEMA_STOPS = pa.DataFrameSchema(
     coerce=True,
 )
 
-def check_meta(pfeed):
+
+def check_meta(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
+    Return `pfeed.meta` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
     """
     return SCHEMA_META.validate(pfeed.meta)
 
-def check_shapes(pfeed):
+
+def check_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
+    Return `pfeed.shapes` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
     """
     if not isinstance(pfeed.shapes, gpd.GeoDataFrame):
         raise ValueError("Shapes must be a GeoDataFrame")
 
     return SCHEMA_SHAPES.validate(pfeed.shapes)
 
-def check_service_windows(pfeed):
+
+def check_service_windows(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
+    Return `pfeed.service_windows` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
     """
     return SCHEMA_SERVICE_WINDOWS.validate(pfeed.service_windows)
 
 
-def check_frequencies(pfeed):
+def check_frequencies(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
+    Return `pfeed.frequencies` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
     """
     return SCHEMA_FREQUENCIES.validate(pfeed.frequencies)
 
-    # Check service window ID
-    # problems = gk.check_column_linked_id(
-    #     problems, table, f, "service_window_id", pfeed.service_windows
-    # )
 
-def check_stops(pfeed):
+def check_stops(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
+    Return `pfeed.stops` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
     """
-    return SCHEMA_STOPS.validate(pfeed.stops)
+    if pfeed.stops is None:
+        return pfeed.stops
+    else:
+        return SCHEMA_STOPS.validate(pfeed.stops)
+
+
+def crosscheck_ids(
+    id_col: str,
+    src_table: pd.DataFrame,
+    src_table_name: str,
+    tgt_table: pd.DataFrame,
+    tgt_table_name: str,
+) -> None:
+    """
+    Check that the set of `id_col` values in the given source table are a subset
+    of those in the target table.
+    Raise a ValueError if not; otherwise do nothing.
+    """
+    if not (D := set(src_table[id_col].unique())) <= set(tgt_table[id_col].unique()):
+        raise ValueError(
+            f"Found {id_col} values in {src_table_name} "
+            f"that are not in {tgt_table_name}: {D}"
+        )
 
 
 def validate(pfeed):
     """
     Return the given ProtoFeed if it is valid.
-    Otherwise, raise a ValueError or a Pandera SchemaError.
+    Otherwise, raise a ValueError after encountering the first error.
     """
-    # Check for invalid columns and check the required tables
+    # Run individual table validators
     checkers = [
         "check_meta",
-        "check_service_windows",
         "check_shapes",
+        "check_service_windows",
         "check_frequencies",
         "check_stops",
     ]
     for checker in checkers:
-        globals()[checker](pfeed)
+        try:
+            globals()[checker](pfeed)
+        except pa.errors.SchemaError as e:
+            raise ValueError(e)
 
-    # TODO: checked some linked ID columns
+    # Cross-check IDs
+    crosscheck_ids("shape_id", pfeed.frequencies, "frequencies", pfeed.shapes, "shapes")
+    crosscheck_ids(
+        "service_window_id",
+        pfeed.frequencies,
+        "frequencies",
+        pfeed.service_windows,
+        "service_windows",
+    )
 
     return pfeed

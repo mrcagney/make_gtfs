@@ -6,7 +6,7 @@ from make_gtfs import *
 
 
 # Load test ProtoFeed
-sample = read_protofeed(DATA_DIR/'auckland')
+sample = read_protofeed(DATA_DIR / "auckland")
 
 
 def test_check_meta():
@@ -18,7 +18,7 @@ def test_check_meta():
         check_meta(pfeed)
 
     pfeed = sample.copy()
-    del pfeed.meta['agency_name']
+    del pfeed.meta["agency_name"]
     with pytest.raises(pa.errors.SchemaError):
         check_meta(pfeed)
 
@@ -27,30 +27,37 @@ def test_check_meta():
     with pytest.raises(pa.errors.SchemaError):
         check_meta(pfeed)
 
-    for col in ['agency_timezone', 'agency_url', 'start_date', 'end_date',
-      'speed_route_type_0']:
+    for col in [
+        "agency_timezone",
+        "agency_url",
+        "start_date",
+        "end_date",
+        "speed_route_type_0",
+    ]:
         pfeed = sample.copy()
-        pfeed.meta[col] = 'bingo'
+        pfeed.meta[col] = "bingo"
         print(col)
         with pytest.raises(pa.errors.SchemaError):
             check_meta(pfeed)
+
 
 def test_check_shapes():
     assert check_shapes(sample).shape[0]
 
     pfeed = sample.copy()
-    del pfeed.shapes['shape_id']
+    del pfeed.shapes["shape_id"]
     with pytest.raises(pa.errors.SchemaError):
         check_shapes(pfeed)
 
     pfeed = sample.copy()
-    pfeed.shapes['yo'] = 3
+    pfeed.shapes["yo"] = 3
     assert check_shapes(pfeed).shape[0]
 
     pfeed = sample.copy()
     pfeed.shapes.geometry.iat[0] = None
     with pytest.raises(pa.errors.SchemaError):
         check_shapes(pfeed)
+
 
 def test_check_service_windows():
     assert check_service_windows(sample).shape[0]
@@ -61,7 +68,7 @@ def test_check_service_windows():
         check_service_windows(pfeed)
 
     pfeed = sample.copy()
-    del pfeed.service_windows['service_window_id']
+    del pfeed.service_windows["service_window_id"]
     with pytest.raises(pa.errors.SchemaError):
         check_service_windows(pfeed)
 
@@ -72,12 +79,22 @@ def test_check_service_windows():
     with pytest.raises(pa.errors.SchemaError):
         check_service_windows(pfeed)
 
-    for col in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
-      'saturday', 'sunday', 'start_time', 'end_time']:
+    for col in [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+        "start_time",
+        "end_time",
+    ]:
         pfeed = sample.copy()
-        pfeed.service_windows[col].iat[0] = '5'
+        pfeed.service_windows[col].iat[0] = "5"
         with pytest.raises(pa.errors.SchemaError):
             check_service_windows(pfeed)
+
 
 def test_check_frequencies():
     assert check_frequencies(sample).shape[0]
@@ -88,28 +105,28 @@ def test_check_frequencies():
         check_frequencies(pfeed)
 
     pfeed = sample.copy()
-    del pfeed.frequencies['route_short_name']
+    del pfeed.frequencies["route_short_name"]
     with pytest.raises(pa.errors.SchemaError):
         check_frequencies(pfeed)
 
     pfeed = sample.copy()
-    pfeed.frequencies['route_long_name'] = ''
+    pfeed.frequencies["route_long_name"] = ""
     with pytest.raises(pa.errors.SchemaError):
         check_frequencies(pfeed)
 
-    # pfeed = sample.copy()
-    # pfeed.frequencies['service_window_id'] = 'Hubba hubba'
-    # with pytest.raises(pa.errors.SchemaError):
-    #     check_frequencies(pfeed)
-
-    for col in ['direction', 'frequency', 'speed']:
+    for col in ["direction", "frequency", "speed"]:
         pfeed = sample.copy()
-        pfeed.frequencies[col] = 'bingo'
+        pfeed.frequencies[col] = "bingo"
         with pytest.raises(pa.errors.SchemaError):
             check_frequencies(pfeed)
 
+
 def test_check_stops():
     assert check_stops(sample).shape[0]
+
+    pfeed = sample.copy()
+    pfeed.stops = None
+    assert check_stops(pfeed) is None
 
     pfeed = sample.copy()
     pfeed.stops = pd.DataFrame()
@@ -117,9 +134,24 @@ def test_check_stops():
         check_stops(pfeed)
 
     pfeed = sample.copy()
-    pfeed.stops.stop_id.iat[0] = ''
+    pfeed.stops.stop_id.iat[0] = ""
     with pytest.raises(pa.errors.SchemaError):
         check_stops(pfeed)
 
+
+def test_crosscheck_ids():
+    pfeed = sample.copy()
+    pfeed.frequencies["shape_id"] = "Hubba hubba"
+    with pytest.raises(ValueError):
+        crosscheck_ids(
+            "shape_id", pfeed.frequencies, "frequencies", pfeed.shapes, "shapes"
+        )
+
+
 def test_validate():
     assert isinstance(validate(sample), ProtoFeed)
+
+    pfeed = sample.copy()
+    pfeed.frequencies["service_window_id"] = "Hubba hubba"
+    with pytest.raises(ValueError):
+        validate(pfeed)

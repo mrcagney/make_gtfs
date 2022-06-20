@@ -14,7 +14,7 @@ from . import protofeed as pf
 from . import constants as cs
 
 
-def get_duration(timestr1, timestr2, units="s"):
+def get_duration(timestr1: str, timestr2: str, units="s") -> float:
     """
     Return the duration of the time period between the first and second
     time string in the given units.
@@ -36,21 +36,21 @@ def get_duration(timestr1, timestr2, units="s"):
     return result
 
 
-def build_stop_ids(shape_id):
+def build_stop_ids(shape_id: str) -> (str, str):
     """
     Create a pair of stop IDs based on the given shape ID.
     """
     return [cs.SEP.join(["stp", shape_id, str(i)]) for i in range(2)]
 
 
-def build_stop_names(shape_id):
+def build_stop_names(shape_id: str) -> (str, str):
     """
     Create a pair of stop names based on the given shape ID.
     """
     return ["Stop {!s} on shape {!s} ".format(i, shape_id) for i in range(2)]
 
 
-def build_agency(pfeed: pf.ProtoFeed):
+def build_agency(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``agency.txt``
     """
@@ -164,7 +164,9 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     )
 
 
-def build_stops(pfeed: pf.ProtoFeed, shapes: Optional[pd.DataFrame]=None) -> pd.DataFrame:
+def build_stops(
+    pfeed: pf.ProtoFeed, shapes: Optional[pd.DataFrame] = None
+) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
     If ``pfeed.stops`` is not ``None``, then return that.
@@ -200,12 +202,12 @@ def build_stops(pfeed: pf.ProtoFeed, shapes: Optional[pd.DataFrame]=None) -> pd.
 
 
 def build_trips(
-    pfeed: pf.ProtoFeed, 
-    routes: pd.DataFrame, 
+    pfeed: pf.ProtoFeed,
+    routes: pd.DataFrame,
     service_by_window: dict,
 ) -> pd.DataFrame:
     """
-    Given a ProtoFeed and its corresponding routes and service-by-window, 
+    Given a ProtoFeed and its corresponding routes and service-by-window,
     return a DataFrame representing ``trips.txt``.
     Trip IDs encode route, direction, and service window information
     to make it easy to compute stop times later.
@@ -289,10 +291,10 @@ def buffer_side(linestring: sg.LineString, side: str, buffer: float) -> sg.Polyg
 
 
 def get_nearby_stops(
-    geo_stops: gpd.GeoDataFrame, 
-    linestring: sg.LineString, 
-    side: str, 
-    buffer: float=cs.BUFFER,
+    geo_stops: gpd.GeoDataFrame,
+    linestring: sg.LineString,
+    side: str,
+    buffer: float = cs.BUFFER,
 ) -> gpd.GeoDataFrame:
     """
     Given a GeoDataFrame of stops, a Shapely LineString in the
@@ -311,12 +313,12 @@ def get_nearby_stops(
 
 
 def build_stop_times(
-    pfeed: pf.ProtoFeed, 
-    routes: pd.DataFrame, 
-    shapes: pd.DataFrame, 
-    stops: pd.DataFrame, 
-    trips: pd.DataFrame, 
-    buffer: float=cs.BUFFER,
+    pfeed: pf.ProtoFeed,
+    routes: pd.DataFrame,
+    shapes: pd.DataFrame,
+    stops: pd.DataFrame,
+    trips: pd.DataFrame,
+    buffer: float = cs.BUFFER,
 ) -> pd.DataFrame:
     """
     Given a ProtoFeed and its corresponding routes,
@@ -397,7 +399,7 @@ def build_stop_times(
         # Don't make stop times for trips without nearby stops
         if stops.empty:
             continue
-        length = geom.length # meters
+        length = geom.length  # meters
         speed = row["speed"] * 1000 / 3600  # meters per second
         duration = int(length / speed)  # seconds
         frequency = row["frequency"]
@@ -439,7 +441,7 @@ def build_stop_times(
     return g
 
 
-def build_feed(pfeed: pf.ProtoFeed, buffer: float=cs.BUFFER) -> gk.Feed:
+def build_feed(pfeed: pf.ProtoFeed, buffer: float = cs.BUFFER) -> gk.Feed:
     """
     Convert the given ProtoFeed to a GTFS Feed with meter distance units.
     Look at a distance of ``buffer`` meters from route shapes to find stops.
