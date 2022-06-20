@@ -1,4 +1,5 @@
 import shutil
+import pathlib as pl
 
 import click.testing
 from click.testing import CliRunner
@@ -15,7 +16,7 @@ def rm_paths(*paths):
     Delete the given file paths/directory paths, if they exists.
     """
     for p in paths:
-        p = Path(p)
+        p = pl.Path(p)
         if p.exists():
             if p.is_file():
                 p.unlink()
