@@ -141,6 +141,7 @@ Changes
 -----------------
 - Refactored to use a dataclass and updated the docstrings, adding some type hints.
 - Added the ability to specify default speeds by route type in ``meta.csv``.
+- Simplified validation with Pandera schemas.
 
 
 2.2.1, 2022-05-03

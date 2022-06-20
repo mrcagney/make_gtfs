@@ -1,412 +1,247 @@
 """
-Validators for ProtoFeeds.
-Designed along the lines of gtfs_kit.validators.py.
+ProtoFeed validators.
 """
-import numbers
+import re
+import pytz
 
 import pandas as pd
-import shapely.geometry as sg
-import gtfs_kit as gk
+import pandera as pa
+import geopandas as gpd
+
+from . import protofeed as pf
 
 
-# ProtoFeed table and field reference
-PROTOFEED_REF = pd.DataFrame(
-    columns=["table", "table_required", "column", "column_required", "dtype"],
-    data=[
-        ["meta", True, "agency_name", True, "str"],
-        ["meta", True, "agency_url", True, "str"],
-        ["meta", True, "agency_timezone", True, "str"],
-        ["meta", True, "start_date", True, "str"],
-        ["meta", True, "end_date", True, "str"],
-        ["meta", True, "speed_route_type_0", False, "float"],
-        ["meta", True, "speed_route_type_1", False, "float"],
-        ["meta", True, "speed_route_type_2", False, "float"],
-        ["meta", True, "speed_route_type_3", False, "float"],
-        ["meta", True, "speed_route_type_4", False, "float"],
-        ["meta", True, "speed_route_type_5", False, "float"],
-        ["meta", True, "speed_route_type_6", False, "float"],
-        ["meta", True, "speed_route_type_7", False, "float"],
-        ["meta", True, "speed_route_type_11", False, "float"],
-        ["meta", True, "speed_route_type_12", False, "float"],
-        ["service_windows", True, "service_window_id", True, "str"],
-        ["service_windows", True, "start_time", True, "str"],
-        ["service_windows", True, "end_time", True, "str"],
-        ["service_windows", True, "monday", True, "int"],
-        ["service_windows", True, "tuesday", True, "int"],
-        ["service_windows", True, "wednesday", True, "int"],
-        ["service_windows", True, "thursday", True, "int"],
-        ["service_windows", True, "friday", True, "int"],
-        ["service_windows", True, "saturday", True, "int"],
-        ["service_windows", True, "sunday", True, "int"],
-        ["shapes", True, "shape_id", True, "str"],
-        ["shapes", True, "geometry", True, "LineString"],
-        ["frequencies", True, "route_short_name", True, "str"],
-        ["frequencies", True, "route_long_name", True, "str"],
-        ["frequencies", True, "route_type", True, "int"],
-        ["frequencies", True, "service_window_id", True, "str"],
-        ["frequencies", True, "direction", True, "int"],
-        ["frequencies", True, "frequency", True, "int"],
-        ["frequencies", True, "shape_id", True, "str"],
-        ["stops", False, "stop_id", True, "str"],
-        ["stops", False, "stop_code", False, "str"],
-        ["stops", False, "stop_name", True, "str"],
-        ["stops", False, "stop_desc", False, "str"],
-        ["stops", False, "stop_lat", True, "float"],
-        ["stops", False, "stop_lon", True, "float"],
-        ["stops", False, "zone_id", False, "str"],
-        ["stops", False, "stop_url", False, "str"],
-        ["stops", False, "location_type", False, "int"],
-        ["stops", False, "parent_station", False, "str"],
-        ["stops", False, "stop_timezone", False, "str"],
-        ["stops", True, "wheelchair_boarding", False, "int"],
-        ["speed_zones", True, "zone_id", True, "str"],
-        ["speed_zones", True, "speed", True, "float"],
-        ["speed_zones", True, "geometry", True, "Polygon"],
-    ],
+URL_PATTERN = re.compile(
+    r"^(?:http)s?://(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?(?:/?|[/?]\S+)$",
+    re.IGNORECASE | re.UNICODE,
+)
+DATE_PATTERN = r"\d\d\d\d\d\d\d\d"
+TIME_PATTERN = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])"
+TIMEZONES = set(pytz.all_timezones)
+NONBLANK_PATTERN = r"(?!\s*$).+"
+
+# ProtoFeed table schemas
+SCHEMA_META = pa.DataFrameSchema(
+    {
+        "agency_name": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
+        "agency_url": pa.Column(str, pa.Check.str_matches(URL_PATTERN)),
+        "agency_timezone": pa.Column(str, pa.Check.isin(TIMEZONES)),
+        "start_date": pa.Column(
+            str,
+            checks=[
+                pa.Check.str_matches(DATE_PATTERN),
+                pa.Check(
+                    lambda x: pd.to_datetime(x)
+                    > pd.to_datetime("1900-01-01", yearfirst=True)
+                ),
+            ],
+        ),
+        "end_date": pa.Column(
+            str,
+            checks=[
+                pa.Check.str_matches(DATE_PATTERN),
+                pa.Check(
+                    lambda x: pd.to_datetime(x)
+                    > pd.to_datetime("1900-01-01", yearfirst=True)
+                ),
+            ],
+        ),
+        "speed_route_type_0": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_1": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_2": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_3": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_4": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_5": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_6": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_7": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_11": pa.Column(float, pa.Check.gt(0), required=False),
+        "speed_route_type_12": pa.Column(float, pa.Check.gt(0), required=False),
+    },
+    checks=pa.Check(lambda x: x.shape[0] == 1),  # Should have exactly 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
+)
+SCHEMA_SHAPES = pa.DataFrameSchema(
+    {
+        "shape_id": pa.Column(
+            str,
+            pa.Check.str_matches(NONBLANK_PATTERN),
+            unique=True,
+        ),
+        "geometry": pa.Column(
+            checks=[
+                pa.Check(lambda x: x.geom_type == "LineString"),
+                pa.Check(lambda x: x.is_valid),
+                pa.Check(lambda x: ~x.is_empty),
+            ]
+        ),
+    },
+    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
+)
+SCHEMA_SERVICE_WINDOWS = pa.DataFrameSchema(
+    {
+        "service_window_id": pa.Column(
+            str,
+            pa.Check.str_matches(NONBLANK_PATTERN),
+            unique=True,
+        ),
+        "start_time": pa.Column(str, pa.Check.str_matches(TIME_PATTERN)),
+        "end_time": pa.Column(str, pa.Check.str_matches(TIME_PATTERN)),
+        "monday": pa.Column(int, pa.Check.isin(range(2))),
+        "tuesday": pa.Column(int, pa.Check.isin(range(2))),
+        "wednesday": pa.Column(int, pa.Check.isin(range(2))),
+        "thursday": pa.Column(int, pa.Check.isin(range(2))),
+        "friday": pa.Column(int, pa.Check.isin(range(2))),
+        "saturday": pa.Column(int, pa.Check.isin(range(2))),
+        "sunday": pa.Column(int, pa.Check.isin(range(2))),
+    },
+    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
+)
+SCHEMA_FREQUENCIES = pa.DataFrameSchema(
+    {
+        "route_short_name": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
+        "route_long_name": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
+        "route_type": pa.Column(int, pa.Check.isin(list(range(8)) + [11, 12])),
+        "service_window_id": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
+        "shape_id": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
+        "direction": pa.Column(int, pa.Check.isin(range(3))),
+        "frequency": pa.Column(int, pa.Check.gt(0)),
+        "speed": pa.Column(float, pa.Check.gt(0), required=False),
+    },
+    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
+)
+SCHEMA_STOPS = pa.DataFrameSchema(
+    {
+        "stop_id": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN), unique=True),
+        "stop_code": pa.Column(str, nullable=True, required=False),
+        "stop_name": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
+        "stop_desc": pa.Column(str, nullable=True, required=False),
+        "stop_lat": pa.Column(float),
+        "stop_lon": pa.Column(float),
+        "zone_id": pa.Column(str, nullable=True, required=False),
+        "stop_url": pa.Column(
+            str, pa.Check.str_matches(URL_PATTERN), nullable=True, required=False
+        ),
+        "location_type": pa.Column(
+            int, pa.Check.isin(range(5)), nullable=True, required=False
+        ),
+        "parent_station": pa.Column(str, nullable=True, required=False),
+        "stop_timezone": pa.Column(
+            str, pa.Check.isin(TIMEZONES), nullable=True, required=False
+        ),
+        "wheelchair_boarding": pa.Column(
+            int, pa.Check.isin(range(3)), nullable=True, required=False
+        ),
+    },
+    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
 )
 
 
-def valid_speed(x):
+def check_meta(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
-    Return ``True`` if ``x`` is a positive number;
-    otherwise return ``False``.
+    Return `pfeed.meta` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
     """
-    if isinstance(x, numbers.Number) and x > 0:
-        return True
+    return SCHEMA_META.validate(pfeed.meta)
+
+
+def check_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
+    """
+    Return `pfeed.shapes` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
+    """
+    if not isinstance(pfeed.shapes, gpd.GeoDataFrame):
+        raise ValueError("Shapes must be a GeoDataFrame")
+
+    return SCHEMA_SHAPES.validate(pfeed.shapes)
+
+
+def check_service_windows(pfeed: pf.ProtoFeed) -> pd.DataFrame:
+    """
+    Return `pfeed.service_windows` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
+    """
+    return SCHEMA_SERVICE_WINDOWS.validate(pfeed.service_windows)
+
+
+def check_frequencies(pfeed: pf.ProtoFeed) -> pd.DataFrame:
+    """
+    Return `pfeed.frequencies` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
+    """
+    return SCHEMA_FREQUENCIES.validate(pfeed.frequencies)
+
+
+def check_stops(pfeed: pf.ProtoFeed) -> pd.DataFrame:
+    """
+    Return `pfeed.stops` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
+    """
+    if pfeed.stops is None:
+        return pfeed.stops
     else:
-        return False
+        return SCHEMA_STOPS.validate(pfeed.stops)
 
 
-def check_for_required_columns(problems, table, df):
+def crosscheck_ids(
+    id_col: str,
+    src_table: pd.DataFrame,
+    src_table_name: str,
+    tgt_table: pd.DataFrame,
+    tgt_table_name: str,
+) -> None:
     """
-    Check that the given ProtoFeed table has the required columns.
-
-    Parameters
-    ----------
-    problems : list
-        A four-tuple containing
-
-        1. A problem type (string) equal to ``'error'`` or ``'warning'``;
-           ``'error'`` means the ProtoFeed is violated;
-           ``'warning'`` means there is a problem but it is not a
-           ProtoFeed violation
-        2. A message (string) that describes the problem
-        3. A ProtoFeed table name, e.g. ``'meta'``, in which the problem
-           occurs
-        4. A list of rows (integers) of the table's DataFrame where the
-           problem occurs
-
-    table : string
-        Name of a ProtoFeed table
-    df : DataFrame
-        The ProtoFeed table corresponding to ``table``
-
-    Returns
-    -------
-    list
-        The ``problems`` list extended as follows.
-        Check that the DataFrame contains the colums required by
-        the ProtoFeed spec
-        and append to the problems list one error for each column
-        missing.
-
+    Check that the set of `id_col` values in the given source table are a subset
+    of those in the target table.
+    Raise a ValueError if not; otherwise do nothing.
     """
-    r = PROTOFEED_REF
-    req_columns = r.loc[(r["table"] == table) & r["column_required"], "column"].values
-    for col in req_columns:
-        if col not in df.columns:
-            problems.append(["error", "Missing column {!s}".format(col), table, []])
-
-    return problems
-
-
-def check_for_invalid_columns(problems, table, df):
-    """
-    Check for invalid columns in the given ProtoFeed DataFrame.
-
-    Parameters
-    ----------
-    problems : list
-        A four-tuple containing
-
-        1. A problem type (string) equal to ``'error'`` or
-           ``'warning'``;
-           ``'error'`` means the ProtoFeed is violated;
-           ``'warning'`` means there is a problem but it is not a
-           ProtoFeed violation
-        2. A message (string) that describes the problem
-        3. A ProtoFeed table name, e.g. ``'meta'``, in which the problem
-           occurs
-        4. A list of rows (integers) of the table's DataFrame where the
-           problem occurs
-
-    table : string
-        Name of a ProtoFeed table
-    df : DataFrame
-        The ProtoFeed table corresponding to ``table``
-
-    Returns
-    -------
-    list
-        The ``problems`` list extended as follows.
-        Check whether the DataFrame contains extra columns not in the
-        ProtoFeed and append to the problems list one warning for each extra
-        column.
-
-    """
-    r = PROTOFEED_REF
-    valid_columns = r.loc[r["table"] == table, "column"].values
-    for col in df.columns:
-        if col not in valid_columns:
-            problems.append(
-                ["warning", "Unrecognized column {!s}".format(col), table, []]
-            )
-
-    return problems
-
-
-def check_meta(pfeed, *, as_df=False, include_warnings=False):
-    """
-    Analog of :func:`check_frequencies` for ``pfeed.meta``
-    """
-    table = "meta"
-    problems = []
-
-    # Preliminary checks
-    if pfeed.meta is None:
-        problems.append(["error", "Missing table", table, []])
-    else:
-        f = pfeed.meta.copy()
-        problems = check_for_required_columns(problems, table, f)
-    if problems:
-        return gk.format_problems(problems, as_df=as_df)
-
-    if include_warnings:
-        problems = check_for_invalid_columns(problems, table, f)
-
-    if f.shape[0] > 1:
-        problems.append(
-            ["error", "Meta must have only one row", table, list(range(1, f.shape[0]))]
+    if not (D := set(src_table[id_col].unique())) <= set(tgt_table[id_col].unique()):
+        raise ValueError(
+            f"Found {id_col} values in {src_table_name} "
+            f"that are not in {tgt_table_name}: {D}"
         )
 
-    # Check agency_name
-    problems = gk.check_column(problems, table, f, "agency_name", gk.valid_str)
 
-    # Check agency_url
-    problems = gk.check_column(problems, table, f, "agency_url", gk.valid_url)
-
-    # Check agency_timezone
-    problems = gk.check_column(problems, table, f, "agency_timezone", gk.valid_timezone)
-
-    # Check start_date and end_date
-    for col in ["start_date", "end_date"]:
-        problems = gk.check_column(problems, table, f, col, gk.valid_date)
-
-    # Check default_route_speed
-    for i in list(range(8)) + [11, 12]:
-        problems = gk.check_column(
-            problems,
-            table,
-            f,
-            f"speed_route_type_{i}",
-            valid_speed,
-            column_required=False,
-        )
-
-    return gk.format_problems(problems, as_df=as_df)
-
-
-def check_service_windows(pfeed, *, as_df=False, include_warnings=False):
+def validate(pfeed):
     """
-    Analog of :func:`check_frequencies` for ``pfeed.service_windows``
+    Return the given ProtoFeed if it is valid.
+    Otherwise, raise a ValueError after encountering the first error.
     """
-    table = "service_windows"
-    problems = []
-
-    # Preliminary checks
-    if pfeed.service_windows is None:
-        problems.append(["error", "Missing table", table, []])
-    else:
-        f = pfeed.service_windows.copy()
-        problems = check_for_required_columns(problems, table, f)
-    if problems:
-        return gk.format_problems(problems, as_df=as_df)
-
-    if include_warnings:
-        problems = check_for_invalid_columns(problems, table, f)
-
-    # Check service window ID
-    problems = gk.check_column_id(problems, table, f, "service_window_id")
-
-    # Check start_time and end_time
-    for column in ["start_time", "end_time"]:
-        problems = gk.check_column(problems, table, f, column, gk.valid_time)
-
-    # Check weekday columns
-    v = lambda x: x in range(2)
-    for col in [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-    ]:
-        #
-        problems = gk.check_column(problems, table, f, col, v)
-
-    return gk.format_problems(problems, as_df=as_df)
-
-
-def check_shapes(pfeed, *, as_df=False, include_warnings=False):
-    """
-    Analog of :func:`check_frequencies` for ``pfeed.shapes``
-    """
-    table = "shapes"
-    problems = []
-
-    # Preliminary checks
-    if pfeed.shapes is None:
-        return problems
-
-    f = pfeed.shapes.copy()
-    problems = check_for_required_columns(problems, table, f)
-    if problems:
-        return gk.format_problems(problems, as_df=as_df)
-
-    if include_warnings:
-        problems = check_for_invalid_columns(problems, table, f)
-
-    # Check shape_id
-    problems = gk.check_column(problems, table, f, "shape_id", gk.valid_str)
-
-    # Check geometry
-    v = lambda x: isinstance(x, sg.LineString) and not x.is_empty
-    problems = gk.check_column(problems, table, f, "geometry", v)
-
-    return gk.format_problems(problems, as_df=as_df)
-
-
-def check_frequencies(pfeed, *, as_df=False, include_warnings=False):
-    """
-    Check that ``pfeed.frequency`` follows the ProtoFeed spec.
-    Return a list of problems of the form described in
-    :func:`gk.check_table`;
-    the list will be empty if no problems are found.
-    """
-    table = "frequencies"
-    problems = []
-
-    # Preliminary checks
-    if pfeed.frequencies is None:
-        problems.append(["error", "Missing table", table, []])
-    else:
-        f = pfeed.frequencies.copy()
-        problems = check_for_required_columns(problems, table, f)
-    if problems:
-        return gk.format_problems(problems, as_df=as_df)
-
-    if include_warnings:
-        problems = check_for_invalid_columns(problems, table, f)
-
-    # Check route_short_name and route_long_name
-    for column in ["route_short_name", "route_long_name"]:
-        problems = gk.check_column(
-            problems, table, f, column, gk.valid_str, column_required=False
-        )
-
-    cond = ~(f["route_short_name"].notnull() | f["route_long_name"].notnull())
-    problems = gk.check_table(
-        problems, table, f, cond, "route_short_name and route_long_name both empty"
-    )
-
-    # Check route_type
-    v = lambda x: x in range(8)
-    problems = gk.check_column(problems, table, f, "route_type", v)
-
-    # Check service window ID
-    problems = gk.check_column_linked_id(
-        problems, table, f, "service_window_id", pfeed.service_windows
-    )
-
-    # Check direction
-    v = lambda x: x in range(3)
-    problems = gk.check_column(problems, table, f, "direction", v)
-
-    # Check frequency
-    v = lambda x: isinstance(x, int)
-    problems = gk.check_column(problems, table, f, "frequency", v)
-
-    # Check speed
-    problems = gk.check_column(
-        problems, table, f, "speed", valid_speed, column_required=False
-    )
-
-    # Check shape ID
-    problems = gk.check_column_linked_id(problems, table, f, "shape_id", pfeed.shapes)
-
-    return gk.format_problems(problems, as_df=as_df)
-
-
-def check_stops(pfeed, *, as_df=False, include_warnings=False):
-    """
-    Analog of :func:`check_frequencies` for ``pfeed.stops``
-    """
-    # Use GTFS Kit's stop validator
-    if pfeed.stops is not None:
-        stop_times = pd.DataFrame(columns=["stop_id"])
-        feed = gk.Feed(stops=pfeed.stops, stop_times=stop_times, dist_units="km")
-        return gk.check_stops(feed, as_df=as_df, include_warnings=False)
-
-
-def validate(pfeed, *, as_df=True, include_warnings=True):
-    """
-    Check whether the given pfeed satisfies the ProtoFeed spec.
-
-    Parameters
-    ----------
-    pfeed : ProtoFeed
-    as_df : boolean
-        If ``True``, then return the resulting report as a DataFrame;
-        otherwise return the result as a list
-    include_warnings : boolean
-        If ``True``, then include problems of types ``'error'`` and
-        ``'warning'``; otherwise, only return problems of type
-        ``'error'``
-
-    Returns
-    -------
-    list or DataFrame
-        Run all the table-checking functions: :func:`check_agency`,
-        :func:`check_calendar`, etc.
-        This yields a possibly empty list of items
-        [problem type, message, table, rows].
-        If ``as_df``, then format the error list as a DataFrame with the
-        columns
-
-        - ``'type'``: 'error' or 'warning'; 'error' means the ProtoFeed
-          spec is violated; 'warning' means there is a problem but it's
-          not a ProtoFeed spec violation
-        - ``'message'``: description of the problem
-        - ``'table'``: table in which problem occurs, e.g. 'routes'
-        - ``'rows'``: rows of the table's DataFrame where problem occurs
-
-        Return early if the pfeed is missing required tables or required
-        columns.
-
-    """
-    problems = []
-
-    # Check for invalid columns and check the required tables
+    # Run individual table validators
     checkers = [
         "check_meta",
-        "check_service_windows",
         "check_shapes",
+        "check_service_windows",
         "check_frequencies",
         "check_stops",
     ]
     for checker in checkers:
-        problems.extend(globals()[checker](pfeed, include_warnings=include_warnings))
+        try:
+            globals()[checker](pfeed)
+        except pa.errors.SchemaError as e:
+            raise ValueError(e)
 
-    return gk.format_problems(problems, as_df=as_df)
+    # Cross-check IDs
+    crosscheck_ids("shape_id", pfeed.frequencies, "frequencies", pfeed.shapes, "shapes")
+    crosscheck_ids(
+        "service_window_id",
+        pfeed.frequencies,
+        "frequencies",
+        pfeed.service_windows,
+        "service_windows",
+    )
+
+    return pfeed
