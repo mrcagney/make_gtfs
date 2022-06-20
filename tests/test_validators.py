@@ -52,74 +52,74 @@ def test_check_shapes():
     with pytest.raises(pa.errors.SchemaError):
         check_shapes(pfeed)
 
-def test_check_frequencies():
-    assert not check_frequencies(sample)
-
-    pfeed = sample.copy()
-    pfeed.frequencies = None
-    assert check_frequencies(pfeed)
-
-    pfeed = sample.copy()
-    del pfeed.frequencies['route_short_name']
-    assert check_frequencies(pfeed)
-
-    pfeed = sample.copy()
-    pfeed.frequencies['b'] = 3
-    assert check_frequencies(pfeed, include_warnings=True)
-
-    pfeed = sample.copy()
-    pfeed.frequencies['route_long_name'] = ''
-    assert check_frequencies(pfeed)
-
-    pfeed = sample.copy()
-    pfeed.frequencies['service_window_id'] = 'Hubba hubba'
-    assert check_frequencies(pfeed)
-
-    for col in ['direction', 'frequency', 'speed']:
-        pfeed = sample.copy()
-        pfeed.frequencies[col] = 'bingo'
-        assert check_frequencies(pfeed)
-
-
 def test_check_service_windows():
-    assert not check_service_windows(sample)
+    assert check_service_windows(sample).shape[0]
 
     pfeed = sample.copy()
-    pfeed.service_windows = None
-    assert check_service_windows(pfeed)
+    pfeed.service_windows = pd.DataFrame()
+    with pytest.raises(pa.errors.SchemaError):
+        check_service_windows(pfeed)
 
     pfeed = sample.copy()
     del pfeed.service_windows['service_window_id']
-    assert check_service_windows(pfeed)
-
-    pfeed = sample.copy()
-    pfeed.service_windows['b'] = 3
-    assert check_service_windows(pfeed, include_warnings=True)
+    with pytest.raises(pa.errors.SchemaError):
+        check_service_windows(pfeed)
 
     pfeed = sample.copy()
     pfeed.service_windows = pd.concat(
         [pfeed.service_windows, pfeed.service_windows.iloc[:1]]
     )
-    assert check_service_windows(pfeed)
+    with pytest.raises(pa.errors.SchemaError):
+        check_service_windows(pfeed)
 
     for col in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
       'saturday', 'sunday', 'start_time', 'end_time']:
         pfeed = sample.copy()
         pfeed.service_windows[col].iat[0] = '5'
-        assert check_service_windows(pfeed)
+        with pytest.raises(pa.errors.SchemaError):
+            check_service_windows(pfeed)
 
+def test_check_frequencies():
+    assert check_frequencies(sample).shape[0]
+
+    pfeed = sample.copy()
+    pfeed.frequencies = pd.DataFrame()
+    with pytest.raises(pa.errors.SchemaError):
+        check_frequencies(pfeed)
+
+    pfeed = sample.copy()
+    del pfeed.frequencies['route_short_name']
+    with pytest.raises(pa.errors.SchemaError):
+        check_frequencies(pfeed)
+
+    pfeed = sample.copy()
+    pfeed.frequencies['route_long_name'] = ''
+    with pytest.raises(pa.errors.SchemaError):
+        check_frequencies(pfeed)
+
+    # pfeed = sample.copy()
+    # pfeed.frequencies['service_window_id'] = 'Hubba hubba'
+    # with pytest.raises(pa.errors.SchemaError):
+    #     check_frequencies(pfeed)
+
+    for col in ['direction', 'frequency', 'speed']:
+        pfeed = sample.copy()
+        pfeed.frequencies[col] = 'bingo'
+        with pytest.raises(pa.errors.SchemaError):
+            check_frequencies(pfeed)
 
 def test_check_stops():
-    assert not check_stops(sample)
+    assert check_stops(sample).shape[0]
 
     pfeed = sample.copy()
-    pfeed.stops = None
-    assert not check_stops(pfeed)
+    pfeed.stops = pd.DataFrame()
+    with pytest.raises(pa.errors.SchemaError):
+        check_stops(pfeed)
 
-    # Don't need to test much else, because GTFSTK does the work here
     pfeed = sample.copy()
     pfeed.stops.stop_id.iat[0] = ''
-    assert check_stops(pfeed)
+    with pytest.raises(pa.errors.SchemaError):
+        check_stops(pfeed)
 
 def test_validate():
-    assert not validate(sample, as_df=False, include_warnings=False)
+    assert isinstance(validate(sample), ProtoFeed)
