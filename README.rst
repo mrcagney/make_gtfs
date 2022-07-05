@@ -117,7 +117,7 @@ See ``data/auckland`` for example files and play with the Jupyter notebook at ``
 
 Documentation
 ===============
-On Github pages `here <https://mrcagney.github.io/make_gtfs_docs>`_.
+On Gitlab pages `here <https://mrcagney.gitlab.io/make_gtfs_docs>`_.
 
 
 Contributors
