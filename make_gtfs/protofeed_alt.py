@@ -5,26 +5,10 @@ from dataclasses import dataclass
 
 import geopandas as gpd
 import pandas as pd
-import numpy as np
 import shapely.geometry as sg
 
-from . import validators as vd
 from . import constants as cs
-
-
-#: Default average speeds by route type in kilometers per hour
-SPEED_BY_RTYPE = {
-    0: 11,
-    1: 30,
-    2: 45,
-    3: 22,
-    4: 22,
-    5: 13,
-    6: 20,
-    7: 18,
-    11: 22,
-    12: 65,
-}
+from . import validators as vd
 
 
 @dataclass
@@ -48,7 +32,8 @@ class ProtoFeed:
         default_speed: float,
     ) -> gpd.GeoDataFrame:
         """
-        Clip the speed zones to the service area, then fill areas
+        Buffer the bounding box of the given shapes by about 1 km, define that as the
+        service area, clip the speed zones to the service area, then fill areas
         of missing speed with the given default speed.
         Return the resulting service area of (Multi)Polygons, now partitioned into speed
         zones.
@@ -83,15 +68,20 @@ class ProtoFeed:
             route_type=lambda x: x.route_type.fillna(3).astype(int)
         )
 
-        # Fill missing route speeds with default speeds specified in ``meta`` and
-        # SPEED_BY_RTYPE
-        f = self.frequencies.copy()
-        if "speed" not in f.columns:
-            f["speed"] = np.nan
-
         d = self.speed_by_rtype()
-        f["speed"] = f.speed.fillna(f.route_type.map(d))
-        self.frequencies = f
+
+        # Tidy speed zones
+        # Build service area as the bounding box of the shapes buffered by about 1 km
+        service_area = gpd.GeoDataFrame(
+            geometry=[sg.box(*self.shapes.total_bounds).buffer(0.01)], crs=cs.WGS84
+        )
+
+        def my_apply(group):
+            route_type = group.route_type.iat[0]
+            default_speed = d[route_type]
+            return tidy_speed_zone_group(group, service_area, default_speed)
+
+        self.speed_zones = self.speed_zones.groupby("route_type").apply(my_apply)
 
         # Build ``shapes_extra``, a dictionary of the form
         # <shape ID> -> <trip directions using the shape (0, 1, or 2)>
@@ -108,20 +98,7 @@ class ProtoFeed:
             self.frequencies.groupby("shape_id").apply(my_agg).reset_index().values
         )
 
-        # Build service area as the bounding box of the shapes buffered by about 1 km
-        service_area = gpd.GeoDataFrame(
-            geometry=[sg.box(*self.shapes.total_bounds).buffer(0.01)], crs=cs.WGS84
-        )
-
-        # Tidy speed zones
-        def my_apply(group):
-            route_type = group.route_type.iat[0]
-            default_speed = d[route_type]
-            return self.tidy_speed_zone_group(group, service_area, default_speed)
-
-        self.speed_zones = self.speed_zones.groupby("route_type").apply(my_apply)
-
-    def copy(self) -> ProtoFeed:
+    def copy(self):
         """
         Return a copy of this ProtoFeed, that is, a feed with all the
         same attributes.
@@ -134,14 +111,6 @@ class ProtoFeed:
             d[k] = v
 
         return ProtoFeed(**d)
-
-    def speed_by_rtype(self) -> dict[int, float]:
-        """
-        Return  the dictionary :const:`SPEED_BY_RTYPE` updated with the speeds listed
-        in ``self.meta``.
-        """
-        m = self.meta.to_dict("records")[0]
-        return {k: m.get(f"speed_route_type_{k}", v) for k, v in SPEED_BY_RTYPE.items()}
 
 
 def read_protofeed(path: str | pl.Path) -> ProtoFeed:
@@ -168,13 +137,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``start_date``, ``end_date`` (required): Strings. The start
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
-      - ``speed_route_type_0`` (optional): float; default average speed in kilometers
-        per hour for routes of route type 0; used to fill missing route speeds in
-        ``frequencies.csv``
-      - ``speed_route_type_<i>`` for the remaining route types 1--7, 11--12 (optional)
-
-      Missing speed columns will be created with values set to the speeds in the
-      dictionary :const:`SPEED_BY_RTYPE`.
+      - ``default_route_speed``: (required) Float. Default average speed of routes
+        in kilometers per hour; used to fill missing speeds in ``speed_zones``.
 
     - ``service_windows.csv``: (required) A CSV file containing service window
       information.
@@ -197,7 +161,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       The file consists of one feature collection of LineString
       features (in WGS84 coordinates), where each feature has the property
 
-      - ``shape_id`` (required): a unique identifier of the shape
+      - ``shape_id`` (required): a unique identifier of the shape, which appears in
+        ``routes.csv``.
 
     - ``frequencies.csv``: (required) A CSV file containing route frequency
       information. The CSV file contains the columns
@@ -222,12 +187,19 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``shape_id``: (required) String. A shape ID that is listed in
         ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction, service window) tuple.
-      - ``speed`` (optional): float; the average speed of the route in kilometers
-        per hour
 
     - ``stops.csv``: (optional) A CSV file containing all the required
       and optional fields of ``stops.txt`` in
       `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+
+    - ``speed_zones.geojson``: (optional) A GeoJSON file of representing speed zones
+      for routes.
+      The file consists of one feature collection of Polygon features
+      (in WGS84 coordinates), each with the properties
+
+      - ``zone_id`` (required): string; a unique identifier of the zone
+      -  ``speed`` (required): positive float; the average speed in kilometers per hour
+        of routes that travel within that polygon.
 
     """
     path = pl.Path(path)
@@ -261,12 +233,18 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
                 "wheelchair_boarding": int,
             },
         )
+    d["speed_zones"] = None
+    if (path / "speed_zones.geojson").exists():
+        g = gpd.read_file(path / "speed_zones.geojson")
+        if "zone_id" in g.columns:
+            g["zone_id"] = g.zone_id.astype(str)
+        d["speed_zones"] = g
 
     pfeed = ProtoFeed(**d)
 
     # Validate
-    vd.validate(pfeed)
-    # if "error" in v.type.values:
-    #     raise ValueError("Invalid ProtoFeed files:\n\n" + v.to_string(justify="left"))
+    v = vd.validate(pfeed)
+    if "error" in v.type.values:
+        raise ValueError("Invalid ProtoFeed files:\n\n" + v.to_string(justify="left"))
 
     return pfeed
