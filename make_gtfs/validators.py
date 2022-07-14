@@ -46,16 +46,6 @@ SCHEMA_META = pa.DataFrameSchema(
                 ),
             ],
         ),
-        "speed_route_type_0": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_1": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_2": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_3": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_4": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_5": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_6": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_7": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_11": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_12": pa.Column(float, pa.Check.gt(0), required=False),
     },
     checks=pa.Check(lambda x: x.shape[0] == 1),  # Should have exactly 1 row
     index=pa.Index(int),
@@ -148,6 +138,28 @@ SCHEMA_STOPS = pa.DataFrameSchema(
     strict="filter",  # Drop columns not specified above
     coerce=True,
 )
+SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
+    {
+        "zone_id": pa.Column(
+            str,
+            pa.Check.str_matches(NONBLANK_PATTERN),
+            unique=True,
+        ),
+        "route_type": pa.Column(int, pa.Check.isin(list(range(8)) + [11, 12])),
+        "speed": pa.Column(float, pa.Check.gt(0)),
+        "geometry": pa.Column(
+            checks=[
+                pa.Check(lambda x: x.geom_type == "Polygon"),
+                pa.Check(lambda x: x.is_valid),
+                pa.Check(lambda x: ~x.is_empty),
+            ]
+        ),
+    },
+    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
+)
 
 
 def check_meta(pfeed: pf.ProtoFeed) -> pd.DataFrame:
@@ -194,6 +206,17 @@ def check_stops(pfeed: pf.ProtoFeed) -> pd.DataFrame:
         return pfeed.stops
     else:
         return SCHEMA_STOPS.validate(pfeed.stops)
+
+
+def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
+    """
+    Return `pfeed.shapes` if it is valid.
+    Otherwise, raise a Pandera SchemaError.
+    """
+    if not isinstance(pfeed.speed_zones, gpd.GeoDataFrame):
+        raise ValueError("Speed zones must be a GeoDataFrame")
+
+    return SCHEMA_SPEED_ZONES.validate(pfeed.speed_zones)
 
 
 def crosscheck_ids(

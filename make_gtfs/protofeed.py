@@ -42,20 +42,22 @@ class ProtoFeed:
     speed_zones: Optional[gpd.GeoDataFrame] = None
 
     @staticmethod
-    def tidy_speed_zone_group(
+    def tidy_speed_zones(
         speed_zones: gpd.GeoDataFrame,
         service_area: gpd.GeoDataFrame,
-        default_speed: float,
+        default_zone_id: str = "default",
+        default_speed: float = np.nan,
     ) -> gpd.GeoDataFrame:
         """
-        Clip the speed zones to the service area, then fill areas
-        of missing speed with the given default speed.
+        Clip the speed zones to the service area.
+        The zone ID of the service area outside of the speed zones will be set to
+        ``default_zone_id`` and the speed there will be set to ``default_speed``.
         Return the resulting service area of (Multi)Polygons, now partitioned into speed
         zones.
         """
         # Partition the service area into speed zones, filling with ``default_speed``
         if speed_zones is None:
-            result = service_area.assign(zone_id="default", speed=default_speed)
+            result = service_area.assign(zone_id=default_zone_id, speed=default_speed)
         elif service_area.geom_equals(speed_zones.unary_union).all():
             # Speed zones already partition the study area, so good
             result = speed_zones
@@ -67,9 +69,8 @@ class ProtoFeed:
                 .clip(service_area)
                 # Union chunks
                 .overlay(service_area, how="union")
-                # Fill missing speeds with default
                 .assign(
-                    zone_id=lambda x: x.zone_id.fillna("default"),
+                    zone_id=lambda x: x.zone_id.fillna(default_zone_id),
                     speed=lambda x: x.speed.fillna(default_speed),
                 )
                 .filter(["zone_id", "speed", "geometry"])
@@ -78,19 +79,12 @@ class ProtoFeed:
         return result
 
     def __post_init__(self):
-        # Fill missing routes types with 3 (bus)
-        self.frequencies = self.frequencies.assign(
-            route_type=lambda x: x.route_type.fillna(3).astype(int)
-        )
-
-        # Fill missing route speeds with default speeds specified in ``meta`` and
-        # SPEED_BY_RTYPE
+        # Fill missing route speeds with speeds in SPEED_BY_RTYPE
         f = self.frequencies.copy()
         if "speed" not in f.columns:
             f["speed"] = np.nan
 
-        d = self.speed_by_rtype()
-        f["speed"] = f.speed.fillna(f.route_type.map(d))
+        f["speed"] = f.speed.fillna(f.route_type.map(SPEED_BY_RTYPE))
         self.frequencies = f
 
         # Build ``shapes_extra``, a dictionary of the form
@@ -114,12 +108,9 @@ class ProtoFeed:
         )
 
         # Tidy speed zones
-        def my_apply(group):
-            route_type = group.route_type.iat[0]
-            default_speed = d[route_type]
-            return self.tidy_speed_zone_group(group, service_area, default_speed)
-
-        self.speed_zones = self.speed_zones.groupby("route_type").apply(my_apply)
+        self.speed_zones = self.speed_zones.groupby("route_type").apply(
+            self.tidy_speed_zones, service_area
+        )
 
     def copy(self) -> ProtoFeed:
         """
@@ -168,13 +159,6 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``start_date``, ``end_date`` (required): Strings. The start
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
-      - ``speed_route_type_0`` (optional): float; default average speed in kilometers
-        per hour for routes of route type 0; used to fill missing route speeds in
-        ``frequencies.csv``
-      - ``speed_route_type_<i>`` for the remaining route types 1--7, 11--12 (optional)
-
-      Missing speed columns will be created with values set to the speeds in the
-      dictionary :const:`SPEED_BY_RTYPE`.
 
     - ``service_windows.csv``: (required) A CSV file containing service window
       information.
@@ -193,7 +177,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         or 1. Indicates whether the service is active on the given day
         (1) or not (0)
 
-    - ``shapes.geojson``: (required) A GeoJSON file representing route shapes.
+    - ``shapes.geojson``: (required) A GeoJSON file representing shapes for all
+      (route, direction 0 or 1, service window) combinations.
       The file consists of one feature collection of LineString
       features (in WGS84 coordinates), where each feature has the property
 
@@ -206,7 +191,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         for the route, e.g. '51X'
       - ``route_long_name``: (required) String. Full name of the route
         that is more descriptive than ``route_short_name``
-      - ``route_type``: (required) Integer. The
+      - ``route_type``: (required) integer. The
         `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
       - ``service_window_id`` (required): String. A service window ID
         for the route taken from the file ``service_windows.csv``
@@ -221,13 +206,27 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         during the service window in vehicles per hour.
       - ``shape_id``: (required) String. A shape ID that is listed in
         ``shapes.geojson`` and corresponds to the linestring of the
-        (route, direction, service window) tuple.
+        (route, direction 0 or 1, service window) tuple.
       - ``speed`` (optional): float; the average speed of the route in kilometers
         per hour
+
+      Missing speed values will be filled with values from the dictionary
+      :const:`SPEED_BY_RTYPE`.
 
     - ``stops.csv``: (optional) A CSV file containing all the required
       and optional fields of ``stops.txt`` in
       `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+
+    - ``speed_zones.geojson``: (optional) A GeoJSON file of Polygons representing
+      speed zones for routes.
+      The file consists of one feature collection of Polygon features
+      (in WGS84 coordinates), each with the properties
+
+      - ``zone_id``: (required) string; a unique identifier of the zone
+      - ``route_type``: (required) integer; a GTFS route type to which the zone applies
+      - ``speed``: (required) positive float; the average speed in kilometers per hour
+        of routes of that route type that travel within the zone; overrides route
+        speeds in ``frequencies.csv`` within the zone.
 
     """
     path = pl.Path(path)
@@ -261,6 +260,12 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
                 "wheelchair_boarding": int,
             },
         )
+    d["speed_zones"] = None
+    if (path / "speed_zones.geojson").exists():
+        g = gpd.read_file(path / "speed_zones.geojson")
+        if "zone_id" in g.columns:
+            g["zone_id"] = g.zone_id.astype(str)
+        d["speed_zones"] = g
 
     pfeed = ProtoFeed(**d)
 
