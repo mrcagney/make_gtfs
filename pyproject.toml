@@ -18,6 +18,7 @@ black = ">=22"
 nbstripout = ">=0.5.0"
 Sphinx = ">=5.0.2"
 publish-sphinx-docs = ">=1.0.3"
+geo-kit = {git = "git@gitlab.com:mrcagney/geo_kit"}
 
 [build-system]
 requires = ["poetry-core>=1"]

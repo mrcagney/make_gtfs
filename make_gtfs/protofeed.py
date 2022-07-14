@@ -108,8 +108,15 @@ class ProtoFeed:
         )
 
         # Tidy speed zones
-        self.speed_zones = self.speed_zones.groupby("route_type").apply(
-            self.tidy_speed_zones, service_area
+        def my_apply(group):
+            return self.tidy_speed_zones(
+                group,
+                service_area,
+                default_zone_id=f"default-{group.name}",
+            )
+
+        self.speed_zones = (
+            self.speed_zones.groupby("route_type").apply(my_apply).reset_index()
         )
 
     def copy(self) -> ProtoFeed:
@@ -222,7 +229,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       The file consists of one feature collection of Polygon features
       (in WGS84 coordinates), each with the properties
 
-      - ``zone_id``: (required) string; a unique identifier of the zone
+      - ``zone_id``: (required) string; a unique identifier of the zone polygon; can
+        be re-used if the polygon is re-used
       - ``route_type``: (required) integer; a GTFS route type to which the zone applies
       - ``speed``: (required) positive float; the average speed in kilometers per hour
         of routes of that route type that travel within the zone; overrides route

@@ -3,6 +3,7 @@ ProtoFeed validators.
 """
 import re
 import pytz
+import functools as ft
 
 import pandas as pd
 import pandera as pa
@@ -143,7 +144,7 @@ SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
         "zone_id": pa.Column(
             str,
             pa.Check.str_matches(NONBLANK_PATTERN),
-            unique=True,
+            unique=False,
         ),
         "route_type": pa.Column(int, pa.Check.isin(list(range(8)) + [11, 12])),
         "speed": pa.Column(float, pa.Check.gt(0)),
@@ -215,6 +216,24 @@ def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     if not isinstance(pfeed.speed_zones, gpd.GeoDataFrame):
         raise ValueError("Speed zones must be a GeoDataFrame")
+
+    # Zone ID must be unique within route type
+    for route_type, group in pfeed.speed_zones.groupby("route_type"):
+        if group.zone_id.nunique() != group.shape[0]:
+            raise ValueError(
+                f"Zone IDs must be unique within each route type; "
+                f"failure with route type {route_type}"
+            )
+
+    # Zones must be pairwise disjoint within route type
+    for route_type, group in pfeed.speed_zones.groupby("route_type"):
+        for zone_id, g in group.groupby("zone_id"):
+            other = group.loc[lambda x: x.zone_id != zone_id]
+            if other.overlaps(g).any():
+                raise ValueError(
+                    f"Zones must be pairwise disjoint within each route type; "
+                    f"failure with route type {route_type}"
+                )
 
     return SCHEMA_SPEED_ZONES.validate(pfeed.speed_zones)
 
