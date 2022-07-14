@@ -176,10 +176,12 @@ def check_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     Return `pfeed.shapes` if it is valid.
     Otherwise, raise a Pandera SchemaError.
     """
+    result = SCHEMA_SHAPES.validate(pfeed.shapes)
+
     if not isinstance(pfeed.shapes, gpd.GeoDataFrame):
         raise ValueError("Shapes must be a GeoDataFrame")
 
-    return SCHEMA_SHAPES.validate(pfeed.shapes)
+    return result
 
 
 def check_service_windows(pfeed: pf.ProtoFeed) -> pd.DataFrame:
@@ -212,13 +214,17 @@ def check_stops(pfeed: pf.ProtoFeed) -> pd.DataFrame:
 def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Return `pfeed.shapes` if it is valid.
-    Otherwise, raise a Pandera SchemaError.
+    Otherwise, raise a ValueError or a Pandera SchemaError.
     """
-    if not isinstance(pfeed.speed_zones, gpd.GeoDataFrame):
+    f = pfeed.speed_zones
+
+    result = SCHEMA_SPEED_ZONES.validate(f)
+
+    if not isinstance(f, gpd.GeoDataFrame):
         raise ValueError("Speed zones must be a GeoDataFrame")
 
     # Zone ID must be unique within route type
-    for route_type, group in pfeed.speed_zones.groupby("route_type"):
+    for route_type, group in f.groupby("route_type"):
         if group.zone_id.nunique() != group.shape[0]:
             raise ValueError(
                 f"Zone IDs must be unique within each route type; "
@@ -226,16 +232,21 @@ def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
             )
 
     # Zones must be pairwise disjoint within route type
-    for route_type, group in pfeed.speed_zones.groupby("route_type"):
+    for route_type, group in f.groupby("route_type"):
+        if group.geometry.nunique() != group.shape[0]:
+            raise ValueError(
+                f"Zones must not overlap each other within each route type; "
+                f"failure with route type {route_type}"
+            )
         for zone_id, g in group.groupby("zone_id"):
             other = group.loc[lambda x: x.zone_id != zone_id]
-            if other.overlaps(g).any():
+            if other.overlaps(g.geometry.iat[0]).any():
                 raise ValueError(
-                    f"Zones must be pairwise disjoint within each route type; "
+                    f"Zones must not overlap each other within each route type; "
                     f"failure with route type {route_type}"
                 )
 
-    return SCHEMA_SPEED_ZONES.validate(pfeed.speed_zones)
+    return result
 
 
 def crosscheck_ids(

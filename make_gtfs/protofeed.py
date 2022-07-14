@@ -46,7 +46,7 @@ class ProtoFeed:
         speed_zones: gpd.GeoDataFrame,
         service_area: gpd.GeoDataFrame,
         default_zone_id: str = "default",
-        default_speed: float = np.nan,
+        default_speed: float = np.inf,
     ) -> gpd.GeoDataFrame:
         """
         Clip the speed zones to the service area.
@@ -116,7 +116,10 @@ class ProtoFeed:
             )
 
         self.speed_zones = (
-            self.speed_zones.groupby("route_type").apply(my_apply).reset_index()
+            self.speed_zones.groupby("route_type")
+            .apply(my_apply)
+            .reset_index()
+            .filter(["route_type", "zone_id", "speed", "geometry"])
         )
 
     def copy(self) -> ProtoFeed:

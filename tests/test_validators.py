@@ -32,7 +32,6 @@ def test_check_meta():
         "agency_url",
         "start_date",
         "end_date",
-        "speed_route_type_0",
     ]:
         pfeed = sample.copy()
         pfeed.meta[col] = "bingo"
@@ -140,16 +139,26 @@ def test_check_stops():
 
 
 def test_check_speed_zones():
-    assert not check_speed_zones(sample)
+    assert check_speed_zones(sample).shape[0]
+
+    # Delete zone ID
+    pfeed = sample.copy()
+    del pfeed.speed_zones["zone_id"]
+    with pytest.raises(pa.errors.SchemaError):
+        check_speed_zones(pfeed)
+
+    # Make speed zones IDs collide within a route type
+    pfeed = sample.copy()
+    pfeed.speed_zones["zone_id"] = "a"
+    with pytest.raises(ValueError):
+        check_speed_zones(pfeed)
 
     # Make speed zones overlap within a route type
     pfeed = sample.copy()
-    pfeed.speed_zones["route_type"] == 3
-    assert check_speed_zones(pfeed)
-
-    pfeed = sample.copy()
-    del pfeed.speed_zones["zone_id"]
-    assert check_speed_zones(pfeed)
+    pfeed.speed_zones["route_type"] = 3
+    pfeed.speed_zones["zone_id"] = [str(i) for i in range(pfeed.speed_zones.shape[0])]
+    with pytest.raises(ValueError):
+        check_speed_zones(pfeed)
 
 
 def test_crosscheck_ids():
