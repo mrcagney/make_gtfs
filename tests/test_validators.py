@@ -139,6 +139,19 @@ def test_check_stops():
         check_stops(pfeed)
 
 
+def test_check_speed_zones():
+    assert not check_speed_zones(sample)
+
+    # Make speed zones overlap within a route type
+    pfeed = sample.copy()
+    pfeed.speed_zones["route_type"] == 3
+    assert check_speed_zones(pfeed)
+
+    pfeed = sample.copy()
+    del pfeed.speed_zones["zone_id"]
+    assert check_speed_zones(pfeed)
+
+
 def test_crosscheck_ids():
     pfeed = sample.copy()
     pfeed.frequencies["shape_id"] = "Hubba hubba"
