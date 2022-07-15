@@ -6,6 +6,7 @@ from make_gtfs import *
 
 pfeed = read_protofeed(DATA_DIR / "auckland")
 
+
 def test_copy():
     pfeed1 = pfeed
     pfeed2 = pfeed1.copy()
@@ -18,6 +19,13 @@ def test_copy():
             assert val.equals(expect_val)
         else:
             assert val == expect_val
+
+
+def test_route_types():
+    rt = pfeed.route_types()
+    assert isinstance(rt, list)
+    assert set(rt) == {2, 3}
+
 
 def test_read_protofeed():
     pfeed = read_protofeed(DATA_DIR / "auckland")

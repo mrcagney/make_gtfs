@@ -141,7 +141,7 @@ SCHEMA_STOPS = pa.DataFrameSchema(
 )
 SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
     {
-        "zone_id": pa.Column(
+        "speed_zone_id": pa.Column(
             str,
             pa.Check.str_matches(NONBLANK_PATTERN),
             unique=False,
@@ -225,7 +225,7 @@ def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
 
     # Zone ID must be unique within route type
     for route_type, group in f.groupby("route_type"):
-        if group.zone_id.nunique() != group.shape[0]:
+        if group.speed_zone_id.nunique() != group.shape[0]:
             raise ValueError(
                 f"Zone IDs must be unique within each route type; "
                 f"failure with route type {route_type}"
@@ -238,8 +238,8 @@ def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
                 f"Zones must not overlap each other within each route type; "
                 f"failure with route type {route_type}"
             )
-        for zone_id, g in group.groupby("zone_id"):
-            other = group.loc[lambda x: x.zone_id != zone_id]
+        for speed_zone_id, g in group.groupby("speed_zone_id"):
+            other = group.loc[lambda x: x.speed_zone_id != speed_zone_id]
             if other.overlaps(g.geometry.iat[0]).any():
                 raise ValueError(
                     f"Zones must not overlap each other within each route type; "

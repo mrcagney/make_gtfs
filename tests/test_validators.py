@@ -143,20 +143,22 @@ def test_check_speed_zones():
 
     # Delete zone ID
     pfeed = sample.copy()
-    del pfeed.speed_zones["zone_id"]
+    del pfeed.speed_zones["speed_zone_id"]
     with pytest.raises(pa.errors.SchemaError):
         check_speed_zones(pfeed)
 
     # Make speed zones IDs collide within a route type
     pfeed = sample.copy()
-    pfeed.speed_zones["zone_id"] = "a"
+    pfeed.speed_zones["speed_zone_id"] = "a"
     with pytest.raises(ValueError):
         check_speed_zones(pfeed)
 
     # Make speed zones overlap within a route type
     pfeed = sample.copy()
     pfeed.speed_zones["route_type"] = 3
-    pfeed.speed_zones["zone_id"] = [str(i) for i in range(pfeed.speed_zones.shape[0])]
+    pfeed.speed_zones["speed_zone_id"] = [
+        str(i) for i in range(pfeed.speed_zones.shape[0])
+    ]
     with pytest.raises(ValueError):
         check_speed_zones(pfeed)
 

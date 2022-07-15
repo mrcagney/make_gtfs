@@ -7,6 +7,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import shapely.geometry as sg
+import gtfs_kit as gk
 
 from . import validators as vd
 from . import constants as cs
@@ -45,19 +46,21 @@ class ProtoFeed:
     def tidy_speed_zones(
         speed_zones: gpd.GeoDataFrame,
         service_area: gpd.GeoDataFrame,
-        default_zone_id: str = "default",
+        default_speed_zone_id: str = "default",
         default_speed: float = np.inf,
     ) -> gpd.GeoDataFrame:
         """
         Clip the speed zones to the service area.
         The zone ID of the service area outside of the speed zones will be set to
-        ``default_zone_id`` and the speed there will be set to ``default_speed``.
+        ``default_speed_zone_id`` and the speed there will be set to ``default_speed``.
         Return the resulting service area of (Multi)Polygons, now partitioned into speed
         zones.
         """
         # Partition the service area into speed zones, filling with ``default_speed``
         if speed_zones is None:
-            result = service_area.assign(zone_id=default_zone_id, speed=default_speed)
+            result = service_area.assign(
+                speed_zone_id=default_speed_zone_id, speed=default_speed
+            )
         elif service_area.geom_equals(speed_zones.unary_union).all():
             # Speed zones already partition the study area, so good
             result = speed_zones
@@ -70,11 +73,13 @@ class ProtoFeed:
                 # Union chunks
                 .overlay(service_area, how="union")
                 .assign(
-                    zone_id=lambda x: x.zone_id.fillna(default_zone_id),
+                    speed_zone_id=lambda x: x.speed_zone_id.fillna(
+                        default_speed_zone_id
+                    ),
                     speed=lambda x: x.speed.fillna(default_speed),
                 )
-                .filter(["zone_id", "speed", "geometry"])
-                .sort_values("zone_id", ignore_index=True)
+                .filter(["speed_zone_id", "speed", "geometry"])
+                .sort_values("speed_zone_id", ignore_index=True)
             )
         return result
 
@@ -112,15 +117,18 @@ class ProtoFeed:
             return self.tidy_speed_zones(
                 group,
                 service_area,
-                default_zone_id=f"default-{group.name}",
+                default_speed_zone_id=f"default-{group.name}",
             )
 
         self.speed_zones = (
             self.speed_zones.groupby("route_type")
             .apply(my_apply)
             .reset_index()
-            .filter(["route_type", "zone_id", "speed", "geometry"])
+            .filter(["route_type", "speed_zone_id", "speed", "geometry"])
         )
+
+        lon, lat = self.shapes.geometry.iat[0].coords[0]
+        self.utm_crs = gk.get_utm_crs(lat, lon)
 
     def copy(self) -> ProtoFeed:
         """
@@ -136,13 +144,8 @@ class ProtoFeed:
 
         return ProtoFeed(**d)
 
-    def speed_by_rtype(self) -> dict[int, float]:
-        """
-        Return  the dictionary :const:`SPEED_BY_RTYPE` updated with the speeds listed
-        in ``self.meta``.
-        """
-        m = self.meta.to_dict("records")[0]
-        return {k: m.get(f"speed_route_type_{k}", v) for k, v in SPEED_BY_RTYPE.items()}
+    def route_types(self) -> list[int]:
+        return self.frequencies.route_type.unique().tolist()
 
 
 def read_protofeed(path: str | pl.Path) -> ProtoFeed:
@@ -232,7 +235,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       The file consists of one feature collection of Polygon features
       (in WGS84 coordinates), each with the properties
 
-      - ``zone_id``: (required) string; a unique identifier of the zone polygon; can
+      - ``speed_zone_id``: (required) string; a unique identifier of the zone polygon; can
         be re-used if the polygon is re-used
       - ``route_type``: (required) integer; a GTFS route type to which the zone applies
       - ``speed``: (required) positive float; the average speed in kilometers per hour
@@ -274,8 +277,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
     d["speed_zones"] = None
     if (path / "speed_zones.geojson").exists():
         g = gpd.read_file(path / "speed_zones.geojson")
-        if "zone_id" in g.columns:
-            g["zone_id"] = g.zone_id.astype(str)
+        if "speed_zone_id" in g.columns:
+            g["speed_zone_id"] = g.speed_zone_id.astype(str)
         d["speed_zones"] = g
 
     pfeed = ProtoFeed(**d)

@@ -5,7 +5,7 @@
       "type": "Feature",
       "properties": {
         "speed": 5,
-        "zone_id": "a",
+        "speed_zone_id": "a",
         "route_type": 3
       },
       "geometry": {
@@ -36,7 +36,7 @@
       "type": "Feature",
       "properties": {
         "speed": 100,
-        "zone_id": "b",
+        "speed_zone_id": "b",
         "route_type": 3
       },
       "geometry": {
@@ -67,7 +67,7 @@
       "type": "Feature",
       "properties": {
         "speed": 100,
-        "zone_id": "b",
+        "speed_zone_id": "b",
         "route_type": 2
       },
       "geometry": {
@@ -98,7 +98,7 @@
       "type": "Feature",
       "properties": {
         "speed": 50,
-        "zone_id": "c",
+        "speed_zone_id": "c",
         "route_type": 2
       },
       "geometry": {
