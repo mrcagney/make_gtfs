@@ -2,6 +2,7 @@ import pandas as pd
 import gtfs_kit as gk
 import shapely.geometry as sg
 import geopandas as gpd
+import pytest
 
 from .context import make_gtfs, DATA_DIR
 from make_gtfs import *
@@ -124,14 +125,14 @@ def test_buffer_side():
             assert b.area >= 2 * buff
 
 
-def test_get_nearby_stops():
+def test_get_stops_nearby():
     geom = sg.LineString([[0, 0], [2, 0]])
     stops = gpd.GeoDataFrame(
         [["a", sg.Point([1, 1])], ["b", sg.Point([1, -1])]],
         columns=["stop_code", "geometry"],
     )
     for side in ["left", "right", "both"]:
-        n = get_nearby_stops(stops, geom, side, 1)
+        n = get_stops_nearby(stops, geom, side, 1)
         if side == "left":
             assert n.shape[0] == 1
             assert n.stop_code.iat[0] == "a"
@@ -143,6 +144,137 @@ def test_get_nearby_stops():
             assert set(n.stop_code.values) == {"a", "b"}
 
 
+def test_compute_shape_point_speeds():
+    shapes = build_shapes(pfeed)
+    route_type = pfeed.route_types()[0]
+    g = compute_shape_point_speeds(shapes, pfeed.speed_zones, route_type)
+    assert isinstance(g, gpd.GeoDataFrame)
+    assert set(g.columns) == {
+        "shape_id",
+        "shape_pt_sequence",
+        "shape_dist_traveled",
+        "geometry",
+        "route_type",
+        "speed_zone_id",
+        "speed",
+    }
+    assert g.crs == WGS84
+
+    # Should have correct length
+    assert g.shape[0] >= shapes.shape[0]
+
+    # Speed zones present should make sense
+    sz = pfeed.speed_zones.loc[lambda x: x.route_type == route_type]
+    assert set(g.speed_zone_id) <= set(sz.speed_zone_id)
+
+
+@pytest.mark.slow
+def test_build_stop_times_for_trip():
+    stops = build_stops(pfeed)
+    stops_g = gk.geometrize_stops_0(stops, use_utm=True)
+    shapes = build_shapes(pfeed)
+    shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
+    trip_id = "bingo"
+    shape_id = shapes_gi.index[0]
+
+    # Generic case
+    linestring = shapes_gi.loc[shape_id].geometry
+    stops_g_nearby = get_stops_nearby(stops_g, linestring, "left")
+    route_type = 3
+    sz = pfeed.speed_zones.to_crs(pfeed.utm_crs)
+    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    default_speed = 2
+    start_time = 0
+    f = build_stop_times_for_trip(
+        trip_id,
+        stops_g_nearby,
+        shape_id,
+        linestring,
+        sz,
+        route_type,
+        shape_point_speeds,
+        default_speed,
+        start_time,
+    )
+    assert set(f.columns) == {
+        "trip_id",
+        "stop_id",
+        "stop_sequence",
+        "arrival_time",
+        "departure_time",
+        "shape_dist_traveled",
+    }
+
+    # Should have correct length
+    assert f.shape[0] == stops_g_nearby.shape[0]
+
+    # Average speed of trip should be reasonable
+    def compute_avg_speed(f):
+        return (
+            3.6
+            * (f.shape_dist_traveled.iat[-1] - f.shape_dist_traveled.iat[0])
+            / (f.arrival_time.iat[-1] - f.arrival_time.iat[0])
+        )
+
+    sz = pfeed.speed_zones.loc[lambda x: x.route_type == route_type]
+    avg_speed = compute_avg_speed(f)
+    assert (
+        min(sz.speed.min(), default_speed)
+        <= avg_speed
+        <= max(sz.speed.max(), default_speed)
+    )
+
+    # Edge case with one speed zone encompassing the trip and infinite speed
+    sz = gpd.GeoDataFrame(
+        [{"speed": np.inf, "route_type": route_type}],
+        geometry=[sg.box(*linestring.bounds).buffer(10)],
+        crs=stops_g.crs,
+    )
+    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    default_speed = 2
+
+    f = build_stop_times_for_trip(
+        trip_id,
+        stops_g_nearby,
+        shape_id,
+        linestring,
+        sz,
+        route_type,
+        shape_point_speeds,
+        default_speed,
+        start_time,
+    )
+
+    # Average speed should be correct
+    avg_speed = compute_avg_speed(f)
+    assert np.allclose(avg_speed, default_speed)
+
+    # Edge case with one speed zone encompassing the trip
+    sz = gpd.GeoDataFrame(
+        [{"speed": 100, "route_type": route_type}],
+        geometry=[sg.box(*linestring.bounds).buffer(10)],
+        crs=stops_g.crs,
+    )
+    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+
+    f = build_stop_times_for_trip(
+        trip_id,
+        stops_g_nearby,
+        shape_id,
+        linestring,
+        sz,
+        route_type,
+        shape_point_speeds,
+        default_speed,
+        start_time,
+    )
+
+    # Average speed should be correct
+    avg_speed = compute_avg_speed(f)
+    assert np.allclose(avg_speed, 100)
+
+
+@pytest.mark.slow
 def test_build_stop_times():
     # Test stopless version first
     pfeed_stopless = pfeed.copy()
@@ -154,7 +286,6 @@ def test_build_stop_times():
     trips = build_trips(pfeed_stopless, routes, service_by_window)
     stop_times = build_stop_times(pfeed_stopless, routes, shapes, stops, trips)
 
-    # Should be a data frame
     assert isinstance(stop_times, pd.DataFrame)
 
     # Should have correct shape.
@@ -190,6 +321,7 @@ def test_build_stop_times():
     assert stop_times.empty
 
 
+@pytest.mark.slow
 def test_build_feed():
     feed = build_feed(pfeed)
 

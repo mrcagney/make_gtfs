@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "make_gtfs"
-version = "2.3.0"
+version = "3.0.0"
 description = "A Python 3.8+ library to build GTFS feeds from basic route information."
 authors = ["Alex Raichev <araichev@mrcagney.com>"]
 license = "MIT"
@@ -18,7 +18,14 @@ black = ">=22"
 nbstripout = ">=0.5.0"
 Sphinx = ">=5.0.2"
 publish-sphinx-docs = ">=1.0.3"
+geo-kit = {git = "git@gitlab.com:mrcagney/geo_kit"}
 
 [build-system]
 requires = ["poetry-core>=1"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]

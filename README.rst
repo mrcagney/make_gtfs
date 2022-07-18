@@ -33,13 +33,6 @@ Make GTFS uses the following files to build a GTFS feed.
   - ``start_date``, ``end_date`` (required): strings; the start
     and end dates for which all this network information is valid
     formated as YYYYMMDD strings
-  - ``speed_route_type_0`` (optional): float; default average speed in kilometers
-    per hour for routes of route type 0; used to fill missing route speeds in
-    ``frequencies.csv``
-  - ``speed_route_type_<i>`` for the remaining route types 1--7, 11--12 (optional)
-
-  Missing speed columns will be created with values set to the speeds in the
-  dictionary ``SPEED_BY_RTYPE`` in ``protofeed.py``.
 
 - ``shapes.geojson`` (required). A GeoJSON file containing route shapes.
   The file consists of one feature collection of LineString features, where each feature's properties contains at least the attribute ``shape_id``.
@@ -86,6 +79,21 @@ Make GTFS uses the following files to build a GTFS feed.
     (route, direction, service window) tuple
   - ``speed`` (optional): float; the average speed of the route in
     kilometers per hour
+
+  Missing speed values will be filled with values from the library's dictionary
+  `SPEED_BY_RTYPE`.
+
+- ``speed_zones.geojson`` (optional). A GeoJSON file of Polygons representing
+  speed zones for routes.
+  The file consists of one feature collection of Polygon features
+  (in WGS84 coordinates), each with the properties
+
+  - ``speed_zone_id`` (required): string; a unique identifier of the zone polygon; can
+    be re-used if the polygon is re-used
+  - ``route_type`` (required): integer; a GTFS route type to which the zone applies
+  - ``speed`` (required): positive float; the average speed in kilometers per hour
+    of routes of that route type that travel within the zone; overrides route
+    speeds in ``frequencies.csv`` within the zone.
 
 - ``stops.csv`` (optional). A CSV file containing all the required
   and optional fields of ``stops.txt`` in
@@ -136,6 +144,12 @@ Notes
 
 Changes
 ========
+
+3.0.0, 2022-07-19
+-----------------
+- Removed the option to set default speeds by route type as overly complex.
+- Added speed zones to override route speeds in user-specified geographic zones.
+
 
 2.3.0, 2022-06-21
 -----------------

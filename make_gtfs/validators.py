@@ -3,6 +3,7 @@ ProtoFeed validators.
 """
 import re
 import pytz
+import functools as ft
 
 import pandas as pd
 import pandera as pa
@@ -46,16 +47,6 @@ SCHEMA_META = pa.DataFrameSchema(
                 ),
             ],
         ),
-        "speed_route_type_0": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_1": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_2": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_3": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_4": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_5": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_6": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_7": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_11": pa.Column(float, pa.Check.gt(0), required=False),
-        "speed_route_type_12": pa.Column(float, pa.Check.gt(0), required=False),
     },
     checks=pa.Check(lambda x: x.shape[0] == 1),  # Should have exactly 1 row
     index=pa.Index(int),
@@ -148,6 +139,28 @@ SCHEMA_STOPS = pa.DataFrameSchema(
     strict="filter",  # Drop columns not specified above
     coerce=True,
 )
+SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
+    {
+        "speed_zone_id": pa.Column(
+            str,
+            pa.Check.str_matches(NONBLANK_PATTERN),
+            unique=False,
+        ),
+        "route_type": pa.Column(int, pa.Check.isin(list(range(8)) + [11, 12])),
+        "speed": pa.Column(float, pa.Check.gt(0)),
+        "geometry": pa.Column(
+            checks=[
+                pa.Check(lambda x: x.geom_type == "Polygon"),
+                pa.Check(lambda x: x.is_valid),
+                pa.Check(lambda x: ~x.is_empty),
+            ]
+        ),
+    },
+    checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
+    index=pa.Index(int),
+    strict="filter",  # Drop columns not specified above
+    coerce=True,
+)
 
 
 def check_meta(pfeed: pf.ProtoFeed) -> pd.DataFrame:
@@ -163,10 +176,12 @@ def check_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     Return `pfeed.shapes` if it is valid.
     Otherwise, raise a Pandera SchemaError.
     """
+    result = SCHEMA_SHAPES.validate(pfeed.shapes)
+
     if not isinstance(pfeed.shapes, gpd.GeoDataFrame):
         raise ValueError("Shapes must be a GeoDataFrame")
 
-    return SCHEMA_SHAPES.validate(pfeed.shapes)
+    return result
 
 
 def check_service_windows(pfeed: pf.ProtoFeed) -> pd.DataFrame:
@@ -194,6 +209,44 @@ def check_stops(pfeed: pf.ProtoFeed) -> pd.DataFrame:
         return pfeed.stops
     else:
         return SCHEMA_STOPS.validate(pfeed.stops)
+
+
+def check_speed_zones(pfeed: pf.ProtoFeed) -> pd.DataFrame:
+    """
+    Return `pfeed.shapes` if it is valid.
+    Otherwise, raise a ValueError or a Pandera SchemaError.
+    """
+    f = pfeed.speed_zones
+
+    result = SCHEMA_SPEED_ZONES.validate(f)
+
+    if not isinstance(f, gpd.GeoDataFrame):
+        raise ValueError("Speed zones must be a GeoDataFrame")
+
+    # Zone ID must be unique within route type
+    for route_type, group in f.groupby("route_type"):
+        if group.speed_zone_id.nunique() != group.shape[0]:
+            raise ValueError(
+                f"Zone IDs must be unique within each route type; "
+                f"failure with route type {route_type}"
+            )
+
+    # Zones must be pairwise disjoint within route type
+    for route_type, group in f.groupby("route_type"):
+        if group.geometry.nunique() != group.shape[0]:
+            raise ValueError(
+                f"Zones must not overlap each other within each route type; "
+                f"failure with route type {route_type}"
+            )
+        for speed_zone_id, g in group.groupby("speed_zone_id"):
+            other = group.loc[lambda x: x.speed_zone_id != speed_zone_id]
+            if other.overlaps(g.geometry.iat[0]).any():
+                raise ValueError(
+                    f"Zones must not overlap each other within each route type; "
+                    f"failure with route type {route_type}"
+                )
+
+    return result
 
 
 def crosscheck_ids(

@@ -1,6 +1,7 @@
 import shutil
 import pathlib as pl
 
+import pytest
 import click.testing
 from click.testing import CliRunner
 
@@ -10,6 +11,7 @@ from make_gtfs.cli import *
 
 
 runner = CliRunner()
+
 
 def rm_paths(*paths):
     """
@@ -23,10 +25,12 @@ def rm_paths(*paths):
             else:
                 shutil.rmtree(str(p))
 
+
+@pytest.mark.slow
 def test_make_gtfs():
-    s_path = DATA_DIR/'auckland'
-    t1_path = DATA_DIR/'bingo.zip'
-    t2_path = DATA_DIR/'bingo'
+    s_path = DATA_DIR / "auckland"
+    t1_path = DATA_DIR / "bingo.zip"
+    t2_path = DATA_DIR / "bingo"
     rm_paths(t1_path, t2_path)
 
     result = runner.invoke(make_gtfs, [str(s_path), str(t1_path)])
