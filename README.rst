@@ -83,15 +83,15 @@ Make GTFS uses the following files to build a GTFS feed.
   Missing speed values will be filled with values from the library dictionary
   `SPEED_BY_RTYPE`.
 
-- ``speed_zones.geojson``: (optional) A GeoJSON file of Polygons representing
+- ``speed_zones.geojson`` (optional). A GeoJSON file of Polygons representing
   speed zones for routes.
   The file consists of one feature collection of Polygon features
   (in WGS84 coordinates), each with the properties
 
-  - ``speed_zone_id``: (required) string; a unique identifier of the zone polygon; can
+  - ``speed_zone_id`` (required): string; a unique identifier of the zone polygon; can
     be re-used if the polygon is re-used
-  - ``route_type``: (required) integer; a GTFS route type to which the zone applies
-  - ``speed``: (required) positive float; the average speed in kilometers per hour
+  - ``route_type`` (required): integer; a GTFS route type to which the zone applies
+  - ``speed`` (required): positive float; the average speed in kilometers per hour
     of routes of that route type that travel within the zone; overrides route
     speeds in ``frequencies.csv`` within the zone.
 

@@ -158,14 +158,14 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
 
     The data files needed to build a ProtoFeed are
 
-    - ``meta.csv``: (required) A CSV file containing network metadata.
+    - ``meta.csv`` (required). A CSV file containing network metadata.
       The CSV file contains the columns
 
-      - ``agency_name``: (required) String. The name of the transport
+      - ``agency_name`` (required): String. The name of the transport
         agency
-      - ``agency_url``: (required) String. A fully qualified URL for
+      - ``agency_url`` (required): String. A fully qualified URL for
         the transport agency
-      - ``agency_timezone``: (required) String. Timezone where the
+      - ``agency_timezone`` (required): String. Timezone where the
         transit agency is located. Timezone names never contain the
         space character but may contain an underscore. Refer to
         `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
@@ -173,16 +173,16 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         and end dates for which all this network information is valid
         formated as YYYYMMDD strings
 
-    - ``service_windows.csv``: (required) A CSV file containing service window
+    - ``service_windows.csv`` (required). A CSV file containing service window
       information.
       A *service window* is a time interval and a set of days of the
       week during which all routes have constant service frequency,
       e.g. Saturday and Sunday 07:00 to 09:00.
       The CSV file contains the columns
 
-      - ``service_window_id``: (required) String. A unique identifier
+      - ``service_window_id`` (required): String. A unique identifier
         for a service window
-      - ``start_time``, ``end_time``: (required) Strings. The start
+      - ``start_time``, ``end_time`` (required): Strings. The start
         and end times of the service window in HH:MM:SS format where
         the hour is less than 24
       - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
@@ -190,25 +190,25 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         or 1. Indicates whether the service is active on the given day
         (1) or not (0)
 
-    - ``shapes.geojson``: (required) A GeoJSON file representing shapes for all
+    - ``shapes.geojson`` (required). A GeoJSON file representing shapes for all
       (route, direction 0 or 1, service window) combinations.
       The file consists of one feature collection of LineString
       features (in WGS84 coordinates), where each feature has the property
 
       - ``shape_id`` (required): a unique identifier of the shape
 
-    - ``frequencies.csv``: (required) A CSV file containing route frequency
+    - ``frequencies.csv`` (required). A CSV file containing route frequency
       information. The CSV file contains the columns
 
-      - ``route_short_name``: (required) String. A unique short name
+      - ``route_short_name`` (required): String. A unique short name
         for the route, e.g. '51X'
-      - ``route_long_name``: (required) String. Full name of the route
+      - ``route_long_name`` (required): String. Full name of the route
         that is more descriptive than ``route_short_name``
-      - ``route_type``: (required) integer. The
+      - ``route_type`` (required): integer. The
         `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
       - ``service_window_id`` (required): String. A service window ID
         for the route taken from the file ``service_windows.csv``
-      - ``direction``: (required) Integer 0, 1, or 2. Indicates
+      - ``direction`` (required): Integer 0, 1, or 2. Indicates
         whether the route travels in GTFS direction 0, GTFS direction
         1, or in both directions.
         In the latter case, trips will be created that travel in both
@@ -217,7 +217,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         travel in only the given direction.
       - ``frequency`` (required): Integer. The frequency of the route
         during the service window in vehicles per hour.
-      - ``shape_id``: (required) String. A shape ID that is listed in
+      - ``shape_id`` (required): String. A shape ID that is listed in
         ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction 0 or 1, service window) tuple.
       - ``speed`` (optional): float; the average speed of the route in kilometers
@@ -226,19 +226,19 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       Missing speed values will be filled with values from the dictionary
       :const:`SPEED_BY_RTYPE`.
 
-    - ``stops.csv``: (optional) A CSV file containing all the required
+    - ``stops.csv`` (optional). A CSV file containing all the required
       and optional fields of ``stops.txt`` in
       `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
 
-    - ``speed_zones.geojson``: (optional) A GeoJSON file of Polygons representing
+    - ``speed_zones.geojson`` (optional). A GeoJSON file of Polygons representing
       speed zones for routes.
       The file consists of one feature collection of Polygon features
       (in WGS84 coordinates), each with the properties
 
-      - ``speed_zone_id``: (required) string; a unique identifier of the zone polygon; can
+      - ``speed_zone_id`` (required): string; a unique identifier of the zone polygon; can
         be re-used if the polygon is re-used
-      - ``route_type``: (required) integer; a GTFS route type to which the zone applies
-      - ``speed``: (required) positive float; the average speed in kilometers per hour
+      - ``route_type`` (required): integer; a GTFS route type to which the zone applies
+      - ``speed`` (required): positive float; the average speed in kilometers per hour
         of routes of that route type that travel within the zone; overrides route
         speeds in ``frequencies.csv`` within the zone.
 
