@@ -15,16 +15,16 @@ from . import constants as cs
 
 #: Default average speeds by route type in kilometers per hour
 SPEED_BY_RTYPE = {
-    0: 11,
-    1: 30,
-    2: 45,
-    3: 22,
-    4: 22,
-    5: 13,
-    6: 20,
-    7: 18,
-    11: 22,
-    12: 65,
+    0: 11,  # tram
+    1: 30,  # subway
+    2: 45,  # rail
+    3: 22,  # bus
+    4: 22,  # ferry
+    5: 13,  # cable tram
+    6: 20,  # aerial lift
+    7: 18,  # funicular
+    11: 22,  # trolleybus
+    12: 65,  # monorail
 }
 
 

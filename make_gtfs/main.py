@@ -2,6 +2,7 @@
 This module contains the main logic.
 """
 from typing import Optional
+from functools import lru_cache
 
 import geopandas as gpd
 import pandas as pd
@@ -12,6 +13,7 @@ import gtfs_kit as gk
 
 from . import protofeed as pf
 from . import constants as cs
+from . import hashables as h
 
 
 def get_duration(timestr1: str, timestr2: str, units="s") -> float:
@@ -555,12 +557,14 @@ def build_stop_times_for_trip(
     linestring: sg.LineString,
     speed_zones: gpd.GeoDataFrame,
     route_type: int,
-    shape_point_speeds: pd.DataFrame,
+    shape_point_speeds: gpd.GeoDataFrame,
     default_speed: float,
     start_time: int,
 ) -> pd.DataFrame:
     """
-    Assume coordinates are in meters, distances are in meters, and speeds are in
+    Build stop times for the given trip ID.
+
+    Assume all coordinates are in meters, distances are in meters, and speeds are in
     kilometers per hour.
     """
     # Subset frames and convert speeds to meters per second
@@ -628,6 +632,36 @@ def build_stop_times_for_trip(
     )
 
 
+@lru_cache()
+def _build_stop_times_for_trip(
+    trip_id: str,
+    stops_g_nearby: h.HashableGeoDataFrame,
+    shape_id: str,
+    linestring: h.HashableLineString,
+    speed_zones: h.HashableGeoDataFrame,
+    route_type: int,
+    shape_point_speeds: h.HashableGeoDataFrame,
+    default_speed: float,
+    start_time: int,
+) -> pd.DataFrame:
+    """
+    Caching version of :func:`build_stop_times_for_trip` for greater speed and internal
+    use.
+    Needs hashable GeoDataFrames and LineStrings to work.
+    """
+    return build_stop_times_for_trip(
+        trip_id,
+        stops_g_nearby,
+        shape_id,
+        linestring,
+        speed_zones,
+        route_type,
+        shape_point_speeds,
+        default_speed,
+        start_time,
+    )
+
+
 def build_stop_times(
     pfeed: pf.ProtoFeed,
     routes: pd.DataFrame,
@@ -655,55 +689,63 @@ def build_stop_times(
     shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
     stops_g = gk.geometrize_stops_0(stops, use_utm=True)
 
-    shape_point_speeds_by_rtype = {
-        rt: (
-            compute_shape_point_speeds(
-                shapes, pfeed.speed_zones, rt, use_utm=True
-            ).drop("geometry", axis="columns")
-        )
-        for rt in pfeed.route_types()
-    }
-
     # For each trip get its shape and stops nearby and set stops times based on its
     # service window frequency.
     # Remember that every trip has a valid shape ID.
     frames = []
     # Look on the correct side of the street for stops
     side = cs.TRAFFIC_BY_TIMEZONE[pfeed.meta.agency_timezone.iat[0]]
-    for index, row in trips.iterrows():
-        shape_id = row["shape_id"]
-        linestring = shapes_gi.loc[shape_id].geometry
-        stops_g_nearby = get_stops_nearby(stops_g, linestring, side, buffer=buffer)
+    speed_zones = h.HashableGeoDataFrame(pfeed.speed_zones.to_crs(pfeed.utm_crs))
+    for (route_type, shape_id, speed), group in trips.groupby(
+        ["route_type", "shape_id", "speed"]
+    ):
+        shape_point_speeds = h.HashableGeoDataFrame(
+            compute_shape_point_speeds(
+                shapes, pfeed.speed_zones, route_type, use_utm=True
+            )
+        )
+        linestring = h.HashableLineString(shapes_gi.loc[shape_id].geometry)
+        stops_g_nearby = h.HashableGeoDataFrame(
+            get_stops_nearby(stops_g, linestring, side, buffer=buffer)
+        )
+
         if stops_g_nearby.empty:
             # No stops to make times for
             continue
 
-        frequency = row["frequency"]
-        if not frequency:
-            # The trip actually doesn't run
-            continue
+        for __, row in group.iterrows():
+            frequency = row["frequency"]
+            if not frequency:
+                # The trip actually doesn't run
+                continue
 
-        trip_id = row["trip_id"]
-        headway = 3600 / frequency  # seconds
-        route_type = row["route_type"]
-        shape_point_speeds = shape_point_speeds_by_rtype[route_type]
-        default_speed = row["speed"]  # kilometers per hour
-        __, route, window, base_timestr, direction, i = trip_id.split(cs.SEP)
-        direction = int(direction)
-        base_time = gk.timestr_to_seconds(base_timestr)
-        start_time = base_time + headway * int(i)  # seconds
-        stop_times = build_stop_times_for_trip(
-            trip_id,
-            stops_g_nearby,
-            shape_id,
-            linestring,
-            pfeed.speed_zones.to_crs(pfeed.utm_crs),
-            route_type,
-            shape_point_speeds,
-            default_speed,
-            start_time,
-        )
-        frames.append(stop_times)
+            trip_id = row["trip_id"]
+            headway = 3600 / frequency  # seconds
+            __, route, window, base_timestr, direction, i = trip_id.split(cs.SEP)
+            direction = int(direction)
+            base_time = gk.timestr_to_seconds(base_timestr)
+            start_time = base_time + headway * int(i)  # seconds
+            f = (
+                _build_stop_times_for_trip(
+                    "tmp_trip_id",
+                    stops_g_nearby,
+                    shape_id,
+                    linestring,
+                    speed_zones,
+                    route_type,
+                    shape_point_speeds,
+                    speed,
+                    0,
+                )
+                # Fill in trip ID and start times.
+                # Doing it after the fact to take advantage of caching?
+                .assign(
+                    trip_id=trip_id,
+                    arrival_time=lambda x: x.arrival_time + start_time,
+                    departure_time=lambda x: x.arrival_time,
+                )
+            )
+            frames.append(f)
 
     if not frames:
         f = pd.DataFrame(
@@ -721,6 +763,9 @@ def build_stop_times(
         f[["arrival_time", "departure_time"]] = f[
             ["arrival_time", "departure_time"]
         ].applymap(lambda x: gk.timestr_to_seconds(x, inverse=True))
+
+    # Free memory
+    _build_stop_times_for_trip.cache_clear()
 
     return f
 

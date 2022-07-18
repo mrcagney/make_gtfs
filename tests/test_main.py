@@ -168,6 +168,7 @@ def test_compute_shape_point_speeds():
     assert set(g.speed_zone_id) <= set(sz.speed_zone_id)
 
 
+@pytest.mark.slow
 def test_build_stop_times_for_trip():
     stops = build_stops(pfeed)
     stops_g = gk.geometrize_stops_0(stops, use_utm=True)
@@ -175,25 +176,26 @@ def test_build_stop_times_for_trip():
     shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
     trip_id = "bingo"
     shape_id = shapes_gi.index[0]
+
+    # Generic case
     linestring = shapes_gi.loc[shape_id].geometry
     stops_g_nearby = get_stops_nearby(stops_g, linestring, "left")
     route_type = 3
-    shape_point_speeds = compute_shape_point_speeds(
-        shapes, pfeed.speed_zones, route_type
-    )
-
+    sz = pfeed.speed_zones.to_crs(pfeed.utm_crs)
+    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    default_speed = 2
+    start_time = 0
     f = build_stop_times_for_trip(
         trip_id,
         stops_g_nearby,
         shape_id,
         linestring,
-        pfeed.speed_zones.to_crs(pfeed.utm_crs),
+        sz,
         route_type,
         shape_point_speeds,
-        default_speed=2,
-        start_time=0,
+        default_speed,
+        start_time,
     )
-    assert isinstance(f, pd.DataFrame)
     assert set(f.columns) == {
         "trip_id",
         "stop_id",
@@ -207,13 +209,69 @@ def test_build_stop_times_for_trip():
     assert f.shape[0] == stops_g_nearby.shape[0]
 
     # Average speed of trip should be reasonable
+    def compute_avg_speed(f):
+        return (
+            3.6
+            * (f.shape_dist_traveled.iat[-1] - f.shape_dist_traveled.iat[0])
+            / (f.arrival_time.iat[-1] - f.arrival_time.iat[0])
+        )
+
     sz = pfeed.speed_zones.loc[lambda x: x.route_type == route_type]
-    avg_speed = (
-        (f.shape_dist_traveled.iat[-1] - f.shape_dist_traveled.iat[0])
-        / (f.arrival_time.iat[-1] - f.arrival_time.iat[0])
-        * (3600 / 1000)
+    avg_speed = compute_avg_speed(f)
+    assert (
+        min(sz.speed.min(), default_speed)
+        <= avg_speed
+        <= max(sz.speed.max(), default_speed)
     )
-    assert sz.speed.min() <= avg_speed <= sz.speed.max()
+
+    # Edge case with one speed zone encompassing the trip and infinite speed
+    sz = gpd.GeoDataFrame(
+        [{"speed": np.inf, "route_type": route_type}],
+        geometry=[sg.box(*linestring.bounds).buffer(10)],
+        crs=stops_g.crs,
+    )
+    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    default_speed = 2
+
+    f = build_stop_times_for_trip(
+        trip_id,
+        stops_g_nearby,
+        shape_id,
+        linestring,
+        sz,
+        route_type,
+        shape_point_speeds,
+        default_speed,
+        start_time,
+    )
+
+    # Average speed should be correct
+    avg_speed = compute_avg_speed(f)
+    assert np.allclose(avg_speed, default_speed)
+
+    # Edge case with one speed zone encompassing the trip
+    sz = gpd.GeoDataFrame(
+        [{"speed": 100, "route_type": route_type}],
+        geometry=[sg.box(*linestring.bounds).buffer(10)],
+        crs=stops_g.crs,
+    )
+    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+
+    f = build_stop_times_for_trip(
+        trip_id,
+        stops_g_nearby,
+        shape_id,
+        linestring,
+        sz,
+        route_type,
+        shape_point_speeds,
+        default_speed,
+        start_time,
+    )
+
+    # Average speed should be correct
+    avg_speed = compute_avg_speed(f)
+    assert np.allclose(avg_speed, 100)
 
 
 @pytest.mark.slow

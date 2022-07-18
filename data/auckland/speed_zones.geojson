@@ -4,7 +4,7 @@
     {
       "type": "Feature",
       "properties": {
-        "speed": 5,
+        "speed": 200,
         "speed_zone_id": "a",
         "route_type": 3
       },
@@ -97,7 +97,7 @@
     {
       "type": "Feature",
       "properties": {
-        "speed": 50,
+        "speed": 200,
         "speed_zone_id": "c",
         "route_type": 2
       },
