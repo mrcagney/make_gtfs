@@ -18,7 +18,14 @@ black = ">=22"
 nbstripout = ">=0.5.0"
 Sphinx = ">=5.0.2"
 publish-sphinx-docs = ">=1.0.3"
+geo-kit = {git = "git@gitlab.com:mrcagney/geo_kit"}
 
 [build-system]
 requires = ["poetry-core>=1"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]
