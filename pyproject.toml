@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "make_gtfs"
-version = "2.3.0"
+version = "3.0.0"
 description = "A Python 3.8+ library to build GTFS feeds from basic route information."
 authors = ["Alex Raichev <araichev@mrcagney.com>"]
 license = "MIT"

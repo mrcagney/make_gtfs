@@ -80,7 +80,7 @@ Make GTFS uses the following files to build a GTFS feed.
   - ``speed`` (optional): float; the average speed of the route in
     kilometers per hour
 
-  Missing speed values will be filled with values from the library dictionary
+  Missing speed values will be filled with values from the library's dictionary
   `SPEED_BY_RTYPE`.
 
 - ``speed_zones.geojson`` (optional). A GeoJSON file of Polygons representing
@@ -145,10 +145,10 @@ Notes
 Changes
 ========
 
-3.0.0, 2022-??-??
+3.0.0, 2022-07-19
 -----------------
-- Removed option to set default speeds by route type as overly complex.
-- Added speed zones to override route speeds in specified geographical zones.
+- Removed the option to set default speeds by route type as overly complex.
+- Added speed zones to override route speeds in user-specified geographic zones.
 
 
 2.3.0, 2022-06-21

@@ -674,8 +674,8 @@ def build_stop_times(
     Given a ProtoFeed and its corresponding routes,
     shapes, stops, and trips DataFrames,
     return a DataFrame representing ``stop_times.txt``.
-    Includes the optional ``shape_dist_traveled`` column in meters.
-    Do not make stop times for trips with no stops within the buffer.
+    Includes the optional ``shape_dist_traveled`` column rounded to the nearest meter.
+    Does not make stop times for trips with no stops within the buffer.
     """
     # Get the table of trips and add frequency and service window details
     routes = routes.filter(["route_id", "route_short_name"]).merge(
@@ -758,7 +758,9 @@ def build_stop_times(
             ]
         )
     else:
-        f = pd.concat(frames, ignore_index=True)
+        f = pd.concat(frames, ignore_index=True).assign(
+            shape_dist_traveled=lambda x: x.shape_dist_traveled.round()
+        )
         # Convert seconds back to time strings
         f[["arrival_time", "departure_time"]] = f[
             ["arrival_time", "departure_time"]
@@ -774,6 +776,7 @@ def build_feed(pfeed: pf.ProtoFeed, buffer: float = cs.BUFFER) -> gk.Feed:
     """
     Convert the given ProtoFeed to a GTFS Feed with meter distance units.
     Look at a distance of ``buffer`` meters from route shapes to find stops.
+    Output distance units will be in meters
     """
     # Create Feed tables
     agency = build_agency(pfeed)
