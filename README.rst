@@ -145,6 +145,11 @@ Notes
 Changes
 ========
 
+3.1.0, 2022-10-06
+-----------------
+- Extended ``build_stops()`` to to build a specified number of equally spaced stops along each built shape or to build stops with a specified spacing along each built shape.
+
+
 3.0.0, 2022-07-19
 -----------------
 - Removed the option to set default speeds by route type as overly complex.

@@ -20,6 +20,35 @@ def test_get_duration():
     assert get == expect
 
 
+def test_sample_points():
+    lines = gpd.read_file(DATA_DIR / "auckland" / "shapes.geojson").to_crs("epsg:2193")
+    lines_looping = lines.iloc[:1]
+    lines_nonlooping = lines.iloc[1:]
+
+    points = sample_points(lines_nonlooping, "shape_id")
+    assert set(points.columns) == {
+        "shape_id",
+        "point_id",
+        "shape_dist_traveled",
+        "geometry",
+    }
+    for __, group in points.groupby("shape_id"):
+        assert group.shape[0] == 2
+
+    n = 5
+    points = sample_points(lines_nonlooping, "shape_id", n=n)
+    for __, group in points.groupby("shape_id"):
+        assert group.shape[0] == n
+
+    points = sample_points(lines_looping, "shape_id", n=n)
+    for __, group in points.groupby("shape_id"):
+        assert group.shape[0] == n - 1
+
+    points = sample_points(lines, "shape_id", δ=200)
+    for __, group in points.groupby("shape_id"):
+        assert group.shape[0] >= 2
+
+
 def test_build_routes():
     routes = build_routes(pfeed)
 
@@ -55,25 +84,23 @@ def test_build_stops():
     # Test with null ``pfeed.stops``
     pfeed_stopless = pfeed.copy()
     pfeed_stopless.stops = None
-    shapes = build_shapes(pfeed_stopless)
-    stops = build_stops(pfeed_stopless, shapes)
-
-    # Should be a data frame
-    assert isinstance(stops, pd.DataFrame)
-
-    # Should have correct shape
-    nshapes = shapes.shape_id.nunique()
-    assert stops.shape[0] <= 2 * nshapes
-    assert stops.shape[1] == 4
 
     # Test with non-null ``pfeed.stops``
     stops = build_stops(pfeed)
-
-    # Should be a data frame
-    assert isinstance(stops, pd.DataFrame)
-
-    # Should have correct shape
     assert stops.shape == pfeed.stops.shape
+    assert set(stops.columns) == set(pfeed.stops.columns)
+
+    shapes = build_shapes(pfeed_stopless)
+    stops = build_stops(pfeed_stopless, shapes, δ=400)
+    assert set(stops.columns) == {"stop_id", "stop_name", "stop_lon", "stop_lat"}
+    nshapes = shapes.shape_id.nunique()
+    assert stops.shape[0] >= nshapes
+
+    n = 4
+    stops = build_stops(pfeed_stopless, shapes, n=4)
+    # Should have correct shape
+    nshapes = shapes.shape_id.nunique()
+    assert stops.shape[0] <= n * nshapes
 
 
 def test_build_trips():
