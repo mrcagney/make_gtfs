@@ -147,7 +147,9 @@ Changes
 
 3.1.0, 2022-10-06
 -----------------
-- Extended ``build_stops()`` to to build a specified number of equally spaced stops along each built shape or to build stops with a specified spacing along each built shape.
+- Extended ``build_stops()`` and ``build_feed()`` to to build a specified number of equally spaced stops on each built shape or to build stops with a specified spacing on each built shape.
+  More specifically, stops will be built on a shape and not also on its antiparallel clone, if that exists.
+  That way we avoid building duplicate stops.
 
 
 3.0.0, 2022-07-19

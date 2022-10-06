@@ -127,15 +127,17 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     directions.
     """
     rows = []
-    for shape, geom in pfeed.shapes[["shape_id", "geometry"]].itertuples(index=False):
-        if shape not in pfeed.shapes_extra:
+    for pshid, geom in pfeed.shapes[["shape_id", "geometry"]].itertuples(index=False):
+        if pshid not in pfeed.shapes_extra:
             continue
-        if pfeed.shapes_extra[shape] == 2:
+        if pfeed.shapes_extra[pshid] == 2:
             # Add shape and its reverse
-            shid = shape + "-1"
+            did = "1"
+            shid = f"{pshid}{cs.SEP}{did}"
             new_rows = [[shid, i, lon, lat] for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
-            shid = shape + "-0"
+            did = "0"
+            shid = f"{pshid}{cs.SEP}{did}"
             new_rows = [
                 [shid, i, lon, lat]
                 for i, (lon, lat) in enumerate(reversed(geom.coords))
@@ -143,7 +145,8 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
             rows.extend(new_rows)
         else:
             # Add shape
-            shid = "{}{}{}".format(shape, cs.SEP, pfeed.shapes_extra[shape])
+            did = pfeed.shapes_extra[pshid]
+            shid = f"{pshid}{cs.SEP}{did}"
             new_rows = [[shid, i, lon, lat] for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
 
@@ -230,12 +233,14 @@ def build_stops(
     If ``pfeed.stops`` is not ``None``, then return that.
     Otherwise, require built shapes output by :func:`build_shapes`.
     In that case, if ``δ`` is not ``None``, then for each line,
-    create stops spaced ``δ`` meters apart from start to end, except allow the
-    spacing of the last two stops to be < 2 * δ.
-    If ``δ`` is ``None``, then create ``n`` equally spaced stops along each shape from
+    create stops on the shape spaced ``δ`` meters apart from start to end,
+    except allow the spacing of the last two stops to be < 2 * δ.
+    If ``δ`` is ``None``, then create ``n`` equally spaced stops on each shape from
     start to end.
     When building stops, drop stops with duplicate geometries within a shape to
     gracefully handle loop shapes.
+    Also, if a shape has an antiparallel clone, then only build stops for the shape,
+    not its clone.
     """
     if pfeed.stops is not None:
         stops = pfeed.stops.copy()
@@ -243,7 +248,13 @@ def build_stops(
         if shapes is None:
             raise ValueError("Must input shapes built by build_shapes()")
 
-        shapes_g = gk.geometrize_shapes_0(shapes, use_utm=True)
+        # Keep only one line per antiparallel pair of shapes.
+        # These can be determined from the shape IDs.
+        shapes_g = (
+            gk.geometrize_shapes_0(shapes, use_utm=True)
+            .assign(base_shape=lambda x: x.shape_id.str.split(cs.SEP, expand=True)[0])
+            .drop_duplicates("base_shape")
+        )
         stops = (
             sample_points(shapes_g, id_col="shape_id", n=n, δ=δ)
             .to_crs(cs.WGS84)
@@ -617,7 +628,7 @@ def build_stop_times(
     shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
     stops_g = gk.geometrize_stops_0(stops, use_utm=True)
 
-    # For each trip get its shape and stops nearby and set stops times based on its
+    # For each trip get its shape and stops nearby and set stop times based on its
     # service window frequency.
     # Remember that every trip has a valid shape ID.
     frames = []
@@ -710,9 +721,11 @@ def build_feed(
     Convert the given ProtoFeed to a GTFS Feed with meter distance units.
     Look at a distance of ``buffer`` meters from route shapes to find stops.
     If no stops are given, then build stops equally spaced by ``stop_spacing`` meters
-    along each shape from start to end.
-    If no stop spacing is giveng, then build ``num_stops_per_shape`` stops for each
+    along (on top of) each shape from start to end.
+    If no stop spacing is given, then build ``num_stops_per_shape`` stops on each
     built shape.
+    If a shape has an antiparallel clone, then only build stops on the shape, not
+    its clone, thereby avoiding unnecessary stops.
     Output distance units will be in meters
     """
     # Create Feed tables
