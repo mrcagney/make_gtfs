@@ -3,6 +3,7 @@ This module contains the main logic.
 """
 from typing import Optional
 from functools import lru_cache
+import math
 
 import geopandas as gpd
 import pandas as pd
@@ -36,20 +37,6 @@ def get_duration(timestr1: str, timestr2: str, units="s") -> float:
         result = duration / 3600
 
     return result
-
-
-def build_stop_ids(shape_id: str) -> (str, str):
-    """
-    Create a pair of stop IDs based on the given shape ID.
-    """
-    return [cs.SEP.join(["stp", shape_id, str(i)]) for i in range(2)]
-
-
-def build_stop_names(shape_id: str) -> (str, str):
-    """
-    Create a pair of stop names based on the given shape ID.
-    """
-    return ["Stop {!s} on shape {!s} ".format(i, shape_id) for i in range(2)]
 
 
 def build_agency(pfeed: pf.ProtoFeed) -> pd.DataFrame:
@@ -140,15 +127,17 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     directions.
     """
     rows = []
-    for shape, geom in pfeed.shapes[["shape_id", "geometry"]].itertuples(index=False):
-        if shape not in pfeed.shapes_extra:
+    for pshid, geom in pfeed.shapes[["shape_id", "geometry"]].itertuples(index=False):
+        if pshid not in pfeed.shapes_extra:
             continue
-        if pfeed.shapes_extra[shape] == 2:
+        if pfeed.shapes_extra[pshid] == 2:
             # Add shape and its reverse
-            shid = shape + "-1"
+            did = "1"
+            shid = f"{pshid}{cs.SEP}{did}"
             new_rows = [[shid, i, lon, lat] for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
-            shid = shape + "-0"
+            did = "0"
+            shid = f"{pshid}{cs.SEP}{did}"
             new_rows = [
                 [shid, i, lon, lat]
                 for i, (lon, lat) in enumerate(reversed(geom.coords))
@@ -156,7 +145,8 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
             rows.extend(new_rows)
         else:
             # Add shape
-            shid = "{}{}{}".format(shape, cs.SEP, pfeed.shapes_extra[shape])
+            did = pfeed.shapes_extra[pshid]
+            shid = f"{pshid}{cs.SEP}{did}"
             new_rows = [[shid, i, lon, lat] for i, (lon, lat) in enumerate(geom.coords)]
             rows.extend(new_rows)
 
@@ -165,17 +155,92 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     )
 
 
+def sample_points(
+    lines: gpd.GeoDataFrame,
+    id_col: str,
+    n: int = 2,
+    δ: Optional[float] = None,
+) -> gpd.GeoDataFrame:
+    """
+    Given a GeoDataFrame of lines with at least the columns
+
+    - ``id_col``: a unique identifier of the line
+    - ``'geometry'``: a LineString in a meters-based CRS
+
+    return a GeoDataFrame of points sampled from each line.
+
+    If ``δ`` is not ``None``, then for each line, sample points along the line
+    spaced ``δ`` meters apart from start to end, except allow the
+    spacing of the last two points to be < 2 * δ.
+    If ``δ`` is ``None``, then for each line, sample ``n`` >= 2 equally spaced points
+    along the line from start to end.
+    In both cases, drop duplicate point geometries, which can occur in loops.
+
+    The resulting GeoDataFrame has the columns
+
+    - ``'point_id'``: a unique identifier of the point
+    - ``id_col``: ID of the line the point corresponds to
+    - ``'shape_dist_traveled'``: how far along the line the point lies; in meters
+    - ``'geometry'``: a Point in the same CRS as the ``lines`` GeoDataFrame
+
+    Helper function for generating stops along trip shapes.
+    """
+    n = int(n)
+    if n < 2:
+        n = 2
+
+    def get_dists(D, spacing):
+        return [spacing * i for i in range(math.floor(D / spacing))] + [D]
+
+    frames = []
+    for s in lines.itertuples(index=False):
+        geom = s.geometry
+        D = geom.length
+        if δ is None:
+            spacing = D / (n - 1)
+        else:
+            spacing = δ
+        # Create points spaced at ``spacing`` meters along line ``s``
+        dists = get_dists(D, spacing)
+        points = [list(geom.interpolate(x).coords[0]) for x in dists]
+        line_id = s._asdict()[id_col]
+        suffixes = gk.make_ids(len(points), prefix="")
+        point_ids = [f"{line_id}{cs.SEP}{suffix}" for suffix in suffixes]
+        geometry = gpd.points_from_xy(
+            x=[p[0] for p in points], y=[p[1] for p in points], crs=lines.crs
+        )
+        g = gpd.GeoDataFrame(
+            {"point_id": point_ids, id_col: line_id, "shape_dist_traveled": dists},
+            geometry=geometry,
+        ).drop_duplicates("geometry")
+        frames.append(g)
+
+    if frames:
+        result = pd.concat(frames)
+    else:
+        result = gpd.GeoDataFrame()
+    return result
+
+
 def build_stops(
-    pfeed: pf.ProtoFeed, shapes: Optional[pd.DataFrame] = None
+    pfeed: pf.ProtoFeed,
+    shapes: Optional[pd.DataFrame] = None,
+    n: int = 2,
+    δ: Optional[float] = None,
 ) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
     If ``pfeed.stops`` is not ``None``, then return that.
-    Otherwise, require built shapes output by :func:`build_shapes`,
-    create one stop at the beginning (the first point) of each shape
-    and one at the end (the last point) of each shape,
-    and drop stops with duplicate coordinates.
-    Note that this will yield one stop for shapes that are loops.
+    Otherwise, require built shapes output by :func:`build_shapes`.
+    In that case, if ``δ`` is not ``None``, then for each line,
+    create stops on the shape spaced ``δ`` meters apart from start to end,
+    except allow the spacing of the last two stops to be < 2 * δ.
+    If ``δ`` is ``None``, then create ``n`` equally spaced stops on each shape from
+    start to end.
+    When building stops, drop stops with duplicate geometries within a shape to
+    gracefully handle loop shapes.
+    Also, if a shape has an antiparallel clone, then only build stops for the shape,
+    not its clone.
     """
     if pfeed.stops is not None:
         stops = pfeed.stops.copy()
@@ -183,21 +248,24 @@ def build_stops(
         if shapes is None:
             raise ValueError("Must input shapes built by build_shapes()")
 
-        geo_shapes = gk.geometrize_shapes_0(shapes)
-        rows = []
-        for shape, geom in geo_shapes[["shape_id", "geometry"]].itertuples(index=False):
-            #
-            stop_ids = build_stop_ids(shape)
-            stop_names = build_stop_names(shape)
-            for i in range(2):
-                stop_id = stop_ids[i]
-                stop_name = stop_names[i]
-                stop_lon, stop_lat = geom.interpolate(i, normalized=True).coords[0]
-                rows.append([stop_id, stop_name, stop_lon, stop_lat])
-
-        stops = pd.DataFrame(
-            rows, columns=["stop_id", "stop_name", "stop_lon", "stop_lat"]
-        ).drop_duplicates(subset=["stop_lon", "stop_lat"])
+        # Keep only one line per antiparallel pair of shapes.
+        # These can be determined from the shape IDs.
+        shapes_g = (
+            gk.geometrize_shapes_0(shapes, use_utm=True)
+            .assign(base_shape=lambda x: x.shape_id.str.split(cs.SEP, expand=True)[0])
+            .drop_duplicates("base_shape")
+        )
+        stops = (
+            sample_points(shapes_g, id_col="shape_id", n=n, δ=δ)
+            .to_crs(cs.WGS84)
+            .rename(columns={"point_id": "stop_id"})
+            .assign(
+                stop_name=lambda x: "stop " + x.stop_id,
+                stop_lon=lambda p: p.geometry.x,
+                stop_lat=lambda p: p.geometry.y,
+            )
+            .filter(["stop_id", "stop_name", "stop_lon", "stop_lat"], axis="columns")
+        )
 
     return stops
 
@@ -311,135 +379,6 @@ def get_stops_nearby(
 
     # Collect stops
     return geo_stops.loc[geo_stops.intersects(b)].copy()
-
-
-# def build_stop_times(
-#     pfeed: pf.ProtoFeed,
-#     routes: pd.DataFrame,
-#     shapes: pd.DataFrame,
-#     stops: pd.DataFrame,
-#     trips: pd.DataFrame,
-#     buffer: float = cs.BUFFER,
-# ) -> pd.DataFrame:
-#     """
-#     Given a ProtoFeed and its corresponding routes,
-#     shapes, stops, and trips DataFrames,
-#     return a DataFrame representing ``stop_times.txt``.
-#     Includes the optional ``shape_dist_traveled`` column in meters.
-#     Do not make stop times for trips with no nearby stops.
-#     """
-#     # Get the table of trips and add frequency and service window details
-#     routes = routes.filter(["route_id", "route_short_name"]).merge(
-#         pfeed.frequencies.drop(["shape_id"], axis=1)
-#     )
-#     trips = trips.assign(
-#         service_window_id=lambda x: x.trip_id.map(lambda y: y.split(cs.SEP)[2])
-#     ).merge(routes)
-
-#     # Get the geometries of GTFS ``shapes``, not ``pfeed.shapes``
-#     geometry_by_shape = dict(
-#         gk.geometrize_shapes_0(shapes, use_utm=True)
-#         .filter(["shape_id", "geometry"])
-#         .values
-#     )
-
-#     # Save on distance computations by memoizing
-#     dist_by_stop_by_shape = {shape: {} for shape in geometry_by_shape}
-
-#     def compute_stops_dists_times(geo_stops, linestring, shape, start_time, end_time):
-#         """
-#         Given a GeoDataFrame of stops on one side of a given Shapely
-#         LineString with given shape ID, compute distances and departure
-#         times of a trip traversing the LineString from start to end
-#         at the given start and end times (in seconds past midnight)
-#         and stopping at the stops encountered along the way.
-#         Do not assume that the stops are ordered by trip encounter.
-#         Return three lists of the same length: the stop IDs in order
-#         that the trip encounters them, the shape distances traveled
-#         along distances at the stops, and the times the stops are
-#         encountered, respectively.
-#         """
-#         g = geo_stops.copy()
-#         dists_and_stops = []
-#         for i, stop in enumerate(g["stop_id"].values):
-#             if stop in dist_by_stop_by_shape[shape]:
-#                 d = dist_by_stop_by_shape[shape][stop]
-#             else:
-#                 d = gk.get_segment_length(linestring, g.geometry.iat[i])  # meters
-#                 dist_by_stop_by_shape[shape][stop] = d
-#             dists_and_stops.append((d, stop))
-#         dists, stops = zip(*sorted(dists_and_stops))
-#         D = linestring.length  # meters
-#         dists_are_reasonable = all([dist < D + 100 for dist in dists])
-#         if not dists_are_reasonable:
-#             # Assume equal distances between stops :-(
-#             n = len(stops)
-#             delta = D / (n - 1)
-#             dists = [i * delta for i in range(n)]
-
-#         # Compute times using distances, start and end stop times,
-#         # and linear interpolation
-#         t0, t1 = start_time, end_time
-#         d0, d1 = dists[0], dists[-1]
-#         # Interpolate
-#         times = np.interp(dists, [d0, d1], [t0, t1])
-#         return stops, dists, times
-
-#     # Iterate through trips and set stop times based on stop ID
-#     # and service window frequency.
-#     # Remember that every trip has a valid shape ID.
-#     # Gather stops geographically from ``stops``.
-#     rows = []
-#     geo_stops = gk.geometrize_stops_0(stops, use_utm=True)
-#     # Look on the side of the traffic side of street for this timezone
-#     side = cs.TRAFFIC_BY_TIMEZONE[pfeed.meta.agency_timezone.iat[0]]
-#     for index, row in trips.iterrows():
-#         shape = row["shape_id"]
-#         geom = geometry_by_shape[shape]
-#         stops = get_stops_nearby(geo_stops, geom, side, buffer=buffer)
-#         # Don't make stop times for trips without nearby stops
-#         if stops.empty:
-#             continue
-#         length = geom.length  # meters
-#         speed = row["speed"] * 1000 / 3600  # meters per second
-#         duration = int(length / speed)  # seconds
-#         frequency = row["frequency"]
-#         if not frequency:
-#             # No stop times for this trip/frequency combo
-#             continue
-#         headway = 3600 / frequency  # seconds
-#         trip = row["trip_id"]
-#         __, route, window, base_timestr, direction, i = trip.split(cs.SEP)
-#         direction = int(direction)
-#         base_time = gk.timestr_to_seconds(base_timestr)
-#         start_time = base_time + headway * int(i)
-#         end_time = start_time + duration
-#         stops, dists, times = compute_stops_dists_times(
-#             stops, geom, shape, start_time, end_time
-#         )
-#         new_rows = [
-#             [trip, stop, j, time, time, dist]
-#             for j, (stop, time, dist) in enumerate(zip(stops, times, dists))
-#         ]
-#         rows.extend(new_rows)
-
-#     g = pd.DataFrame(
-#         rows,
-#         columns=[
-#             "trip_id",
-#             "stop_id",
-#             "stop_sequence",
-#             "arrival_time",
-#             "departure_time",
-#             "shape_dist_traveled",
-#         ],
-#     )
-
-#     # Convert seconds back to time strings
-#     g[["arrival_time", "departure_time"]] = g[
-#         ["arrival_time", "departure_time"]
-#     ].applymap(lambda x: gk.timestr_to_seconds(x, inverse=True))
-#     return g
 
 
 def compute_shape_point_speeds(
@@ -689,7 +628,7 @@ def build_stop_times(
     shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
     stops_g = gk.geometrize_stops_0(stops, use_utm=True)
 
-    # For each trip get its shape and stops nearby and set stops times based on its
+    # For each trip get its shape and stops nearby and set stop times based on its
     # service window frequency.
     # Remember that every trip has a valid shape ID.
     frames = []
@@ -772,10 +711,21 @@ def build_stop_times(
     return f
 
 
-def build_feed(pfeed: pf.ProtoFeed, buffer: float = cs.BUFFER) -> gk.Feed:
+def build_feed(
+    pfeed: pf.ProtoFeed,
+    buffer: float = cs.BUFFER,
+    num_stops_per_shape: int = 2,
+    stop_spacing: Optional[float] = None,
+) -> gk.Feed:
     """
     Convert the given ProtoFeed to a GTFS Feed with meter distance units.
     Look at a distance of ``buffer`` meters from route shapes to find stops.
+    If no stops are given, then build stops equally spaced by ``stop_spacing`` meters
+    along (on top of) each shape from start to end.
+    If no stop spacing is given, then build ``num_stops_per_shape`` stops on each
+    built shape.
+    If a shape has an antiparallel clone, then only build stops on the shape, not
+    its clone, thereby avoiding unnecessary stops.
     Output distance units will be in meters
     """
     # Create Feed tables
@@ -783,7 +733,7 @@ def build_feed(pfeed: pf.ProtoFeed, buffer: float = cs.BUFFER) -> gk.Feed:
     calendar, service_by_window = build_calendar_etc(pfeed)
     routes = build_routes(pfeed)
     shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed, shapes)
+    stops = build_stops(pfeed, shapes, n=num_stops_per_shape, δ=stop_spacing)
     trips = build_trips(pfeed, routes, service_by_window)
     stop_times = build_stop_times(pfeed, routes, shapes, stops, trips, buffer=buffer)
 
