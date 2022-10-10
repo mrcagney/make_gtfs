@@ -155,11 +155,13 @@ def build_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     )
 
 
-def sample_points(
+def make_stop_points(
     lines: gpd.GeoDataFrame,
     id_col: str,
+    offset: float,
+    side: str,
     n: int = 2,
-    δ: Optional[float] = None,
+    spacing: Optional[float] = None,
 ) -> gpd.GeoDataFrame:
     """
     Given a GeoDataFrame of lines with at least the columns
@@ -167,14 +169,16 @@ def sample_points(
     - ``id_col``: a unique identifier of the line
     - ``'geometry'``: a LineString in a meters-based CRS
 
-    return a GeoDataFrame of points sampled from each line.
+    return a GeoDataFrame containing ``n`` equally spaced points for each line,
+    offset by ``offset`` meters on the ``side`` side ('left' or 'right') of the line.
+    The lines represent route shapes and the points represent stops.
 
-    If ``δ`` is not ``None``, then for each line, sample points along the line
-    spaced ``δ`` meters apart from start to end, except allow the
-    spacing of the last two points to be < 2 * δ.
-    If ``δ`` is ``None``, then for each line, sample ``n`` >= 2 equally spaced points
-    along the line from start to end.
-    In both cases, drop duplicate point geometries, which can occur in loops.
+    If ``spacing`` is not ``None``, then ignore ``n`` and for each line,
+    sample points along the line spaced ``spacing`` meters apart from start to end,
+    except allow the spacing of the last two points to be < 2 * spacing.
+    Then offset these points according to ``offset`` and ``side``.
+
+    Drop duplicate point geometries, which can occur in loops.
 
     The resulting GeoDataFrame has the columns
 
@@ -189,20 +193,32 @@ def sample_points(
     if n < 2:
         n = 2
 
-    def get_dists(D, spacing):
-        return [spacing * i for i in range(math.floor(D / spacing))] + [D]
+    def get_dists(L, δ):
+        return [δ * i for i in range(math.floor(L / δ))] + [L]
 
     frames = []
     for s in lines.itertuples(index=False):
-        geom = s.geometry
-        D = geom.length
-        if δ is None:
-            spacing = D / (n - 1)
+        geom_1 = s.geometry
+        L = geom_1.length
+        if spacing is None:
+            δ = L / (n - 1)
         else:
-            spacing = δ
-        # Create points spaced at ``spacing`` meters along line ``s``
-        dists = get_dists(D, spacing)
-        points = [list(geom.interpolate(x).coords[0]) for x in dists]
+            δ = spacing
+        # Sample points spaced at ``spacing`` meters along the line
+        dists = get_dists(L, δ)
+        points_1 = [geom_1.interpolate(x) for x in dists]
+        # Offset the points in the correct direction using vector addition.
+        # It's simpler to offset the line, then sample points on the offset.
+        # But that method often fails on self-intersecting lines,
+        # producting disconnected offsets.
+        geom_2 = geom_1.parallel_offset(0.1, side)  # offset line by a smidge
+        points_2 = [geom_2.interpolate(geom_2.project(p)) for p in points_1]
+        points = [
+            np.array(points_1[i].coords[0])
+            + offset
+            * (np.array(points_2[i].coords[0]) - np.array(points_1[i].coords[0]))
+            for i in range(len(points_1))
+        ]
         line_id = s._asdict()[id_col]
         suffixes = gk.make_ids(len(points), prefix="")
         point_ids = [f"{line_id}{cs.SEP}{suffix}" for suffix in suffixes]
@@ -225,18 +241,20 @@ def sample_points(
 def build_stops(
     pfeed: pf.ProtoFeed,
     shapes: Optional[pd.DataFrame] = None,
+    offset: float = cs.STOP_OFFSET,
     n: int = 2,
-    δ: Optional[float] = None,
+    spacing: Optional[float] = None,
 ) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
     If ``pfeed.stops`` is not ``None``, then return that.
     Otherwise, require built shapes output by :func:`build_shapes`.
-    In that case, if ``δ`` is not ``None``, then for each line,
-    create stops on the shape spaced ``δ`` meters apart from start to end,
-    except allow the spacing of the last two stops to be < 2 * δ.
-    If ``δ`` is ``None``, then create ``n`` equally spaced stops on each shape from
-    start to end.
+    In that case, for each shape, build ``n`` equally spaced stops offset by ``offset``
+    meters on the traffic side of the shape.
+    If ``spacing`` is not ``None``, then ignore ``n`` and for each shape,
+    create offset stops spaced ``spacing`` meters apart (when projected onto the shape),
+    except allow the spacing of the last two stops to be < 2 * spacing.
+
     When building stops, drop stops with duplicate geometries within a shape to
     gracefully handle loop shapes.
     Also, if a shape has an antiparallel clone, then only build stops for the shape,
@@ -255,8 +273,16 @@ def build_stops(
             .assign(base_shape=lambda x: x.shape_id.str.split(cs.SEP, expand=True)[0])
             .drop_duplicates("base_shape")
         )
+        side = cs.TRAFFIC_BY_TIMEZONE[pfeed.meta.agency_timezone.iat[0]]
         stops = (
-            sample_points(shapes_g, id_col="shape_id", n=n, δ=δ)
+            make_stop_points(
+                shapes_g,
+                id_col="shape_id",
+                offset=offset,
+                side=side,
+                n=n,
+                spacing=spacing,
+            )
             .to_crs(cs.WGS84)
             .rename(columns={"point_id": "stop_id"})
             .assign(
@@ -714,16 +740,18 @@ def build_stop_times(
 def build_feed(
     pfeed: pf.ProtoFeed,
     buffer: float = cs.BUFFER,
+    stop_offset: float = cs.STOP_OFFSET,
     num_stops_per_shape: int = 2,
     stop_spacing: Optional[float] = None,
 ) -> gk.Feed:
     """
     Convert the given ProtoFeed to a GTFS Feed with meter distance units.
     Look at a distance of ``buffer`` meters from route shapes to find stops.
-    If no stops are given, then build stops equally spaced by ``stop_spacing`` meters
-    along (on top of) each shape from start to end.
-    If no stop spacing is given, then build ``num_stops_per_shape`` stops on each
-    built shape.
+    If no stops are given, then for each shape build stops offset by ``stop_offset``
+    meters on the traffic side of each built shape.
+    Make ``n`` equally spaced stops for each shape, then offset them.
+    But if ``stop_spacing`` is given, then instead space the stops every ``stop_spacing``
+    meters along each shape, then offset them.
     If a shape has an antiparallel clone, then only build stops on the shape, not
     its clone, thereby avoiding unnecessary stops.
     Output distance units will be in meters
@@ -733,7 +761,7 @@ def build_feed(
     calendar, service_by_window = build_calendar_etc(pfeed)
     routes = build_routes(pfeed)
     shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed, shapes, n=num_stops_per_shape, δ=stop_spacing)
+    stops = build_stops(pfeed, shapes, n=num_stops_per_shape, spacing=stop_spacing)
     trips = build_trips(pfeed, routes, service_by_window)
     stop_times = build_stop_times(pfeed, routes, shapes, stops, trips, buffer=buffer)
 

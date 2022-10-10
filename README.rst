@@ -145,6 +145,12 @@ Notes
 Changes
 ========
 
+4.0.0, 2022-10-11
+-----------------
+- Offset built stops to the traffic side of each shape.
+- Breaking change: renamed some function parameters.
+
+
 3.1.0, 2022-10-06
 -----------------
 - Extended ``build_stops()`` and ``build_feed()`` to to build a specified number of equally spaced stops on each built shape or to build stops with a specified spacing on each built shape.

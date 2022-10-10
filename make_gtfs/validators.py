@@ -3,7 +3,6 @@ ProtoFeed validators.
 """
 import re
 import pytz
-import functools as ft
 
 import pandas as pd
 import pandera as pa
