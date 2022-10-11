@@ -171,6 +171,7 @@ def make_stop_points(
 
     return a GeoDataFrame containing ``n`` equally spaced points for each line,
     offset by ``offset`` meters on the ``side`` side ('left' or 'right') of the line.
+    Set ``offset = 0`` to make points on each line.
     The lines represent route shapes and the points represent stops.
 
     If ``spacing`` is not ``None``, then ignore ``n`` and for each line,
@@ -206,19 +207,25 @@ def make_stop_points(
             δ = spacing
         # Sample points spaced at ``spacing`` meters along the line
         dists = get_dists(L, δ)
-        points_1 = [geom_1.interpolate(x) for x in dists]
-        # Offset the points in the correct direction using vector addition.
-        # It's simpler to offset the line, then sample points on the offset.
-        # But that method often fails on self-intersecting lines,
-        # producting disconnected offsets.
-        geom_2 = geom_1.parallel_offset(0.1, side)  # offset line by a smidge
-        points_2 = [geom_2.interpolate(geom_2.project(p)) for p in points_1]
-        points = [
-            np.array(points_1[i].coords[0])
-            + offset
-            * (np.array(points_2[i].coords[0]) - np.array(points_1[i].coords[0]))
-            for i in range(len(points_1))
-        ]
+
+        if offset > 0:
+            # Offset the points in the correct direction using vector addition.
+            # It's simpler to offset the line, then sample points on the offset.
+            # But that method often fails on self-intersecting lines,
+            # producting disconnected offsets.
+            points_1 = [geom_1.interpolate(x) for x in dists]
+            geom_2 = geom_1.parallel_offset(0.1, side)  # offset line by a smidge
+            points_2 = [geom_2.interpolate(geom_2.project(p)) for p in points_1]
+            points = [
+                np.array(points_1[i].coords[0])
+                + offset
+                * (np.array(points_2[i].coords[0]) - np.array(points_1[i].coords[0]))
+                for i in range(len(points_1))
+            ]
+        else:
+            # Skip the complexities
+            points = [geom_1.interpolate(x).coords[0] for x in dists]
+
         line_id = s._asdict()[id_col]
         suffixes = gk.make_ids(len(points), prefix="")
         point_ids = [f"{line_id}{cs.SEP}{suffix}" for suffix in suffixes]
