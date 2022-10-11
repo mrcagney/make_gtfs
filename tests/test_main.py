@@ -20,14 +20,14 @@ def test_get_duration():
     assert get == expect
 
 
-def test_():
+def test_make_stop_points():
     lines = gpd.read_file(DATA_DIR / "auckland" / "shapes.geojson").to_crs("epsg:2193")
     lines_looping = lines.iloc[:1]
     lines_nonlooping = lines.iloc[1:]
 
     offset = 5
     side = "left"
-    points = make_stop_points(lines_nonlooping, "shape_id", offset, side)
+    points = make_stop_points(lines_nonlooping, "shape_id", offset=0, side=side)
     assert set(points.columns) == {
         "shape_id",
         "point_id",

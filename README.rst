@@ -145,6 +145,11 @@ Notes
 Changes
 ========
 
+4.0.1, 2022-10-11
+-----------------
+- Speeded up ``make_stop_points`` when ``offset`` is zero.
+
+
 4.0.0, 2022-10-11
 -----------------
 - Offset built stops to the traffic side of each shape.
