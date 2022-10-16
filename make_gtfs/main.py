@@ -768,7 +768,7 @@ def build_feed(
     calendar, service_by_window = build_calendar_etc(pfeed)
     routes = build_routes(pfeed)
     shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed, shapes, n=num_stops_per_shape, spacing=stop_spacing)
+    stops = build_stops(pfeed, shapes, offset=stop_offset, n=num_stops_per_shape, spacing=stop_spacing)
     trips = build_trips(pfeed, routes, service_by_window)
     stop_times = build_stop_times(pfeed, routes, shapes, stops, trips, buffer=buffer)
 

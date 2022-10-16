@@ -144,6 +144,10 @@ Notes
 
 Changes
 ========
+4.0.2, 2022-10-17
+-----------------
+- Bugfix: propogated ``stop_offset`` parameter in ``build_feed`` down the function chain.
+
 
 4.0.1, 2022-10-11
 -----------------
