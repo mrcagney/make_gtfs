@@ -58,9 +58,16 @@ class ProtoFeed:
         """
         # Partition the service area into speed zones, filling with ``default_speed``
         if speed_zones is None:
-            result = service_area.assign(
-                speed_zone_id=default_speed_zone_id, speed=default_speed
-            )
+            frames = []
+            for route_type in self.frequencies.route_type.unique():
+                g = service_area.assign(
+                    route_type=route_type,
+                    speed_zone_id=default_speed_zone_id, 
+                    speed=default_speed,
+                )
+                frames.append(g)
+                result = pd.concat(g)
+                
         elif service_area.geom_equals(speed_zones.unary_union).all():
             # Speed zones already partition the study area, so good
             result = speed_zones
@@ -120,12 +127,15 @@ class ProtoFeed:
                 default_speed_zone_id=f"default-{group.name}",
             )
 
-        self.speed_zones = (
-            self.speed_zones.groupby("route_type")
-            .apply(my_apply)
-            .reset_index()
-            .filter(["route_type", "speed_zone_id", "speed", "geometry"])
-        )
+        if self.speed_zones is None:
+            self.speed_zones = self.tidy_speed_zones(None, service_area)
+        else:
+            self.speed_zones = (
+                self.speed_zones.groupby("route_type")
+                .apply(my_apply)
+                .reset_index()
+                .filter(["route_type", "speed_zone_id", "speed", "geometry"])
+            )
 
         lon, lat = self.shapes.geometry.iat[0].coords[0]
         self.utm_crs = gk.get_utm_crs(lat, lon)

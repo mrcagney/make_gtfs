@@ -1,0 +1,2 @@
+route_short_name,route_long_name,route_type,shape_id,service_window_id,frequency,direction
+A,"A nice route",3,shp1,weekday_peak_1,1,1
