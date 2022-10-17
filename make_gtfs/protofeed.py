@@ -43,7 +43,7 @@ class ProtoFeed:
     speed_zones: Optional[gpd.GeoDataFrame] = None
 
     @staticmethod
-    def tidy_speed_zones(
+    def clean_speed_zones(
         speed_zones: gpd.GeoDataFrame,
         service_area: gpd.GeoDataFrame,
         default_speed_zone_id: str = "default",
@@ -56,19 +56,7 @@ class ProtoFeed:
         Return the resulting service area of (Multi)Polygons, now partitioned into speed
         zones.
         """
-        # Partition the service area into speed zones, filling with ``default_speed``
-        if speed_zones is None:
-            frames = []
-            for route_type in self.frequencies.route_type.unique():
-                g = service_area.assign(
-                    route_type=route_type,
-                    speed_zone_id=default_speed_zone_id, 
-                    speed=default_speed,
-                )
-                frames.append(g)
-                result = pd.concat(g)
-                
-        elif service_area.geom_equals(speed_zones.unary_union).all():
+        if service_area.geom_equals(speed_zones.unary_union).all():
             # Speed zones already partition the study area, so good
             result = speed_zones
         else:
@@ -119,17 +107,30 @@ class ProtoFeed:
             geometry=[sg.box(*self.shapes.total_bounds).buffer(0.01)], crs=cs.WGS84
         )
 
-        # Tidy speed zones
-        def my_apply(group):
-            return self.tidy_speed_zones(
-                group,
-                service_area,
-                default_speed_zone_id=f"default-{group.name}",
-            )
-
+        # Clean speed zones
         if self.speed_zones is None:
-            self.speed_zones = self.tidy_speed_zones(None, service_area)
+            # Create one speed zone per route type present in this ProtoFeed.
+            # For each zone, use the geometry of the service area and assign
+            # it infinite speed so it won't override route speeds present in
+            # ``self.frequencies``.
+            frames = []
+            for route_type in self.frequencies.route_type.unique():
+                g = service_area.assign(
+                    route_type=route_type,
+                    speed_zone_id=f"default{cs.SEP}{route_type}",
+                    speed=np.inf,
+                )
+                frames.append(g)
+            self.speed_zones = pd.concat(frames, ignore_index=True)
         else:
+
+            def my_apply(group):
+                return self.clean_speed_zones(
+                    group,
+                    service_area,
+                    default_speed_zone_id=f"default{cs.SEP}{group.name}",
+                )
+
             self.speed_zones = (
                 self.speed_zones.groupby("route_type")
                 .apply(my_apply)
@@ -171,16 +172,16 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
     - ``meta.csv`` (required). A CSV file containing network metadata.
       The CSV file contains the columns
 
-      - ``agency_name`` (required): String. The name of the transport
+      - ``agency_name`` (required): string; the name of the transport
         agency
-      - ``agency_url`` (required): String. A fully qualified URL for
+      - ``agency_url`` (required): string; a fully qualified URL for
         the transport agency
-      - ``agency_timezone`` (required): String. Timezone where the
-        transit agency is located. Timezone names never contain the
-        space character but may contain an underscore. Refer to
+      - ``agency_timezone`` (required): string; timezone where the
+        transit agency is located; timezone names never contain the
+        space character but may contain an underscore; refer to
         `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
-      - ``start_date``, ``end_date`` (required): Strings. The start
-        and end dates for which all this network information is valid
+      - ``start_date``, ``end_date`` (required): strings; the start
+        and end dates for which all this network information is valid,
         formated as YYYYMMDD strings
 
     - ``service_windows.csv`` (required). A CSV file containing service window
@@ -190,44 +191,47 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       e.g. Saturday and Sunday 07:00 to 09:00.
       The CSV file contains the columns
 
-      - ``service_window_id`` (required): String. A unique identifier
+      - ``service_window_id`` (required): string; a unique identifier
         for a service window
-      - ``start_time``, ``end_time`` (required): Strings. The start
+      - ``start_time``, ``end_time`` (required): strings; the start
         and end times of the service window in HH:MM:SS format where
         the hour is less than 24
       - ``monday``, ``tuesday``, ``wednesday``, ``thursday``,
-        ``friday``, ``saturday``, ``sunday`` (required): Integer 0
-        or 1. Indicates whether the service is active on the given day
+        ``friday``, ``saturday``, ``sunday`` (required): integer 0
+        or 1; indicates whether the service is active on the given day
         (1) or not (0)
 
     - ``shapes.geojson`` (required). A GeoJSON file representing shapes for all
       (route, direction 0 or 1, service window) combinations.
-      The file consists of one feature collection of LineString
+      The file comprises one feature collection of LineString
       features (in WGS84 coordinates), where each feature has the property
 
       - ``shape_id`` (required): a unique identifier of the shape
 
+      Each LineString should represent the run of one representive trip of a route.
+      In particular, the LineString should not traverse the same section of road many times, unless you want a trip to actually do that.
+
+
     - ``frequencies.csv`` (required). A CSV file containing route frequency
       information. The CSV file contains the columns
 
-      - ``route_short_name`` (required): String. A unique short name
+      - ``route_short_name`` (required): string; a unique short name
         for the route, e.g. '51X'
-      - ``route_long_name`` (required): String. Full name of the route
+      - ``route_long_name`` (required): string; full name of the route
         that is more descriptive than ``route_short_name``
-      - ``route_type`` (required): integer. The
+      - ``route_type`` (required): integer; the
         `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
-      - ``service_window_id`` (required): String. A service window ID
+      - ``service_window_id`` (required): string; a service window ID
         for the route taken from the file ``service_windows.csv``
-      - ``direction`` (required): Integer 0, 1, or 2. Indicates
-        whether the route travels in GTFS direction 0, GTFS direction
-        1, or in both directions.
-        In the latter case, trips will be created that travel in both
-        directions along the route's path, each direction operating at
-        the given frequency.  Otherwise, trips will be created that
-        travel in only the given direction.
-      - ``frequency`` (required): Integer. The frequency of the route
+      - ``direction`` (required): integer 0, 1, or 2;
+        indicates whether the route travels in the direction of its shape (1), or in the reverse direction of its shape (0), or in both directions (2);
+        in the latter case, trips will be created that travel in both
+        directions along the route's shape, each direction operating at
+        the given frequency;
+        otherwise, trips will be created that travel in only the given direction
+      - ``frequency`` (required): integer; the frequency of the route
         during the service window in vehicles per hour.
-      - ``shape_id`` (required): String. A shape ID that is listed in
+      - ``shape_id`` (required): string; a shape ID that is listed in
         ``shapes.geojson`` and corresponds to the linestring of the
         (route, direction 0 or 1, service window) tuple.
       - ``speed`` (optional): float; the average speed of the route in kilometers
