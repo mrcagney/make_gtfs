@@ -10,6 +10,8 @@ from make_gtfs import *
 
 # Load test ProtoFeed
 pfeed = read_protofeed(DATA_DIR / "auckland")
+pfeed_l = read_protofeed(DATA_DIR / "auckland_light")
+pfeed_w = read_protofeed(DATA_DIR / "auckland_wonky")
 
 
 def test_get_duration():
@@ -52,15 +54,17 @@ def test_make_stop_points():
 
 
 def test_build_routes():
-    routes = build_routes(pfeed)
+    for p in [pfeed, pfeed_w]:
+        routes = build_routes(pfeed)
 
-    # Should be a data frame
-    assert isinstance(routes, pd.DataFrame)
-
-    # Should have correct shape
-    expect_nrows = pfeed.frequencies.drop_duplicates("route_short_name").shape[0]
-    expect_ncols = 4
-    assert routes.shape == (expect_nrows, expect_ncols)
+        # Should have correct shape
+        assert routes.shape[0] == pfeed.frequencies.drop_duplicates("route_short_name").shape[0]
+        assert set(routes.columns) == {
+            "route_id",
+            "route_type",
+            "route_short_name",
+            "route_long_name",
+        }
 
 
 def test_build_shapes():
