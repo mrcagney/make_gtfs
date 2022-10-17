@@ -35,7 +35,9 @@ Make GTFS uses the following files to build a GTFS feed.
     formated as YYYYMMDD strings
 
 - ``shapes.geojson`` (required). A GeoJSON file containing route shapes.
-  The file consists of one feature collection of LineString features, where each feature's properties contains at least the attribute ``shape_id``.
+  The file comprises one feature collection of LineString features, where each feature's properties contains at least the attribute ``shape_id``.
+    Each LineString should represent the run of one representive trip of a route.
+    In particular, the LineString should not traverse the same section of road many times, unless you want a trip to actually do that.
 
 - ``service_windows.csv``(required). A CSV file containing service window
   information.
@@ -66,10 +68,9 @@ Make GTFS uses the following files to build a GTFS feed.
   - ``service_window_id`` (required): string; a service window ID
     for the route taken from the file ``service_windows.csv``
   - ``direction`` (required): 0, 1, or 2; indicates
-    whether the route travels in GTFS direction 0, GTFS direction
-    1, or in both directions;
+    whether the route travels in the direction of its shape (1), or in the reverse direction of its shape (0), or in both directions (2);
     in the latter case, trips will be created that travel in both
-    directions along the route's path, each direction operating at
+    directions along the route's shape, each direction operating at
     the given frequency;  otherwise, trips will be created that
     travel in only the given direction
   - ``frequency`` (required): integer; the frequency of the route
@@ -144,9 +145,16 @@ Notes
 
 Changes
 ========
+
+4.0.3, 2022-10-18
+-----------------
+- Bugfix: Created proper default speed zones when creating ProtoFeeds without given speed zones.
+- Clarified README docs some.
+
+
 4.0.2, 2022-10-17
 -----------------
-- Bugfix: propogated ``stop_offset`` parameter in ``build_feed`` down the function chain.
+- Bugfix: Propogated ``stop_offset`` parameter in ``build_feed`` down the function chain.
 
 
 4.0.1, 2022-10-11

@@ -1,0 +1,2 @@
+service_window_id,start_time,end_time,monday,tuesday,wednesday,thursday,friday,saturday,sunday
+weekday_peak_1,07:00:00,09:00:00,1,1,1,1,1,0,0 
