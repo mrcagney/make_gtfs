@@ -146,6 +146,11 @@ Notes
 Changes
 ========
 
+4.0.4, 2022-10-19
+-----------------
+- Bugfix: Changed ``make_stop_points`` to correctly respect the ``offset`` parameter.
+
+
 4.0.3, 2022-10-18
 -----------------
 - Bugfix: Created proper default speed zones when creating ProtoFeeds without given speed zones.

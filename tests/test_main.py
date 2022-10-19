@@ -44,6 +44,9 @@ def test_make_stop_points():
     for __, group in points.groupby("shape_id"):
         assert group.shape[0] == n
 
+    # Points should be the correct distance away.
+    assert np.allclose(points.distance(lines_nonlooping.geometry.iat[0]), offset)
+
     points = make_stop_points(lines_looping, "shape_id", offset, side, n=n)
     for __, group in points.groupby("shape_id"):
         assert group.shape[0] == n - 1
