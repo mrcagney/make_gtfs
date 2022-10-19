@@ -216,10 +216,15 @@ def make_stop_points(
             points_1 = [geom_1.interpolate(x) for x in dists]
             geom_2 = geom_1.parallel_offset(0.1, side)  # offset line by a smidge
             points_2 = [geom_2.interpolate(geom_2.project(p)) for p in points_1]
+            # Make unit vectors in the correct directions
+            vectors = [
+                np.array(points_2[i].coords[0]) - np.array(points_1[i].coords[0])
+                for i in range(len(points_1))
+            ]
+            unit_vectors = [v / np.linalg.norm(v) for v in vectors]
+            # Make points as points_1 + offset * unit_vectors.
             points = [
-                np.array(points_1[i].coords[0])
-                + offset
-                * (np.array(points_2[i].coords[0]) - np.array(points_1[i].coords[0]))
+                np.array(points_1[i].coords[0]) + offset * unit_vectors[i]
                 for i in range(len(points_1))
             ]
         else:
