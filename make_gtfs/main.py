@@ -485,7 +485,11 @@ def compute_shape_point_speeds(
     for shape_id, group in shapes_g.groupby("shape_id"):
         bd = group.boundary_points.iat[0]
         if bd and not bd.is_empty:
-            for point in bd.geoms:
+            if isinstance(bd, sg.Point):
+                bpoints = [bd]
+            else:
+                bpoints = bd.geoms
+            for point in bpoints:
                 dist = group.geometry.iat[0].project(point)
                 rows.append([shape_id, dist, point])
 
@@ -773,7 +777,9 @@ def build_feed(
     calendar, service_by_window = build_calendar_etc(pfeed)
     routes = build_routes(pfeed)
     shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed, shapes, offset=stop_offset, n=num_stops_per_shape, spacing=stop_spacing)
+    stops = build_stops(
+        pfeed, shapes, offset=stop_offset, n=num_stops_per_shape, spacing=stop_spacing
+    )
     trips = build_trips(pfeed, routes, service_by_window)
     stop_times = build_stop_times(pfeed, routes, shapes, stops, trips, buffer=buffer)
 

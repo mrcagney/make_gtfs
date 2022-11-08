@@ -147,10 +147,11 @@ def test_check_speed_zones():
     with pytest.raises(pa.errors.SchemaError):
         check_speed_zones(pfeed)
 
-    # Check coercion
-    # pfeed = sample.copy()
-    # pfeed.speed_zones["route_type"].iat[0] = 3
-    # assert isinstance(check_speed_zones(pfeed), pd.DataFrame)
+    # Set bad route type
+    pfeed = sample.copy()
+    pfeed.speed_zones["route_type"].iat[0] = "3"
+    with pytest.raises(pa.errors.SchemaError):
+        check_speed_zones(pfeed)
 
     # Make speed zones IDs collide within a route type
     pfeed = sample.copy()
