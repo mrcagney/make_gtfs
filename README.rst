@@ -39,7 +39,7 @@ Make GTFS uses the following files to build a GTFS feed.
   Each LineString should represent the run of one representive trip of a route.
   In particular, the LineString should not traverse the same section of road many times, unless you want a trip to actually do that.
 
-- ``service_windows.csv``(required). A CSV file containing service window
+- ``service_windows.csv`` (required). A CSV file containing service window
   information.
   A *service window* is a time interval and a set of days of the
   week during which all routes have constant service frequency,
