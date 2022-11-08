@@ -98,7 +98,7 @@ Make GTFS uses the following files to build a GTFS feed.
 
 - ``stops.csv`` (optional). A CSV file containing all the required
   and optional fields of ``stops.txt`` in
-  `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+  `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_.
 
 
 
