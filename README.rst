@@ -146,6 +146,12 @@ Notes
 Changes
 ========
 
+4.0.5, 2022-YY-DD
+-----------------
+- Removed most type coercion in validation.
+  Probably more instructive for the user that way.
+
+
 4.0.4, 2022-10-19
 -----------------
 - Bugfix: Changed ``make_stop_points`` to correctly respect the ``offset`` parameter.
