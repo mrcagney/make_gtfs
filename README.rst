@@ -36,10 +36,10 @@ Make GTFS uses the following files to build a GTFS feed.
 
 - ``shapes.geojson`` (required). A GeoJSON file containing route shapes.
   The file comprises one feature collection of LineString features, where each feature's properties contains at least the attribute ``shape_id``.
-    Each LineString should represent the run of one representive trip of a route.
-    In particular, the LineString should not traverse the same section of road many times, unless you want a trip to actually do that.
+  Each LineString should represent the run of one representive trip of a route.
+  In particular, the LineString should not traverse the same section of road many times, unless you want a trip to actually do that.
 
-- ``service_windows.csv``(required). A CSV file containing service window
+- ``service_windows.csv`` (required). A CSV file containing service window
   information.
   A *service window* is a time interval and a set of days of the
   week during which all routes have constant service frequency,
@@ -56,7 +56,7 @@ Make GTFS uses the following files to build a GTFS feed.
     or 1; indicates whether the service is active on the given day
     (1) or not (0)
 
-- ``frequencies.csv``(required). A CSV file containing route frequency information.
+- ``frequencies.csv`` (required). A CSV file containing route frequency information.
   The CSV file contains the following columns.
 
   - ``route_short_name`` (required): string; a unique short name
@@ -98,7 +98,7 @@ Make GTFS uses the following files to build a GTFS feed.
 
 - ``stops.csv`` (optional). A CSV file containing all the required
   and optional fields of ``stops.txt`` in
-  `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_
+  `the GTFS <https://developers.google.com/transit/gtfs/reference/#stopstxt>`_.
 
 
 
