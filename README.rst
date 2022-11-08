@@ -56,7 +56,7 @@ Make GTFS uses the following files to build a GTFS feed.
     or 1; indicates whether the service is active on the given day
     (1) or not (0)
 
-- ``frequencies.csv``(required). A CSV file containing route frequency information.
+- ``frequencies.csv`` (required). A CSV file containing route frequency information.
   The CSV file contains the following columns.
 
   - ``route_short_name`` (required): string; a unique short name
