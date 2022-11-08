@@ -50,7 +50,6 @@ SCHEMA_META = pa.DataFrameSchema(
     checks=pa.Check(lambda x: x.shape[0] == 1),  # Should have exactly 1 row
     index=pa.Index(int),
     strict="filter",  # Drop columns not specified above
-    coerce=True,
 )
 SCHEMA_SHAPES = pa.DataFrameSchema(
     {
@@ -70,7 +69,6 @@ SCHEMA_SHAPES = pa.DataFrameSchema(
     checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
     index=pa.Index(int),
     strict="filter",  # Drop columns not specified above
-    coerce=True,
 )
 SCHEMA_SERVICE_WINDOWS = pa.DataFrameSchema(
     {
@@ -92,7 +90,6 @@ SCHEMA_SERVICE_WINDOWS = pa.DataFrameSchema(
     checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
     index=pa.Index(int),
     strict="filter",  # Drop columns not specified above
-    coerce=True,
 )
 SCHEMA_FREQUENCIES = pa.DataFrameSchema(
     {
@@ -108,19 +105,22 @@ SCHEMA_FREQUENCIES = pa.DataFrameSchema(
     checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
     index=pa.Index(int),
     strict="filter",  # Drop columns not specified above
-    coerce=True,
 )
 SCHEMA_STOPS = pa.DataFrameSchema(
     {
         "stop_id": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN), unique=True),
-        "stop_code": pa.Column(str, nullable=True, required=False),
+        "stop_code": pa.Column(str, nullable=True, required=False, coerce=True),
         "stop_name": pa.Column(str, pa.Check.str_matches(NONBLANK_PATTERN)),
-        "stop_desc": pa.Column(str, nullable=True, required=False),
+        "stop_desc": pa.Column(str, nullable=True, required=False, coerce=True),
         "stop_lat": pa.Column(float),
         "stop_lon": pa.Column(float),
-        "zone_id": pa.Column(str, nullable=True, required=False),
+        "zone_id": pa.Column(str, nullable=True, required=False, coerce=True),
         "stop_url": pa.Column(
-            str, pa.Check.str_matches(URL_PATTERN), nullable=True, required=False
+            str,
+            pa.Check.str_matches(URL_PATTERN),
+            nullable=True,
+            required=False,
+            coerce=True,
         ),
         "location_type": pa.Column(
             int, pa.Check.isin(range(5)), nullable=True, required=False
@@ -136,7 +136,6 @@ SCHEMA_STOPS = pa.DataFrameSchema(
     checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
     index=pa.Index(int),
     strict="filter",  # Drop columns not specified above
-    coerce=True,
 )
 SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
     {
@@ -158,7 +157,6 @@ SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
     checks=pa.Check(lambda x: x.shape[0] >= 1),  # Should have at least 1 row
     index=pa.Index(int),
     strict="filter",  # Drop columns not specified above
-    coerce=True,
 )
 
 

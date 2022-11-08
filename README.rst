@@ -146,6 +146,18 @@ Notes
 Changes
 ========
 
+4.0.5, 2022-11-08
+-----------------
+- Removed most type coercion in validation.
+  Probably more instructive for the user that way.
+- Fixed `Issue 11 <https://gitlab.com/mrcagney/make_gtfs/-/issues/11>`_.
+
+
+4.0.4, 2022-10-19
+-----------------
+- Bugfix: Changed ``make_stop_points`` to correctly respect the ``offset`` parameter.
+
+
 4.0.3, 2022-10-18
 -----------------
 - Bugfix: Created proper default speed zones when creating ProtoFeeds without given speed zones.

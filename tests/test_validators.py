@@ -147,6 +147,12 @@ def test_check_speed_zones():
     with pytest.raises(pa.errors.SchemaError):
         check_speed_zones(pfeed)
 
+    # Set bad route type
+    pfeed = sample.copy()
+    pfeed.speed_zones["route_type"].iat[0] = "3"
+    with pytest.raises(pa.errors.SchemaError):
+        check_speed_zones(pfeed)
+
     # Make speed zones IDs collide within a route type
     pfeed = sample.copy()
     pfeed.speed_zones["speed_zone_id"] = "a"
