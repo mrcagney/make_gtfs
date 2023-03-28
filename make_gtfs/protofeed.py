@@ -179,7 +179,7 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``agency_timezone`` (required): string; timezone where the
         transit agency is located; timezone names never contain the
         space character but may contain an underscore; refer to
-        `http://en.wikipedia.org/wiki/List_of_tz_zones <http://en.wikipedia.org/wiki/List_of_tz_zones>`_ for a list of valid values
+        http://en.wikipedia.org/wiki/List_of_tz_zones for a list of valid values
       - ``start_date``, ``end_date`` (required): strings; the start
         and end dates for which all this network information is valid,
         formated as YYYYMMDD strings
@@ -209,7 +209,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       - ``shape_id`` (required): a unique identifier of the shape
 
       Each LineString should represent the run of one representive trip of a route.
-      In particular, the LineString should not traverse the same section of road many times, unless you want a trip to actually do that.
+      In particular, the LineString should not traverse the same section of
+      road many times, unless you want a trip to actually do that.
 
 
     - ``frequencies.csv`` (required). A CSV file containing route frequency
@@ -219,12 +220,13 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
         for the route, e.g. '51X'
       - ``route_long_name`` (required): string; full name of the route
         that is more descriptive than ``route_short_name``
-      - ``route_type`` (required): integer; the
-        `GTFS type of the route <https://developers.google.com/transit/gtfs/reference/#routestxt>`_
+      - ``route_type`` (required): integer; the GTFS type of the route type;
+         https://developers.google.com/transit/gtfs/reference/#routestxt
       - ``service_window_id`` (required): string; a service window ID
         for the route taken from the file ``service_windows.csv``
       - ``direction`` (required): integer 0, 1, or 2;
-        indicates whether the route travels in the direction of its shape (1), or in the reverse direction of its shape (0), or in both directions (2);
+        indicates whether the route travels in the direction of its shape (1),
+        or in the reverse direction of its shape (0), or in both directions (2);
         in the latter case, trips will be created that travel in both
         directions along the route's shape, each direction operating at
         the given frequency;
@@ -249,8 +251,8 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
       The file consists of one feature collection of Polygon features
       (in WGS84 coordinates), each with the properties
 
-      - ``speed_zone_id`` (required): string; a unique identifier of the zone polygon; can
-        be re-used if the polygon is re-used
+      - ``speed_zone_id`` (required): string; a unique identifier of the zone polygon;
+        can be re-used if the polygon is re-used
       - ``route_type`` (required): integer; a GTFS route type to which the zone applies
       - ``speed`` (required): positive float; the average speed in kilometers per hour
         of routes of that route type that travel within the zone; overrides route

@@ -131,8 +131,8 @@ On Gitlab pages `here <https://mrcagney.gitlab.io/make_gtfs_docs>`_.
 
 Contributors
 ============
-- Alex Raichev (2014-09), maintainer
-- Danielle Gatland (2021-10), reviewer
+- Alex Raichev (maintainer), 2014-09
+- Danielle Gatland (reviewer), 2021-10
 
 
 Notes
@@ -145,6 +145,10 @@ Notes
 
 Changes
 ========
+
+4.0.6, 2023-03-29
+-----------------
+- Updated dependencies and pre-commit hooks.
 
 4.0.5, 2022-11-08
 -----------------
