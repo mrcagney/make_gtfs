@@ -1,6 +1,6 @@
 Make GTFS
 ***********
-.. image:: https://github.com/mrcagney/make_gtfs/actions/workflows/run_tests.yml/badge.svg
+.. image:: https://github.com/mrcagney/gtfs_kit/actions/workflows/test.yml/badge.svg
 
 A Python 3.8+ library to build GTFS feeds from basic route information.
 Inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
