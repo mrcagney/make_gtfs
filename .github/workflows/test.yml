@@ -64,7 +64,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install --no-interaction --no-root --without dev
-          poetry add pytest
+          poetry add pytest --group main
       #----------------------------------------------
       #    add matrix specifics and run test suite
       #----------------------------------------------
