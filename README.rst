@@ -9,7 +9,7 @@ Makes naive timetables, but they are often good enough for preliminary work.
 
 Installation
 =============
-Create a Python 3.8+ virtual environment and run ``poetry install make_gtfs``.
+Create a Python 3.8+ virtual environment and run ``poetry add make_gtfs``.
 
 
 Usage
@@ -126,7 +126,7 @@ See ``data/auckland`` for example files and play with the Jupyter notebook at ``
 
 Documentation
 ===============
-On Gitlab pages `here <https://mrcagney.gitlab.io/make_gtfs_docs>`_.
+On Github pages `here <https://mrcagney.github.io/make_gtfs_docs>`_.
 
 
 Contributors
