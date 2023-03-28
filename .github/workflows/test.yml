@@ -66,13 +66,6 @@ jobs:
           poetry install --no-interaction --no-root --without dev
           poetry add pytest
       #----------------------------------------------
-      # install your root project, if required
-      #----------------------------------------------
-      - name: Install library
-        run: |
-          poetry install --no-interaction --without dev
-          poetry add pytest
-      #----------------------------------------------
       #    add matrix specifics and run test suite
       #----------------------------------------------
       - name: Run tests
