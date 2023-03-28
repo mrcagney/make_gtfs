@@ -587,7 +587,8 @@ def build_stop_times_for_trip(
             .fillna(0),
         )
         # Drop the shape points, keeping only the stops,
-        # then compute distances, distance-weighted speeds, and times between successive stops.
+        # then compute distances, distance-weighted speeds,
+        # and times between successive stops.
         .loc[lambda x: x.stop_id.notna()]
         .assign(
             trip_id=trip_id,
@@ -766,8 +767,8 @@ def build_feed(
     If no stops are given, then for each shape build stops offset by ``stop_offset``
     meters on the traffic side of each built shape.
     Make ``n`` equally spaced stops for each shape, then offset them.
-    But if ``stop_spacing`` is given, then instead space the stops every ``stop_spacing``
-    meters along each shape, then offset them.
+    But if ``stop_spacing`` is given, then instead space the stops every
+    ``stop_spacing`` meters along each shape, then offset them.
     If a shape has an antiparallel clone, then only build stops on the shape, not
     its clone, thereby avoiding unnecessary stops.
     Output distance units will be in meters
