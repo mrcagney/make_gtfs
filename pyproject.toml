@@ -10,6 +10,9 @@ python = ">=3.8, <4"
 gtfs-kit = ">=5"
 pandera = ">=0.11.0"
 
+[tool.poetry.group.githubtest.dependencies]
+pytest = ">=6.2.5"
+
 [tool.poetry.group.dev.dependencies]
 pytest = ">=6.2.5"
 jupyter = ">=1.0.0"

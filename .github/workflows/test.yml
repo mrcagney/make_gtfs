@@ -28,7 +28,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.9", "3.10" ]
+        python-version: [ "3.8", "3.9", "3.10" ]
     runs-on: ${{ matrix.os }}
     steps:
       #----------------------------------------------
@@ -63,8 +63,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry add pytest --group main --lock
-          poetry install --no-interaction --no-root --only main
+          poetry install --no-interaction --no-root --only githubtest
       #----------------------------------------------
       #    add matrix specifics and run test suite
       #----------------------------------------------
