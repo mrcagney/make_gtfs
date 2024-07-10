@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "make_gtfs"
-version = "4.0.6"
-description = "A Python 3.8+ library to build GTFS feeds from basic route information."
+version = "4.0.7"
+description = "A Python 3.9+ library to build GTFS feeds from basic route information."
 authors = ["Alex Raichev <araichev@mrcagney.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.8, <4"
+python = ">=3.9, <4"
 gtfs-kit = ">=5"
 pandera = ">=0.11.0"
 
@@ -19,14 +19,9 @@ jupyter = ">=1.0.0"
 pre-commit = ">=2.15.0"
 Sphinx = ">=5.0.2"
 publish-sphinx-docs = ">=1.0.3"
-geo-kit = {git = "git@github.com:mrcagney/geo_kit"}
 black = ">=22"
 ruff = ">=0.0.259"
 nbstripout = ">=0.6.1"
-
-[build-system]
-requires = ["poetry-core>=1"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 markers = [
@@ -37,4 +32,8 @@ markers = [
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
 select = ["E", "F"]
-ignore = ["F403"]
+ignore = ["F401", "F403"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+
 import pathlib as pl
 from dataclasses import dataclass
 
@@ -39,8 +39,8 @@ class ProtoFeed:
     service_windows: pd.DataFrame
     shapes: gpd.GeoDataFrame
     frequencies: pd.DataFrame
-    stops: Optional[pd.DataFrame] = None
-    speed_zones: Optional[gpd.GeoDataFrame] = None
+    stops: pd.DataFrame | None = None
+    speed_zones: gpd.GeoDataFrame | None = None
 
     @staticmethod
     def clean_speed_zones(
@@ -55,8 +55,10 @@ class ProtoFeed:
         ``default_speed_zone_id`` and the speed there will be set to ``default_speed``.
         Return the resulting service area of (Multi)Polygons, now partitioned into speed
         zones.
+        The result is a GeoDataFrame with the columns 'speed_zone_id', 'speed',
+        'geometry'.
         """
-        if service_area.geom_equals(speed_zones.unary_union).all():
+        if service_area.geom_equals(speed_zones.union_all()).all():
             # Speed zones already partition the study area, so good
             result = speed_zones
         else:
@@ -68,12 +70,13 @@ class ProtoFeed:
                 # Union chunks
                 .overlay(service_area, how="union")
                 .assign(
-                    speed_zone_id=lambda x: x.speed_zone_id.fillna(
+                    route_type=lambda x: x["route_type"].ffill().astype(int),
+                    speed_zone_id=lambda x: x["speed_zone_id"].fillna(
                         default_speed_zone_id
                     ),
-                    speed=lambda x: x.speed.fillna(default_speed),
+                    speed=lambda x: x["speed"].fillna(default_speed),
                 )
-                .filter(["speed_zone_id", "speed", "geometry"])
+                .filter(["route_type", "speed_zone_id", "speed", "geometry"])
                 .sort_values("speed_zone_id", ignore_index=True)
             )
         return result
@@ -91,7 +94,7 @@ class ProtoFeed:
         # <shape ID> -> <trip directions using the shape (0, 1, or 2)>
         def my_agg(group):
             d = {}
-            dirs = group.direction.unique()
+            dirs = group["direction"].unique()
             if len(dirs) > 1 or 2 in dirs:
                 d["direction"] = 2
             else:
@@ -114,7 +117,7 @@ class ProtoFeed:
             # it infinite speed so it won't override route speeds present in
             # ``self.frequencies``.
             frames = []
-            for route_type in self.frequencies.route_type.unique():
+            for route_type in self.frequencies["route_type"].unique():
                 g = service_area.assign(
                     route_type=route_type,
                     speed_zone_id=f"default{cs.SEP}{route_type}",
@@ -132,14 +135,24 @@ class ProtoFeed:
                 )
 
             self.speed_zones = (
-                self.speed_zones.groupby("route_type")
+                self.speed_zones.groupby("route_type", group_keys=False)
                 .apply(my_apply)
-                .reset_index()
                 .filter(["route_type", "speed_zone_id", "speed", "geometry"])
             )
 
         lon, lat = self.shapes.geometry.iat[0].coords[0]
         self.utm_crs = gk.get_utm_crs(lat, lon)
+
+    def __eq__(self, other) -> bool:
+        for k in self.__dataclass_fields__:
+            v1 = getattr(self, k)
+            v2 = getattr(other, k)
+            if isinstance(v1, (pd.DataFrame, gpd.GeoDataFrame)):
+                if not v1.equals(v2):
+                    return False
+            elif not isinstance(v2, type(v1)) or v1 != v2:
+                return False
+        return True
 
     def copy(self) -> ProtoFeed:
         """
@@ -293,8 +306,10 @@ def read_protofeed(path: str | pl.Path) -> ProtoFeed:
     d["speed_zones"] = None
     if (path / "speed_zones.geojson").exists():
         g = gpd.read_file(path / "speed_zones.geojson")
+        if "route_type" in g.columns:
+            g["route_type"] = g["route_type"].astype(int)
         if "speed_zone_id" in g.columns:
-            g["speed_zone_id"] = g.speed_zone_id.astype(str)
+            g["speed_zone_id"] = g["speed_zone_id"].astype(str)
         d["speed_zones"] = g
 
     pfeed = ProtoFeed(**d)

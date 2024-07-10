@@ -4,4 +4,4 @@ from .protofeed import *
 from .hashables import *
 from .main import *
 
-__version__ = "4.0.6"
+__version__ = "4.0.7"

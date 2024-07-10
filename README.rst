@@ -2,14 +2,20 @@ Make GTFS
 ***********
 .. image:: https://github.com/mrcagney/gtfs_kit/actions/workflows/test.yml/badge.svg
 
-A Python 3.8+ library to build GTFS feeds from basic route information.
+A Python 3.9+ library to build GTFS feeds from basic route information.
 Inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
 Makes naive timetables, but they are often good enough for preliminary work.
+
+Contributors
+============
+- Alex Raichev (maintainer), 2014-09
 
 
 Installation
 =============
-Create a Python 3.8+ virtual environment and run ``poetry add make_gtfs``.
+To use as a library in your own project (called something other than ``make_gtfs``), make a Python 3.9+ virtual environment for your project, then run ``poetry add make_gtfs``.
+
+To develop the ``make_gtfs`` repo, Git clone it, make a Python 3.9+ virtual environment, then run ``poetry install --no-root && pre-commit install``.
 
 
 Usage
@@ -130,12 +136,6 @@ Documentation
 On Github pages `here <https://mrcagney.github.io/make_gtfs_docs>`_.
 
 
-Contributors
-============
-- Alex Raichev (maintainer), 2014-09
-- Danielle Gatland (reviewer), 2021-10
-
-
 Notes
 ======
 - This project's development status is Alpha.
@@ -146,6 +146,13 @@ Notes
 
 Changes
 ========
+
+4.0.7, 2024-07-10
+-----------------
+- Updated dependencies.
+- Upgraded Python to 3.9+.
+- Tweaked some validators.
+- Updated README.
 
 4.0.6, 2023-03-29
 -----------------

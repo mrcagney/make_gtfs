@@ -1,10 +1,12 @@
+import numpy as np
 import pandas as pd
+import geopandas as gpd
 
 from .context import make_gtfs, DATA_DIR
-from make_gtfs import *
+import make_gtfs as mg
 
 
-pfeed = read_protofeed(DATA_DIR / "auckland")
+pfeed = mg.read_protofeed(DATA_DIR / "auckland")
 
 
 def test_copy():
@@ -28,24 +30,24 @@ def test_route_types():
 
 
 def test_read_protofeed():
-    pfeed = read_protofeed(DATA_DIR / "auckland")
-    assert isinstance(pfeed, ProtoFeed)
+    pfeed = mg.read_protofeed(DATA_DIR / "auckland")
+    assert isinstance(pfeed, mg.ProtoFeed)
 
-    pfeed = read_protofeed(DATA_DIR / "auckland_light")
-    assert isinstance(pfeed, ProtoFeed)
+    pfeed = mg.read_protofeed(DATA_DIR / "auckland_light")
+    assert isinstance(pfeed, mg.ProtoFeed)
 
 
 def test_pfeed():
-    pfeed0 = read_protofeed(DATA_DIR / "auckland")
+    pfeed0 = mg.read_protofeed(DATA_DIR / "auckland")
 
     # Test init without stops or speed_zones
-    pfeed = ProtoFeed(
+    pfeed = mg.ProtoFeed(
         meta=pfeed0.meta,
         service_windows=pfeed0.service_windows,
         shapes=pfeed0.shapes,
         frequencies=pfeed0.frequencies,
     )
-    assert validate(pfeed)
+    assert mg.validate(pfeed)
     # Resulting speed zones should contain one zone per unique route type
     assert pfeed.speed_zones.shape[0] == pfeed.frequencies.route_type.nunique()
     # Speed zone geometries should all be the same
@@ -54,21 +56,21 @@ def test_pfeed():
     assert np.equal(pfeed.speed_zones.speed, np.inf).all()
 
     # Test init without speed_zones
-    pfeed = ProtoFeed(
+    pfeed = mg.ProtoFeed(
         meta=pfeed0.meta,
         service_windows=pfeed0.service_windows,
         shapes=pfeed0.shapes,
         frequencies=pfeed0.frequencies,
         stops=pfeed0.stops,
     )
-    assert validate(pfeed)
+    assert mg.validate(pfeed)
 
     # Test init without stops
-    pfeed = ProtoFeed(
+    pfeed = mg.ProtoFeed(
         meta=pfeed0.meta,
         service_windows=pfeed0.service_windows,
         shapes=pfeed0.shapes,
         frequencies=pfeed0.frequencies,
         speed_zones=pfeed0.speed_zones,
     )
-    assert validate(pfeed)
+    assert mg.validate(pfeed)

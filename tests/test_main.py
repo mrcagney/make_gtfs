@@ -2,22 +2,23 @@ import pandas as pd
 import gtfs_kit as gk
 import shapely.geometry as sg
 import geopandas as gpd
+import numpy as np
 import pytest
 
 from .context import make_gtfs, DATA_DIR
-from make_gtfs import *
+import make_gtfs as mg
 
 
 # Load test ProtoFeed
-pfeed = read_protofeed(DATA_DIR / "auckland")
-pfeed_l = read_protofeed(DATA_DIR / "auckland_light")
-pfeed_w = read_protofeed(DATA_DIR / "auckland_wonky")
+pfeed = mg.read_protofeed(DATA_DIR / "auckland")
+pfeed_l = mg.read_protofeed(DATA_DIR / "auckland_light")
+pfeed_w = mg.read_protofeed(DATA_DIR / "auckland_wonky")
 
 
 def test_get_duration():
     ts1 = "01:01:01"
     ts2 = "01:05:01"
-    get = get_duration(ts1, ts2, units="min")
+    get = mg.get_duration(ts1, ts2, units="min")
     expect = 4
     assert get == expect
 
@@ -29,7 +30,7 @@ def test_make_stop_points():
 
     offset = 5
     side = "left"
-    points = make_stop_points(lines_nonlooping, "shape_id", offset=0, side=side)
+    points = mg.make_stop_points(lines_nonlooping, "shape_id", offset=0, side=side)
     assert set(points.columns) == {
         "shape_id",
         "point_id",
@@ -40,28 +41,31 @@ def test_make_stop_points():
         assert group.shape[0] == 2
 
     n = 5
-    points = make_stop_points(lines_nonlooping, "shape_id", offset, side, n=n)
+    points = mg.make_stop_points(lines_nonlooping, "shape_id", offset, side, n=n)
     for __, group in points.groupby("shape_id"):
         assert group.shape[0] == n
 
     # Points should be the correct distance away.
     assert np.allclose(points.distance(lines_nonlooping.geometry.iat[0]), offset)
 
-    points = make_stop_points(lines_looping, "shape_id", offset, side, n=n)
+    points = mg.make_stop_points(lines_looping, "shape_id", offset, side, n=n)
     for __, group in points.groupby("shape_id"):
         assert group.shape[0] == n - 1
 
-    points = make_stop_points(lines, "shape_id", offset, side, spacing=200)
+    points = mg.make_stop_points(lines, "shape_id", offset, side, spacing=200)
     for __, group in points.groupby("shape_id"):
         assert group.shape[0] >= 2
 
 
 def test_build_routes():
     for p in [pfeed, pfeed_w]:
-        routes = build_routes(pfeed)
+        routes = mg.build_routes(pfeed)
 
         # Should have correct shape
-        assert routes.shape[0] == pfeed.frequencies.drop_duplicates("route_short_name").shape[0]
+        assert (
+            routes.shape[0]
+            == pfeed.frequencies.drop_duplicates("route_short_name").shape[0]
+        )
         assert set(routes.columns) == {
             "route_id",
             "route_type",
@@ -71,7 +75,7 @@ def test_build_routes():
 
 
 def test_build_shapes():
-    shapes = build_shapes(pfeed)
+    shapes = mg.build_shapes(pfeed)
 
     # Should be a data frame
     assert isinstance(shapes, pd.DataFrame)
@@ -95,28 +99,28 @@ def test_build_stops():
     pfeed_stopless.stops = None
 
     # Test with non-null ``pfeed.stops``
-    stops = build_stops(pfeed)
+    stops = mg.build_stops(pfeed)
     assert stops.shape == pfeed.stops.shape
     assert set(stops.columns) == set(pfeed.stops.columns)
 
-    shapes = build_shapes(pfeed_stopless)
-    stops = build_stops(pfeed_stopless, shapes, spacing=400)
+    shapes = mg.build_shapes(pfeed_stopless)
+    stops = mg.build_stops(pfeed_stopless, shapes, spacing=400)
     assert set(stops.columns) == {"stop_id", "stop_name", "stop_lon", "stop_lat"}
     nshapes = shapes.shape_id.nunique()
     assert stops.shape[0] >= nshapes
 
     n = 4
-    stops = build_stops(pfeed_stopless, shapes, n=4)
+    stops = mg.build_stops(pfeed_stopless, shapes, n=4)
     # Should have correct shape
     nshapes = shapes.shape_id.nunique()
     assert stops.shape[0] <= n * nshapes
 
 
 def test_build_trips():
-    routes = build_routes(pfeed)
-    __, service_by_window = build_calendar_etc(pfeed)
-    shapes = build_shapes(pfeed)
-    trips = build_trips(pfeed, routes, service_by_window)
+    routes = mg.build_routes(pfeed)
+    __, service_by_window = mg.build_calendar_etc(pfeed)
+    shapes = mg.build_shapes(pfeed)
+    trips = mg.build_trips(pfeed, routes, service_by_window)
 
     # Should be a data frame
     assert isinstance(trips, pd.DataFrame)
@@ -133,7 +137,7 @@ def test_build_trips():
         if not frequency:
             continue
         start, end = row[["start_time", "end_time"]].values
-        duration = get_duration(start, end, "h")
+        duration = mg.get_duration(start, end, "h")
         direction = row["direction"]
         if direction == 0:
             trip_mult = 1
@@ -149,7 +153,7 @@ def test_buffer_side():
     buff = 5
     # Buffers should have correct area and orientation
     for side in ["left", "right", "both"]:
-        b = buffer_side(s, side, buff)
+        b = mg.buffer_side(s, side, buff)
         p = b.representative_point()
         if side == "left":
             assert b.area >= buff
@@ -168,7 +172,7 @@ def test_get_stops_nearby():
         columns=["stop_code", "geometry"],
     )
     for side in ["left", "right", "both"]:
-        n = get_stops_nearby(stops, geom, side, 1)
+        n = mg.get_stops_nearby(stops, geom, side, 1)
         if side == "left":
             assert n.shape[0] == 1
             assert n.stop_code.iat[0] == "a"
@@ -181,9 +185,9 @@ def test_get_stops_nearby():
 
 
 def test_compute_shape_point_speeds():
-    shapes = build_shapes(pfeed)
+    shapes = mg.build_shapes(pfeed)
     route_type = pfeed.route_types()[0]
-    g = compute_shape_point_speeds(shapes, pfeed.speed_zones, route_type)
+    g = mg.compute_shape_point_speeds(shapes, pfeed.speed_zones, route_type)
     assert isinstance(g, gpd.GeoDataFrame)
     assert set(g.columns) == {
         "shape_id",
@@ -194,7 +198,7 @@ def test_compute_shape_point_speeds():
         "speed_zone_id",
         "speed",
     }
-    assert g.crs == WGS84
+    assert g.crs == mg.WGS84
 
     # Should have correct length
     assert g.shape[0] >= shapes.shape[0]
@@ -206,22 +210,22 @@ def test_compute_shape_point_speeds():
 
 @pytest.mark.slow
 def test_build_stop_times_for_trip():
-    stops = build_stops(pfeed)
+    stops = mg.build_stops(pfeed)
     stops_g = gk.geometrize_stops_0(stops, use_utm=True)
-    shapes = build_shapes(pfeed)
+    shapes = mg.build_shapes(pfeed)
     shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
     trip_id = "bingo"
     shape_id = shapes_gi.index[0]
 
     # Generic case
     linestring = shapes_gi.loc[shape_id].geometry
-    stops_g_nearby = get_stops_nearby(stops_g, linestring, "left")
+    stops_g_nearby = mg.get_stops_nearby(stops_g, linestring, "left")
     route_type = 3
     sz = pfeed.speed_zones.to_crs(pfeed.utm_crs)
-    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    shape_point_speeds = mg.compute_shape_point_speeds(shapes, sz, route_type)
     default_speed = 2
     start_time = 0
-    f = build_stop_times_for_trip(
+    f = mg.build_stop_times_for_trip(
         trip_id,
         stops_g_nearby,
         shape_id,
@@ -266,10 +270,10 @@ def test_build_stop_times_for_trip():
         geometry=[sg.box(*linestring.bounds).buffer(10)],
         crs=stops_g.crs,
     )
-    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    shape_point_speeds = mg.compute_shape_point_speeds(shapes, sz, route_type)
     default_speed = 2
 
-    f = build_stop_times_for_trip(
+    f = mg.build_stop_times_for_trip(
         trip_id,
         stops_g_nearby,
         shape_id,
@@ -291,9 +295,9 @@ def test_build_stop_times_for_trip():
         geometry=[sg.box(*linestring.bounds).buffer(10)],
         crs=stops_g.crs,
     )
-    shape_point_speeds = compute_shape_point_speeds(shapes, sz, route_type)
+    shape_point_speeds = mg.compute_shape_point_speeds(shapes, sz, route_type)
 
-    f = build_stop_times_for_trip(
+    f = mg.build_stop_times_for_trip(
         trip_id,
         stops_g_nearby,
         shape_id,
@@ -315,12 +319,12 @@ def test_build_stop_times():
     # Test stopless version first
     pfeed_stopless = pfeed.copy()
     pfeed_stopless.stops = None
-    routes = build_routes(pfeed_stopless)
-    shapes = build_shapes(pfeed_stopless)
-    __, service_by_window = build_calendar_etc(pfeed_stopless)
-    stops = build_stops(pfeed_stopless, shapes)
-    trips = build_trips(pfeed_stopless, routes, service_by_window)
-    stop_times = build_stop_times(pfeed_stopless, routes, shapes, stops, trips)
+    routes = mg.build_routes(pfeed_stopless)
+    shapes = mg.build_shapes(pfeed_stopless)
+    __, service_by_window = mg.build_calendar_etc(pfeed_stopless)
+    stops = mg.build_stops(pfeed_stopless, shapes)
+    trips = mg.build_trips(pfeed_stopless, routes, service_by_window)
+    stop_times = mg.build_stop_times(pfeed_stopless, routes, shapes, stops, trips)
 
     assert isinstance(stop_times, pd.DataFrame)
 
@@ -331,12 +335,12 @@ def test_build_stop_times():
     assert stop_times.shape[1] == 6
 
     # Test with stops
-    routes = build_routes(pfeed)
-    shapes = build_shapes(pfeed)
-    stops = build_stops(pfeed)
-    __, service_by_window = build_calendar_etc(pfeed)
-    trips = build_trips(pfeed, routes, service_by_window)
-    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips)
+    routes = mg.build_routes(pfeed)
+    shapes = mg.build_shapes(pfeed)
+    stops = mg.build_stops(pfeed)
+    __, service_by_window = mg.build_calendar_etc(pfeed)
+    trips = mg.build_trips(pfeed, routes, service_by_window)
+    stop_times = mg.build_stop_times(pfeed, routes, shapes, stops, trips)
 
     # Should be a data frame
     assert isinstance(stop_times, pd.DataFrame)
@@ -348,7 +352,7 @@ def test_build_stop_times():
     assert stop_times.shape[1] == 6
 
     # Test with stops and tiny buffer so that no stop times are built
-    stop_times = build_stop_times(pfeed, routes, shapes, stops, trips, buffer=0)
+    stop_times = mg.build_stop_times(pfeed, routes, shapes, stops, trips, buffer=0)
 
     # Should be a data frame
     assert isinstance(stop_times, pd.DataFrame)
@@ -359,7 +363,7 @@ def test_build_stop_times():
 
 @pytest.mark.slow
 def test_build_feed():
-    feed = build_feed(pfeed)
+    feed = mg.build_feed(pfeed)
 
     # Should be a GTFSTK Feed
     assert isinstance(feed, gk.Feed)
@@ -371,5 +375,4 @@ def test_build_feed():
 
     # Should be a valid feed
     v = feed.validate()
-    print(v)
     assert "error" not in v.type.values
