@@ -1,6 +1,7 @@
 """
 Constants used throughout the package.
 """
+
 import pytz
 import pycountry
 

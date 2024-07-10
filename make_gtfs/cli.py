@@ -1,6 +1,7 @@
 """
 The command-line-interface module.
 """
+
 import click
 
 from . import protofeed as pf
