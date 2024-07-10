@@ -123,6 +123,7 @@ Basically,
   Assign stops to each trip as follows.
   Collect all stops in the built file ``stops.txt`` that are within a fixed distance of the traffic side (e.g. the right hand side for USA agency timezones and the left hand side for New Zealand agency timezones) of the trip shape.
   If the trip has no nearby stops, then do not make stop times for that trip.
+- Once validated, write these files to disk by running command ``feed.write("gtfsfile.zip")``. 
 
 
 Examples
