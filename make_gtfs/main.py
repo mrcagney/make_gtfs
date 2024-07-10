@@ -1,7 +1,9 @@
 """
 This module contains the main logic.
 """
-from typing import Optional
+
+from __future__ import annotations
+
 from functools import lru_cache
 import math
 
@@ -161,7 +163,7 @@ def make_stop_points(
     offset: float,
     side: str,
     n: int = 2,
-    spacing: Optional[float] = None,
+    spacing: float | None = None,
 ) -> gpd.GeoDataFrame:
     """
     Given a GeoDataFrame of lines with at least the columns
@@ -252,10 +254,10 @@ def make_stop_points(
 
 def build_stops(
     pfeed: pf.ProtoFeed,
-    shapes: Optional[pd.DataFrame] = None,
+    shapes: pd.DataFrame | None = None,
     offset: float = cs.STOP_OFFSET,
     n: int = 2,
-    spacing: Optional[float] = None,
+    spacing: float | None = None,
 ) -> pd.DataFrame:
     """
     Given a ProtoFeed, return a DataFrame representing ``stops.txt``.
@@ -477,7 +479,9 @@ def compute_shape_point_speeds(
     shapes_g = (
         gk.geometrize_shapes_0(shapes)
         .to_crs(utm_crs)
-        .assign(boundary_points=lambda x: x.intersection(speed_zones.boundary))
+        .assign(
+            boundary_points=lambda x: x.intersection(speed_zones.boundary, align=True)
+        )
     )
 
     # Assign distances to those boundary points
@@ -746,7 +750,7 @@ def build_stop_times(
         # Convert seconds back to time strings
         f[["arrival_time", "departure_time"]] = f[
             ["arrival_time", "departure_time"]
-        ].applymap(lambda x: gk.timestr_to_seconds(x, inverse=True))
+        ].map(lambda x: gk.timestr_to_seconds(x, inverse=True))
 
     # Free memory
     _build_stop_times_for_trip.cache_clear()
@@ -759,7 +763,7 @@ def build_feed(
     buffer: float = cs.BUFFER,
     stop_offset: float = cs.STOP_OFFSET,
     num_stops_per_shape: int = 2,
-    stop_spacing: Optional[float] = None,
+    stop_spacing: float | None = None,
 ) -> gk.Feed:
     """
     Convert the given ProtoFeed to a GTFS Feed with meter distance units.

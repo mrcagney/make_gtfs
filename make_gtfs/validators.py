@@ -1,6 +1,7 @@
 """
 ProtoFeed validators.
 """
+
 import re
 import pytz
 
@@ -163,22 +164,23 @@ SCHEMA_SPEED_ZONES = pa.DataFrameSchema(
 def check_meta(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Return `pfeed.meta` if it is valid.
-    Otherwise, raise a Pandera SchemaError.
+    Otherwise, raise a ValueError or a Pandera SchemaError.
     """
+    if not isinstance(pfeed.meta, pd.DataFrame):
+        raise ValueError("Meta must be a DataFrame")
+
     return SCHEMA_META.validate(pfeed.meta)
 
 
 def check_shapes(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     """
     Return `pfeed.shapes` if it is valid.
-    Otherwise, raise a Pandera SchemaError.
+    Otherwise, raise a ValueError or a Pandera SchemaError.
     """
-    result = SCHEMA_SHAPES.validate(pfeed.shapes)
-
     if not isinstance(pfeed.shapes, gpd.GeoDataFrame):
         raise ValueError("Shapes must be a GeoDataFrame")
 
-    return result
+    return SCHEMA_SHAPES.validate(pfeed.shapes)
 
 
 def check_service_windows(pfeed: pf.ProtoFeed) -> pd.DataFrame:
@@ -186,6 +188,9 @@ def check_service_windows(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     Return `pfeed.service_windows` if it is valid.
     Otherwise, raise a Pandera SchemaError.
     """
+    if not isinstance(pfeed.service_windows, pd.DataFrame):
+        raise ValueError("Service windows must be a DataFrame")
+
     return SCHEMA_SERVICE_WINDOWS.validate(pfeed.service_windows)
 
 
@@ -194,6 +199,9 @@ def check_frequencies(pfeed: pf.ProtoFeed) -> pd.DataFrame:
     Return `pfeed.frequencies` if it is valid.
     Otherwise, raise a Pandera SchemaError.
     """
+    if not isinstance(pfeed.frequencies, pd.DataFrame):
+        raise ValueError("Frequencies must be a DataFrame")
+
     return SCHEMA_FREQUENCIES.validate(pfeed.frequencies)
 
 
