@@ -147,6 +147,12 @@ Notes
 Changes
 ========
 
+4.1.0, 2024-12-19
+-----------------
+- Switched from Poetry to UV for project management.
+- Bumped to Python 3.10+.
+- Fixed some Pandas deprecation warnings.
+
 4.0.7, 2024-07-10
 -----------------
 - Updated dependencies.

@@ -211,9 +211,9 @@ def test_compute_shape_point_speeds():
 @pytest.mark.slow
 def test_build_stop_times_for_trip():
     stops = mg.build_stops(pfeed)
-    stops_g = gk.geometrize_stops_0(stops, use_utm=True)
+    stops_g = gk.geometrize_stops(stops, use_utm=True)
     shapes = mg.build_shapes(pfeed)
-    shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
+    shapes_gi = gk.geometrize_shapes(shapes, use_utm=True).set_index("shape_id")
     trip_id = "bingo"
     shape_id = shapes_gi.index[0]
 

@@ -90,7 +90,7 @@ def test_check_service_windows():
         "end_time",
     ]:
         pfeed = sample.copy()
-        pfeed.service_windows[col].iat[0] = "5"
+        pfeed.service_windows[col].iat[0] = -5
         with pytest.raises(pa.errors.SchemaError):
             mg.check_service_windows(pfeed)
 

@@ -7,7 +7,6 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import shapely.geometry as sg
-import gtfs_kit as gk
 
 from . import validators as vd
 from . import constants as cs
@@ -102,7 +101,10 @@ class ProtoFeed:
             return pd.Series(d)
 
         self.shapes_extra = dict(
-            self.frequencies.groupby("shape_id").apply(my_agg).reset_index().values
+            self.frequencies.groupby("shape_id")
+            .apply(my_agg, include_groups=False)
+            .reset_index()
+            .values
         )
 
         # Build service area as the bounding box of the shapes buffered by about 1 km
@@ -128,6 +130,7 @@ class ProtoFeed:
         else:
 
             def my_apply(group):
+                group["route_type"] = group.name
                 return self.clean_speed_zones(
                     group,
                     service_area,
@@ -136,12 +139,11 @@ class ProtoFeed:
 
             self.speed_zones = (
                 self.speed_zones.groupby("route_type", group_keys=False)
-                .apply(my_apply)
+                .apply(my_apply, include_groups=False)
                 .filter(["route_type", "speed_zone_id", "speed", "geometry"])
             )
 
-        lon, lat = self.shapes.geometry.iat[0].coords[0]
-        self.utm_crs = gk.get_utm_crs(lat, lon)
+        self.utm_crs = self.shapes.estimate_utm_crs()
 
     def __eq__(self, other) -> bool:
         for k in self.__dataclass_fields__:

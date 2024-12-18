@@ -1,29 +1,37 @@
-[tool.poetry]
-name = "make_gtfs"
-version = "4.0.7"
-description = "A Python 3.9+ library to build GTFS feeds from basic route information."
-authors = ["Alex Raichev <araichev@mrcagney.com>"]
+[project]
+name = "make-gtfs"
+version = "4.1.0"
+description = "A Python 3.10+ library to build GTFS feeds from basic route information."
+requires-python = ">=3.10"
 license = "MIT"
+authors = [
+    { name = "Alexander Raichev", email = "araichev@mrcagney.com" },
+]
+dependencies = [
+    "gtfs-kit>=8",
+    "pandera>=0.11.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9, <4"
-gtfs-kit = ">=5"
-pandera = ">=0.11.0"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.group.githubtest.dependencies]
-pytest = ">=6.2.5"
+[tool.setuptools]
+packages = ["make_gtfs"]
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=6.2.5"
-jupyter = ">=1.0.0"
-pre-commit = ">=2.15.0"
-Sphinx = ">=5.0.2"
-publish-sphinx-docs = ">=1.0.3"
-black = ">=22"
-ruff = ">=0.0.259"
-nbstripout = ">=0.6.1"
+[tool.uv]
+dev-dependencies = [
+    "pytest>=6.2.5",
+    "jupyter>=1.0.0",
+    "pre-commit-uv>=0",
+    "Sphinx>=5.0.2",
+    "publish-sphinx-docs>=1.0.3",
+    "black>=22",
+    "ruff>=0.0.259",
+    "nbstripout>=0.6.1",
+]
 
-[tool.pytest.ini_options]
+[tool.pytest.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
@@ -31,9 +39,7 @@ markers = [
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F"]
-ignore = ["F401", "F403"]
+lint.select = ["E", "F"]
+lint.ignore = ["E501", "E731", "F401", "F403"]
+exclude = ["*.ipynb"]
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
