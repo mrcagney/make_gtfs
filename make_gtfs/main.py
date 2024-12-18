@@ -2,8 +2,6 @@
 This module contains the main logic.
 """
 
-from __future__ import annotations
-
 from functools import lru_cache
 import math
 
@@ -283,7 +281,7 @@ def build_stops(
         # Keep only one line per antiparallel pair of shapes.
         # These can be determined from the shape IDs.
         shapes_g = (
-            gk.geometrize_shapes_0(shapes, use_utm=True)
+            gk.geometrize_shapes(shapes, use_utm=True)
             .assign(base_shape=lambda x: x.shape_id.str.split(cs.SEP, expand=True)[0])
             .drop_duplicates("base_shape")
         )
@@ -451,8 +449,7 @@ def compute_shape_point_speeds(
         return gpd.GeoDataFrame()
 
     # Get UTM CRS to compute distances in metres
-    lat, lon = shapes[["shape_pt_lat", "shape_pt_lon"]].values[0]
-    utm_crs = gk.get_utm_crs(lat, lon)
+    utm_crs = speed_zones.estimate_utm_crs()
     speed_zones = speed_zones.to_crs(utm_crs)
 
     # Build shape points
@@ -471,13 +468,13 @@ def compute_shape_point_speeds(
         .to_crs(utm_crs)
         .sort_values(["shape_id", "shape_pt_sequence"])
         .groupby("shape_id")
-        .apply(compute_dists)
+        .apply(compute_dists, include_groups=False)
         .drop(["dist", "shape_pt_lat", "shape_pt_lon"], axis="columns")
     )
 
     # Get points where shapes intersect speed zone boundaries
     shapes_g = (
-        gk.geometrize_shapes_0(shapes)
+        gk.geometrize_shapes(shapes)
         .to_crs(utm_crs)
         .assign(
             boundary_points=lambda x: x.intersection(speed_zones.boundary, align=True)
@@ -672,8 +669,8 @@ def build_stop_times(
     ).merge(routes)
 
     # Get the geometries of GTFS ``shapes``, not ``pfeed.shapes``
-    shapes_gi = gk.geometrize_shapes_0(shapes, use_utm=True).set_index("shape_id")
-    stops_g = gk.geometrize_stops_0(stops, use_utm=True)
+    shapes_gi = gk.geometrize_shapes(shapes, use_utm=True).set_index("shape_id")
+    stops_g = gk.geometrize_stops(stops, use_utm=True)
 
     # For each trip get its shape and stops nearby and set stop times based on its
     # service window frequency.

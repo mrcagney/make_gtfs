@@ -2,7 +2,7 @@ Make GTFS
 ***********
 .. image:: https://github.com/mrcagney/gtfs_kit/actions/workflows/test.yml/badge.svg
 
-A Python 3.9+ library to build GTFS feeds from basic route information.
+A Python 3.10+ library to build GTFS feeds from basic route information.
 Inspired by Conveyal's `geom2gtfs <https://github.com/conveyal/geom2gtfs>`_.
 Makes naive timetables, but they are often good enough for preliminary work.
 
@@ -13,10 +13,8 @@ Contributors
 
 Installation
 =============
-To use as a library in your own project (called something other than ``make_gtfs``), make a Python 3.9+ virtual environment for your project, then run ``poetry add make_gtfs``.
-
-To develop the ``make_gtfs`` repo, Git clone it, make a Python 3.9+ virtual environment, then run ``poetry install --no-root && pre-commit install``.
-
+To use as a library in your own project, install as a dependency with UV, say, via  ``uv add make_gtfs``.
+To develop the ``make_gtfs`` repo, Git clone it, then run ``uv add make_gtfs``.
 
 Usage
 =====
@@ -139,13 +137,20 @@ On Github pages `here <https://mrcagney.github.io/make_gtfs_docs>`_.
 Notes
 ======
 - This project's development status is Alpha.
-  Alex and Danielle use this project for work and change it breakingly when it suits their needs.
+  Alex uses this project for work and changes it breakingly when it suits his needs.
 - This project uses semantic versioning.
 - Thanks to `MRCagney <https://mrcagney.com>`_ for periodically funding this project.
 
 
 Changes
 ========
+
+4.1.0, 2024-12-19
+-----------------
+- Switched from Poetry to UV for project management.
+- Bumped to Python 3.10+.
+- Fixed some Pandas deprecation warnings.
+- Fixed CLI access.
 
 4.0.7, 2024-07-10
 -----------------
