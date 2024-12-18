@@ -19,6 +19,9 @@ build-backend = "hatchling.build"
 [tool.setuptools]
 packages = ["make_gtfs"]
 
+[project.scripts]
+make_gtfs = "make_gtfs.cli:make_gtfs"
+
 [tool.uv]
 dev-dependencies = [
     "pytest>=6.2.5",

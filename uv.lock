@@ -983,7 +983,7 @@ wheels = [
 
 [[package]]
 name = "make-gtfs"
-version = "4.0.7"
+version = "4.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "gtfs-kit" },
