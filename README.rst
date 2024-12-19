@@ -13,12 +13,16 @@ Contributors
 
 Installation
 =============
-To use as a library in your own project, install as a dependency with UV, say, via  ``uv add make_gtfs``.
+Here are instructions if you're using UV for Python dependency management.
+To use as a library in your own project, install as a dependency via  ``uv add make_gtfs``.
 To develop the ``make_gtfs`` repo, Git clone it, then run ``uv add make_gtfs``.
+
+If you're using Poetry or another dependency management program then change the UV commands above accordingly.
 
 Usage
 =====
-Use as a library, or use from the command line by typing ``make_gtfs --help`` and following the instructions.
+Use as a library, or use from the command line by typing ``uv run make_gtfs --help`` and following the instructions.
+If you're using Poetry or another dependency management program then change the UV command above accordingly.
 
 Make GTFS uses the following files to build a GTFS feed.
 
@@ -121,7 +125,7 @@ Basically,
   Assign stops to each trip as follows.
   Collect all stops in the built file ``stops.txt`` that are within a fixed distance of the traffic side (e.g. the right hand side for USA agency timezones and the left hand side for New Zealand agency timezones) of the trip shape.
   If the trip has no nearby stops, then do not make stop times for that trip.
-- Once validated, write these files to disk by running command ``feed.write("gtfsfile.zip")``. 
+- Once validated, write these files to disk by running command ``feed.write("gtfsfile.zip")``.
 
 
 Examples
@@ -144,6 +148,11 @@ Notes
 
 Changes
 ========
+
+4.1.1, 2024-12-20
+-----------------
+- Added the missing Click dependency.
+- Improved the usage installation and usage instructions.
 
 4.1.0, 2024-12-19
 -----------------
