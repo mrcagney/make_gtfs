@@ -1,6 +1,6 @@
 [project]
 name = "make-gtfs"
-version = "4.1.0"
+version = "4.1.1"
 description = "A Python 3.10+ library to build GTFS feeds from basic route information."
 requires-python = ">=3.10"
 license = "MIT"
